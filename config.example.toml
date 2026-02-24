@@ -1,0 +1,38 @@
+# q configuration file
+# Copy to ~/.config/q/config.toml or run `q config init`
+#
+# Config resolution order (later overrides earlier):
+#   1. XDG config: ~/.config/q/config.toml (or $XDG_CONFIG_HOME/q/config.toml)
+#   2. Project config: ./config.toml in current directory
+#   3. Environment variables: Q_PROVIDER, Q_MODEL
+
+[default]
+provider = "anthropic"
+model = "claude-sonnet-4-20250514"
+
+[providers.anthropic]
+type = "anthropic"
+api_key_env = "ANTHROPIC_API_KEY"
+
+[providers.openai]
+type = "openai"
+api_key_env = "OPENAI_API_KEY"
+
+# OpenAI-compatible provider (e.g., LM Studio, LocalAI)
+# [providers.local]
+# type = "openai_compatible"
+# base_url = "http://localhost:1234/v1"
+# api_key_env = "LOCAL_API_KEY"
+
+# Portkey (uses OpenAI provider with custom baseURL)
+# Supports env var interpolation in base_url and headers
+# [providers.portkey]
+# type = "openai"
+# base_url = "https://api.portkey.ai/v1"
+# api_key_env = "PORTKEY_API_KEY"
+# headers = { "x-portkey-config" = "${PORTKEY_CONFIG_ID}" }
+
+# Ollama (local models)
+# [providers.ollama]
+# type = "ollama"
+# base_url = "http://localhost:11434"
