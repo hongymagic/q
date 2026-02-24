@@ -1,4 +1,5 @@
 import { parseArgs } from "node:util";
+import pkg from "../package.json";
 import { UsageError } from "./errors.ts";
 
 export type Command = "query" | "config" | "providers";
@@ -50,7 +51,7 @@ EXAMPLES:
   q config init
 `;
 
-const VERSION = "0.4.0";
+const VERSION = pkg.version;
 
 export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
   const { values, positionals } = parseArgs({
