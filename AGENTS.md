@@ -205,6 +205,7 @@ src/
 
 ```bash
 bun run build              # Build for current platform
+bun run build:npm          # Build Node.js-compatible bundle for npm
 bun run build:all          # Build for all platforms
 ```
 
@@ -217,6 +218,50 @@ bun run build:all          # Build for all platforms
 - `bun-windows-x64` (Windows x64)
 
 Output: `dist/q-<platform>`
+
+---
+
+## npm Publishing
+
+The package is published to npm as `@hongymagic/q`. Users install with:
+
+```bash
+npm install -g @hongymagic/q
+```
+
+The binary is installed as `q`, so usage remains:
+
+```bash
+q "how do I rewrite git history"
+```
+
+### Release Process
+
+Releases are automated via GitHub Actions using npm Trusted Publishers (OIDC). To publish a new version:
+
+1. Update version in `package.json`
+2. Commit: `git commit -am "chore: bump version to X.Y.Z"`
+3. Tag: `git tag vX.Y.Z`
+4. Push: `git push && git push --tags`
+
+The release workflow will:
+- Build standalone binaries for all platforms
+- Create a GitHub Release with binaries attached
+- Publish the package to npm with provenance attestation
+
+### Trusted Publisher Setup (One-Time)
+
+No secrets required. Instead, configure npm to trust this GitHub repository:
+
+1. Go to [npmjs.com](https://www.npmjs.com) and log in
+2. Go to package settings: Access → Publishing access
+3. Add a new trusted publisher:
+   - Repository owner: `hongymagic`
+   - Repository name: `q`
+   - Workflow filename: `release.yml`
+   - Environment: _(leave empty)_
+
+This allows GitHub Actions to publish without storing npm tokens as secrets.
 
 ---
 

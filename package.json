@@ -1,11 +1,31 @@
 {
-  "name": "q",
+  "name": "@hongymagic/q",
   "version": "0.2.0",
   "description": "Quick AI answers from the command line",
+  "main": "dist/q.js",
   "module": "src/cli.ts",
   "type": "module",
   "bin": {
-    "q": "src/cli.ts"
+    "q": "dist/q.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hongymagic/q.git"
+  },
+  "keywords": [
+    "cli",
+    "ai",
+    "llm",
+    "terminal",
+    "assistant"
+  ],
+  "author": "hongymagic <packages@hon.gy>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
   },
   "scripts": {
     "start": "bun run src/cli.ts",
@@ -15,6 +35,7 @@
     "lint": "biome check .",
     "fix": "biome check --write --unsafe .",
     "build": "bun build --compile --minify --sourcemap ./src/cli.ts --outfile dist/q",
+    "build:npm": "bun build ./src/cli.ts --outfile dist/q.js --target node",
     "build:all": "bun run build:darwin-arm64 && bun run build:darwin-x64 && bun run build:linux-x64 && bun run build:linux-arm64 && bun run build:windows-x64",
     "build:darwin-arm64": "bun build --compile --minify --target=bun-darwin-arm64 ./src/cli.ts --outfile dist/q-darwin-arm64",
     "build:darwin-x64": "bun build --compile --minify --target=bun-darwin-x64 ./src/cli.ts --outfile dist/q-darwin-x64",
