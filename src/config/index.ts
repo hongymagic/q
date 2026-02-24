@@ -7,7 +7,6 @@
  *   3. Environment variables (Q_PROVIDER, Q_MODEL)
  */
 import { mkdir } from "node:fs/promises";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
 import { env } from "../env.ts";
@@ -86,7 +85,7 @@ export function getXdgConfigPath(): string {
   if (xdgConfigHome) {
     return join(xdgConfigHome, "q", "config.toml");
   }
-  return join(homedir(), ".config", "q", "config.toml");
+  return join(process.env.HOME ?? "", ".config", "q", "config.toml");
 }
 
 /**
@@ -97,7 +96,7 @@ export function getXdgConfigDir(): string {
   if (xdgConfigHome) {
     return join(xdgConfigHome, "q");
   }
-  return join(homedir(), ".config", "q");
+  return join(process.env.HOME ?? "", ".config", "q");
 }
 
 /**

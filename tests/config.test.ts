@@ -1,4 +1,3 @@
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -10,15 +9,15 @@ import {
 } from "../src/config/index.ts";
 
 describe("config paths", () => {
-  const originalEnv = process.env;
+  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     vi.resetModules();
-    process.env = { ...originalEnv };
   });
 
   afterEach(() => {
-    process.env = originalEnv;
+    // Restore original env
+    process.env = { ...originalEnv };
   });
 
   describe("getXdgConfigPath", () => {
@@ -29,7 +28,12 @@ describe("config paths", () => {
 
     it("should fall back to ~/.config when XDG_CONFIG_HOME is not set", () => {
       delete process.env.XDG_CONFIG_HOME;
-      const expected = join(homedir(), ".config", "q", "config.toml");
+      const expected = join(
+        process.env.HOME ?? "",
+        ".config",
+        "q",
+        "config.toml",
+      );
       expect(getXdgConfigPath()).toBe(expected);
     });
   });
@@ -42,7 +46,7 @@ describe("config paths", () => {
 
     it("should fall back to ~/.config when XDG_CONFIG_HOME is not set", () => {
       delete process.env.XDG_CONFIG_HOME;
-      const expected = join(homedir(), ".config", "q");
+      const expected = join(process.env.HOME ?? "", ".config", "q");
       expect(getXdgConfigDir()).toBe(expected);
     });
   });
@@ -57,7 +61,12 @@ describe("config paths", () => {
   describe("getConfigPath (legacy)", () => {
     it("should return XDG config path", () => {
       delete process.env.XDG_CONFIG_HOME;
-      const expected = join(homedir(), ".config", "q", "config.toml");
+      const expected = join(
+        process.env.HOME ?? "",
+        ".config",
+        "q",
+        "config.toml",
+      );
       expect(getConfigPath()).toBe(expected);
     });
   });
@@ -65,7 +74,7 @@ describe("config paths", () => {
   describe("getConfigDir (legacy)", () => {
     it("should return XDG config dir", () => {
       delete process.env.XDG_CONFIG_HOME;
-      const expected = join(homedir(), ".config", "q");
+      const expected = join(process.env.HOME ?? "", ".config", "q");
       expect(getConfigDir()).toBe(expected);
     });
   });

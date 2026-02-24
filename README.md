@@ -182,11 +182,8 @@ bun run typecheck
 # Lint (check for issues)
 bun run lint
 
-# Lint and auto-fix
-bun run lint:fix
-
-# Format all files
-bun run format
+# Fix all auto-fixable issues (lint + format)
+bun run fix
 
 # Run directly
 bun run src/cli.ts <query>

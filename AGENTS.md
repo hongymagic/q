@@ -239,8 +239,7 @@ This project uses [Biome](https://biomejs.dev/) for linting and formatting.
 
 ```bash
 bun run lint        # Check for issues (used in CI)
-bun run lint:fix    # Fix auto-fixable issues
-bun run format      # Format all files
+bun run fix         # Fix all auto-fixable issues (lint + format)
 ```
 
 ### Pre-commit Hooks
@@ -340,3 +339,28 @@ grepai trace graph "ValidateToken" --depth 3 --json
 2. Use `grepai trace` to understand function relationships
 3. Use `Read` tool to examine files from results
 4. Only use Grep for exact string searches if needed
+
+---
+
+## Keeping AGENTS.md Up-to-Date
+
+**IMPORTANT**: When making changes to the project that affect:
+
+- Project structure (adding/removing/renaming files or directories)
+- Scripts in `package.json`
+- Dependencies (adding/removing packages)
+- Configuration files (biome, lefthook, tsconfig, etc.)
+- CLI commands or options
+- Build targets or processes
+- Testing approach or test structure
+- Any documented conventions or patterns
+
+You MUST update this file to reflect those changes. This file serves as the authoritative source of truth for AI agents and developers working on this project.
+
+### What to Update
+
+1. **Project Structure**: Update the tree diagram in the "Project Structure" section
+2. **Scripts**: Update the "Linting & Formatting" or "Build" sections
+3. **Dependencies**: Update the "Key Dependencies" table
+4. **CLI Changes**: Update the "CLI UX" section (commands, options)
+5. **Config Changes**: Update the "Config" section
