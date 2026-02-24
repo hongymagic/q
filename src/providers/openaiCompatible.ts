@@ -2,10 +2,6 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { ProviderConfig } from "../config/index.ts";
 import { ConfigValidationError, MissingApiKeyError } from "../errors.ts";
 
-/**
- * Create an OpenAI-compatible provider instance
- * Used for local LLMs (LM Studio, etc.) and other OpenAI-compatible APIs
- */
 export function createOpenAICompatibleProvider(
   config: ProviderConfig,
   providerName: string,

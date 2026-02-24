@@ -276,7 +276,7 @@ Test cases cover:
 - TOML parsing + Zod validation
 - CLI parsing edge cases
 - Provider resolution and overrides
-- `--json`, `--stream`, `--copy` behavior
+- `--json`, `--stream`, `--copy` behaviour
 - Empty args shows help
 
 Run tests:
@@ -418,3 +418,51 @@ You MUST update this file to reflect those changes. This file serves as the auth
 3. **Dependencies**: Update the "Key Dependencies" table
 4. **CLI Changes**: Update the "CLI UX" section (commands, options)
 5. **Config Changes**: Update the "Config" section
+
+---
+
+## Code Style Guidelines
+
+### Australian English
+
+Use Australian/British English spellings throughout documentation and user-facing strings:
+
+| American (Don't Use) | Australian (Use) |
+|---------------------|------------------|
+| behavior | behaviour |
+| color | colour |
+| initialize | initialise |
+| organize | organise |
+| customize | customise |
+| center | centre |
+| favor | favour |
+| license (noun) | licence |
+
+**Exception**: Technical identifiers like `xterm-256color` remain unchanged.
+
+### Comments
+
+- **No verbose JSDoc**: Don't add JSDoc comments that merely restate the function name
+- **No module headers**: Don't add file-level comments explaining what the module does
+- **Self-documenting code**: Prefer clear naming over comments
+- **Only comment the "why"**: Add comments only for non-obvious logic or business decisions
+
+```typescript
+// Bad - restates the obvious
+/** Create an OpenAI provider instance */
+export function createOpenAIProvider() { ... }
+
+// Good - no comment needed, function name is clear
+export function createOpenAIProvider() { ... }
+
+// Good - explains non-obvious behaviour
+// Retry with exponential backoff to handle rate limits
+await retry(request, { maxAttempts: 3, backoff: 'exponential' });
+```
+
+### General Style
+
+- Keep code concise and readable
+- Prefer early returns over nested conditionals
+- Use TypeScript's type system; avoid `any`
+- Function and variable names should be descriptive but not verbose

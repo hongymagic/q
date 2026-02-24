@@ -1,11 +1,3 @@
-/**
- * Typed errors for the q CLI with stable exit codes
- * Exit codes:
- *   0 - Success
- *   1 - Runtime/provider errors
- *   2 - Usage/config errors
- */
-
 export class QError extends Error {
   constructor(
     message: string,
@@ -80,16 +72,10 @@ export class UsageError extends QError {
   }
 }
 
-/**
- * Log a message to stderr (for errors, warnings, debug info)
- */
 export function logError(message: string): void {
   console.error(message);
 }
 
-/**
- * Log debug information to stderr only if debug mode is enabled
- */
 export function logDebug(message: string, debug: boolean): void {
   if (debug) {
     console.error(`[debug] ${message}`);

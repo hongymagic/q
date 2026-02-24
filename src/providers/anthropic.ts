@@ -2,9 +2,6 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import type { ProviderConfig } from "../config/index.ts";
 import { MissingApiKeyError } from "../errors.ts";
 
-/**
- * Create an Anthropic provider instance
- */
 export function createAnthropicProvider(
   config: ProviderConfig,
   providerName: string,

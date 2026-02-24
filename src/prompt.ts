@@ -1,20 +1,13 @@
-/**
- * System prompt builder for the q CLI
- * Generates environment-aware prompts for terminal assistance
- */
 import {
   type EnvironmentInfo,
   formatEnvForPrompt,
   getEnvironmentInfo,
 } from "./env-info.ts";
 
-/**
- * Returns current date and time formatted for the prompt
- */
 function getFormattedDateTime(): string {
   try {
     const now = new Date();
-    return now.toLocaleString("en-US", {
+    return now.toLocaleString("en-AU", {
       weekday: "short",
       year: "numeric",
       month: "short",
@@ -28,11 +21,6 @@ function getFormattedDateTime(): string {
   }
 }
 
-/**
- * Builds a dynamic system prompt with environment context
- * @param env - Optional environment info for testing; auto-detected if not provided
- * @param dateTime - Optional date/time string for testing; auto-generated if not provided
- */
 export function buildSystemPrompt(
   env?: EnvironmentInfo,
   dateTime?: string,
@@ -94,5 +82,4 @@ lsof -ti:3000 | xargs kill -9
 REMEMBER: Plain text only. No markdown. No backticks. Just the command.`;
 }
 
-// Re-export for convenience
 export { getEnvironmentInfo, type EnvironmentInfo };

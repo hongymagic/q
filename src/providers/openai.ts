@@ -2,10 +2,6 @@ import { createOpenAI } from "@ai-sdk/openai";
 import type { ProviderConfig } from "../config/index.ts";
 import { MissingApiKeyError } from "../errors.ts";
 
-/**
- * Create an OpenAI provider instance
- * Also supports Portkey and other OpenAI-compatible services via baseURL
- */
 export function createOpenAIProvider(
   config: ProviderConfig,
   providerName: string,
