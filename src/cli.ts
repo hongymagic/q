@@ -3,7 +3,7 @@ import clipboard from "clipboardy";
 import { getHelpText, getVersion, parseCliArgs } from "./args.ts";
 import { getConfigPath, initConfig, loadConfig } from "./config/index.ts";
 import { formatEnvForDebug, getEnvironmentInfo } from "./env-info.ts";
-import { logDebug, logError, QError } from "./errors.ts";
+import { logDebug, logError, QError, UsageError } from "./errors.ts";
 import { formatOutput } from "./output.ts";
 import { buildSystemPrompt } from "./prompt.ts";
 import { listProviders, resolveProvider } from "./providers/index.ts";
@@ -49,6 +49,16 @@ async function main(): Promise<void> {
     }
 
     // Main query flow
+    const query = args.query.join(" ");
+
+    // Security: Limit query length to prevent abuse and excessive API costs
+    const MAX_QUERY_LENGTH = 5000;
+    if (query.length > MAX_QUERY_LENGTH) {
+      throw new UsageError(
+        `Query too long (${query.length} characters). Maximum is ${MAX_QUERY_LENGTH}.`,
+      );
+    }
+
     logDebug("Loading config...", debug);
     const config = await loadConfig();
 
@@ -63,7 +73,6 @@ async function main(): Promise<void> {
       debug,
     );
 
-    const query = args.query.join(" ");
     const envInfo = getEnvironmentInfo();
     logDebug(`Query: ${query}`, debug);
     logDebug(`Provider: ${providerName}, Model: ${modelId}`, debug);

@@ -13,6 +13,33 @@ export interface ResolvedProvider {
   modelId: string;
 }
 
+const SENSITIVE_FIELD_PATTERNS = [
+  "key",
+  "secret",
+  "token",
+  "password",
+  "auth",
+  "credential",
+];
+
+/**
+ * Filter sensitive fields from a provider config for safe logging.
+ * Removes any field containing: key, secret, token, password, auth, credential
+ * @internal Exported for testing only
+ */
+export function filterSensitiveFields(
+  config: ProviderConfig,
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(config).filter(([key]) => {
+      const lowerKey = key.toLowerCase();
+      return !SENSITIVE_FIELD_PATTERNS.some((pattern) =>
+        lowerKey.includes(pattern),
+      );
+    }),
+  );
+}
+
 /**
  * Resolve a provider and model from config, with optional overrides
  */
@@ -32,7 +59,7 @@ export function resolveProvider(
   const modelId = modelOverride ?? config.default.model;
 
   logDebug(
-    `Provider config: ${JSON.stringify(providerConfig, null, 2)}`,
+    `Provider config: ${JSON.stringify(filterSensitiveFields(providerConfig), null, 2)}`,
     debug,
   );
 

@@ -77,10 +77,12 @@ Config is loaded from multiple sources. Later sources override earlier ones:
 
 ### Env Var Interpolation
 
-Support `${VAR_NAME}` syntax in specific fields:
+Support `${VAR_NAME}` syntax in specific fields for allowlisted variables only:
 - `base_url`
 - `headers` values
 - `provider_slug` (Portkey-specific)
+
+**Allowlisted variables:** `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `PORTKEY_API_KEY`, `PORTKEY_BASE_URL`, `PORTKEY_PROVIDER`, `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`, `HOME`, `USER`, `HOSTNAME`
 
 ### Schema (TOML)
 
@@ -108,7 +110,7 @@ base_url = "https://your-portkey-gateway.internal/v1"
 provider_slug = "@your-org/bedrock-provider"
 api_key_env = "PORTKEY_API_KEY"
 provider_api_key_env = "PROVIDER_API_KEY"
-headers = { "x-custom" = "${CUSTOM_VALUE}" }
+headers = { "x-portkey-trace-id" = "${HOSTNAME}" }
 
 [providers.ollama]
 type = "ollama"

@@ -32,7 +32,7 @@ api_key_env = "OPENAI_API_KEY"
 # provider_slug = "@your-org/bedrock-provider"  # Maps to x-portkey-provider header
 # api_key_env = "PORTKEY_API_KEY"               # Maps to x-portkey-api-key header (optional)
 # provider_api_key_env = "PROVIDER_API_KEY"     # Maps to Authorization header (optional)
-# headers = { "x-custom" = "${CUSTOM_VALUE}" }  # Additional headers (optional)
+# headers = { "x-portkey-trace-id" = "${HOSTNAME}" }  # Only allowlisted env vars (see docs)
 
 # Portkey Cloud (public API)
 # [providers.portkey]

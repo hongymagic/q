@@ -181,16 +181,60 @@ export class Config {
   }
 
   private static interpolate(value: string): string {
-    return value.replace(/\$\{([^}]+)\}/g, (_, varName: string) => {
-      const envValue = process.env[varName];
-      if (envValue === undefined) {
-        throw new ConfigValidationError(
-          `Environment variable '${varName}' referenced in config but not set`,
-        );
-      }
-      return envValue;
-    });
+    return interpolateValue(value);
   }
+}
+
+/**
+ * Allowlist of environment variables permitted for interpolation.
+ * This prevents exfiltration of sensitive env vars via base_url or headers.
+ */
+const ALLOWED_INTERPOLATION_VARS = new Set([
+  // Provider API keys
+  "ANTHROPIC_API_KEY",
+  "OPENAI_API_KEY",
+  "PORTKEY_API_KEY",
+  // Provider base URLs
+  "ANTHROPIC_BASE_URL",
+  "OPENAI_BASE_URL",
+  "PORTKEY_BASE_URL",
+  // Portkey-specific
+  "PORTKEY_PROVIDER",
+  // Proxy settings
+  "HTTP_PROXY",
+  "HTTPS_PROXY",
+  "NO_PROXY",
+  // Safe system vars
+  "HOME",
+  "USER",
+  "HOSTNAME",
+]);
+
+/**
+ * Interpolate environment variables in a string value.
+ * Only allowlisted variables are permitted for security.
+ * @internal Exported for testing only
+ */
+export function interpolateValue(value: string): string {
+  return value.replace(/\$\{([^}]+)\}/g, (_, varName: string) => {
+    // Security: Only allow specific env vars to prevent exfiltration
+    // of sensitive environment variables via base_url or headers
+    if (!ALLOWED_INTERPOLATION_VARS.has(varName)) {
+      const allowedList = Array.from(ALLOWED_INTERPOLATION_VARS).join(", ");
+      throw new ConfigValidationError(
+        `Environment variable '${varName}' is not allowed for interpolation.\n` +
+          `Allowed variables: ${allowedList}`,
+      );
+    }
+
+    const envValue = process.env[varName];
+    if (envValue === undefined) {
+      throw new ConfigValidationError(
+        `Environment variable '${varName}' referenced in config but not set`,
+      );
+    }
+    return envValue;
+  });
 }
 
 export async function loadConfig(): Promise<Config> {
@@ -239,7 +283,7 @@ api_key_env = "OPENAI_API_KEY"
 # provider_slug = "@your-org/bedrock-provider"
 # api_key_env = "PORTKEY_API_KEY"
 # provider_api_key_env = "PROVIDER_API_KEY"
-# headers = { "x-custom" = "\${CUSTOM_VALUE}" }
+# headers = { "x-portkey-trace-id" = "\${HOSTNAME}" }  # Only allowlisted env vars
 
 # Example: Ollama (local models)
 # [providers.ollama]

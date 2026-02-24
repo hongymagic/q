@@ -105,7 +105,7 @@ provider_api_key_env = "PROVIDER_API_KEY"
 | `provider_slug` | Provider identifier (maps to `x-portkey-provider` header) |
 | `api_key_env` | Environment variable for Portkey API key (maps to `x-portkey-api-key` header) |
 | `provider_api_key_env` | Environment variable for underlying provider's API key (maps to `Authorization` header) |
-| `headers` | Additional custom headers (supports `${VAR}` interpolation) |
+| `headers` | Additional custom headers (supports env var interpolation for allowlisted vars) |
 
 **Environment variables:**
 
