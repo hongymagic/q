@@ -3,7 +3,6 @@
   "version": "0.3.0",
   "description": "Quick AI answers from the command line",
   "main": "dist/q.js",
-  "module": "src/cli.ts",
   "type": "module",
   "bin": {
     "q": "dist/q.js"
@@ -15,6 +14,10 @@
     "type": "git",
     "url": "git+https://github.com/hongymagic/q.git"
   },
+  "homepage": "https://github.com/hongymagic/q#readme",
+  "bugs": {
+    "url": "https://github.com/hongymagic/q/issues"
+  },
   "keywords": [
     "cli",
     "ai",
@@ -25,7 +28,7 @@
   "author": "hongymagic <packages@hon.gy>",
   "license": "MIT",
   "engines": {
-    "node": ">=18"
+    "node": ">=24"
   },
   "scripts": {
     "start": "bun run src/cli.ts",
