@@ -25,6 +25,7 @@
 - Use Bun-native APIs where available (e.g., `Bun.TOML.parse`, `Bun.file()`)
 - Type-safe env vars via `@t3-oss/env-core`
 - Schema validation via Zod 4
+- Node.js >=24 required for npm package
 
 ---
 
@@ -153,8 +154,9 @@ Each adapter should expose a unified interface for `generateText` and `streamTex
 
 - System prompt: concise, command-first
 - Always return actionable results
-- Use fenced code blocks for shell commands
-- If destructive, include clear warnings
+- Output plain text only (no markdown, no code fences, no backticks)
+- Commands printed directly for easy copy/paste
+- If destructive, use `WARNING:` prefix (no emojis)
 - No auto execution
 
 ---
