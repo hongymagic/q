@@ -2,9 +2,10 @@
 import clipboard from "clipboardy";
 import { getHelpText, getVersion, parseCliArgs } from "./args.ts";
 import { getConfigPath, initConfig, loadConfig } from "./config/index.ts";
+import { formatEnvForDebug, getEnvironmentInfo } from "./env-info.ts";
 import { logDebug, logError, QError } from "./errors.ts";
 import { formatOutput } from "./output.ts";
-import { SYSTEM_PROMPT } from "./prompt.ts";
+import { buildSystemPrompt } from "./prompt.ts";
 import { listProviders, resolveProvider } from "./providers/index.ts";
 import { runQuery } from "./run.ts";
 
@@ -63,15 +64,17 @@ async function main(): Promise<void> {
     );
 
     const query = args.query.join(" ");
+    const envInfo = getEnvironmentInfo();
     logDebug(`Query: ${query}`, debug);
     logDebug(`Provider: ${providerName}, Model: ${modelId}`, debug);
     logDebug(`Stream: ${args.options.stream}`, debug);
+    logDebug(formatEnvForDebug(envInfo), debug);
 
     // Run the query
     const result = await runQuery({
       model,
       query,
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt: buildSystemPrompt(envInfo),
       stream: args.options.stream,
     });
 

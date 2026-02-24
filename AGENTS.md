@@ -166,6 +166,7 @@ src/
 ├── cli.ts              # Entrypoint
 ├── args.ts             # CLI argument parsing (util.parseArgs)
 ├── env.ts              # Type-safe env vars (@t3-oss/env-core)
+├── env-info.ts         # Environment detection (OS, shell, terminal)
 ├── config/
 │   └── index.ts        # Config class, schemas, paths (consolidated)
 ├── providers/
@@ -177,7 +178,7 @@ src/
 │   └── portkey.ts      # Portkey AI Gateway provider
 ├── run.ts              # AI execution (generateText/streamText)
 ├── output.ts           # stdout formatting
-├── prompt.ts           # System prompt
+├── prompt.ts           # System prompt builder (dynamic, env-aware)
 └── errors.ts           # Typed errors + exit codes
 ```
 
