@@ -86,5 +86,11 @@ describe("System Prompt", () => {
       expect(prompt).toContain("Windows");
       expect(prompt).toContain("powershell");
     });
+
+    it("should instruct plain text output (no markdown)", () => {
+      const prompt = buildSystemPrompt(mockEnv, "test-date");
+      expect(prompt).toMatch(/plain text/i);
+      expect(prompt).toMatch(/no markdown/i);
+    });
   });
 });

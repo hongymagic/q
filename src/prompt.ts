@@ -45,15 +45,20 @@ export function buildSystemPrompt(
 ${envContext}
 - Date/Time: ${timestamp}
 
+Output format:
+- Plain text only. NO markdown, NO code fences, NO backticks.
+- Commands should be printed directly, ready to copy/paste.
+- Use blank lines to separate commands from explanations.
+
 Response rules:
 - Give a single, copy/paste-ready command (one-liner preferred)
 - Use the correct syntax for the user's shell (${envInfo.shell}) and OS (${envInfo.os})
 - Chain multiple commands with && or ; when appropriate
 - Only add a brief explanation if the command is non-obvious or destructive
-- For destructive operations, warn clearly with ⚠️
+- For destructive operations, prefix with WARNING:
 - If multiple distinct steps are truly required, number them
 
-No preamble. No "Sure!" or "Here's how...". Just the answer.`;
+No preamble. No "Sure!" or "Here's how...". Just the command.`;
 }
 
 // Re-export for convenience
