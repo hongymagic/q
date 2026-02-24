@@ -28,11 +28,13 @@ export const ProviderType = z.enum([
   "anthropic",
   "openai_compatible",
   "ollama",
+  "portkey",
 ]);
 export type ProviderType = z.infer<typeof ProviderType>;
 
 /**
  * Provider configuration schema
+ * Supports all provider types with optional portkey-specific fields
  */
 export const ProviderConfigSchema = z.object({
   type: ProviderType,
@@ -40,6 +42,9 @@ export const ProviderConfigSchema = z.object({
   base_url: z.string().optional(),
   // Zod 4: z.record() requires two arguments
   headers: z.record(z.string(), z.string()).optional(),
+  // Portkey-specific fields
+  provider_slug: z.string().optional(), // Maps to x-portkey-provider header
+  provider_api_key_env: z.string().optional(), // Maps to Authorization: Bearer header
 });
 export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
 
@@ -237,7 +242,7 @@ export class Config {
 
   /**
    * Interpolate ${VAR_NAME} in specific config fields
-   * Only interpolates: base_url, headers values
+   * Only interpolates: base_url, headers values, provider_slug
    */
   private static interpolateEnvVars(config: ConfigData): ConfigData {
     const result = structuredClone(config);
@@ -246,6 +251,11 @@ export class Config {
       // Interpolate base_url
       if (provider.base_url) {
         provider.base_url = Config.interpolate(provider.base_url);
+      }
+
+      // Interpolate provider_slug (Portkey-specific)
+      if (provider.provider_slug) {
+        provider.provider_slug = Config.interpolate(provider.provider_slug);
       }
 
       // Interpolate header values
@@ -331,13 +341,22 @@ api_key_env = "OPENAI_API_KEY"
 # base_url = "http://localhost:1234/v1"
 # api_key_env = "LOCAL_API_KEY"
 
-# Example: Portkey (uses OpenAI provider with custom baseURL)
-# Supports env var interpolation in base_url and headers
+# Example: Portkey Gateway (dedicated provider type for AI gateway routing)
+# Supports internal/self-hosted Portkey deployments
+# [providers.portkey_internal]
+# type = "portkey"
+# base_url = "https://your-portkey-gateway.internal/v1"
+# provider_slug = "@your-org/bedrock-provider"  # Maps to x-portkey-provider header
+# api_key_env = "PORTKEY_API_KEY"               # Maps to x-portkey-api-key header (optional)
+# provider_api_key_env = "PROVIDER_API_KEY"     # Maps to Authorization header (optional)
+# headers = { "x-custom" = "\${CUSTOM_VALUE}" } # Additional headers (optional)
+
+# Example: Portkey Cloud (public API)
 # [providers.portkey]
-# type = "openai"
+# type = "portkey"
 # base_url = "https://api.portkey.ai/v1"
+# provider_slug = "openai"
 # api_key_env = "PORTKEY_API_KEY"
-# headers = { "x-portkey-config" = "\${PORTKEY_CONFIG_ID}" }
 
 # Example: Ollama (local models)
 # [providers.ollama]

@@ -79,6 +79,7 @@ Config is loaded from multiple sources. Later sources override earlier ones:
 Support `${VAR_NAME}` syntax in specific fields:
 - `base_url`
 - `headers` values
+- `provider_slug` (Portkey-specific)
 
 ### Schema (TOML)
 
@@ -100,11 +101,13 @@ type = "openai_compatible"
 base_url = "http://localhost:11434/v1"
 api_key_env = "LOCAL_KEY"
 
-[providers.portkey]
-type = "openai"
-base_url = "https://api.portkey.ai/v1"
+[providers.portkey_internal]
+type = "portkey"
+base_url = "https://your-portkey-gateway.internal/v1"
+provider_slug = "@your-org/bedrock-provider"
 api_key_env = "PORTKEY_API_KEY"
-headers = { "x-portkey-config" = "${PORTKEY_CONFIG_ID}" }
+provider_api_key_env = "PROVIDER_API_KEY"
+headers = { "x-custom" = "${CUSTOM_VALUE}" }
 
 [providers.ollama]
 type = "ollama"
@@ -124,10 +127,13 @@ Implement a provider resolver:
 
 ```typescript
 type ProviderConfig = {
-  type: "openai" | "anthropic" | "openai_compatible" | "ollama"
+  type: "openai" | "anthropic" | "openai_compatible" | "ollama" | "portkey"
   api_key_env?: string
   base_url?: string
   headers?: Record<string, string>
+  // Portkey-specific fields
+  provider_slug?: string       // Maps to x-portkey-provider header
+  provider_api_key_env?: string // Maps to Authorization: Bearer header
 }
 ```
 
@@ -137,6 +143,7 @@ Adapters:
 - `anthropic` → `@ai-sdk/anthropic`
 - `openai_compatible` → `@ai-sdk/openai-compatible`
 - `ollama` → `ollama-ai-provider-v2`
+- `portkey` → `@ai-sdk/openai` (with Portkey-specific headers for internal/cloud gateways)
 
 Each adapter should expose a unified interface for `generateText` and `streamText`.
 
@@ -166,7 +173,8 @@ src/
 │   ├── openai.ts
 │   ├── anthropic.ts
 │   ├── openaiCompatible.ts
-│   └── ollama.ts
+│   ├── ollama.ts
+│   └── portkey.ts      # Portkey AI Gateway provider
 ├── run.ts              # AI execution (generateText/streamText)
 ├── output.ts           # stdout formatting
 ├── prompt.ts           # System prompt

@@ -59,6 +59,7 @@ async function main(): Promise<void> {
       config,
       args.options.provider,
       args.options.model,
+      debug,
     );
 
     const query = args.query.join(" ");

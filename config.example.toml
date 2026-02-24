@@ -24,13 +24,22 @@ api_key_env = "OPENAI_API_KEY"
 # base_url = "http://localhost:1234/v1"
 # api_key_env = "LOCAL_API_KEY"
 
-# Portkey (uses OpenAI provider with custom baseURL)
-# Supports env var interpolation in base_url and headers
+# Portkey Gateway - Internal/Self-hosted deployment
+# Use type = "portkey" for first-class Portkey support
+# [providers.portkey_internal]
+# type = "portkey"
+# base_url = "https://your-portkey-gateway.internal/v1"
+# provider_slug = "@your-org/bedrock-provider"  # Maps to x-portkey-provider header
+# api_key_env = "PORTKEY_API_KEY"               # Maps to x-portkey-api-key header (optional)
+# provider_api_key_env = "PROVIDER_API_KEY"     # Maps to Authorization header (optional)
+# headers = { "x-custom" = "${CUSTOM_VALUE}" }  # Additional headers (optional)
+
+# Portkey Cloud (public API)
 # [providers.portkey]
-# type = "openai"
+# type = "portkey"
 # base_url = "https://api.portkey.ai/v1"
+# provider_slug = "openai"
 # api_key_env = "PORTKEY_API_KEY"
-# headers = { "x-portkey-config" = "${PORTKEY_CONFIG_ID}" }
 
 # Ollama (local models)
 # [providers.ollama]

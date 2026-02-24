@@ -1,10 +1,11 @@
 import type { LanguageModel } from "ai";
 import type { ConfigData, ProviderConfig } from "../config/index.ts";
-import { ProviderNotFoundError } from "../errors.ts";
+import { logDebug, ProviderNotFoundError } from "../errors.ts";
 import { createAnthropicProvider } from "./anthropic.ts";
 import { createOllamaProvider } from "./ollama.ts";
 import { createOpenAIProvider } from "./openai.ts";
 import { createOpenAICompatibleProvider } from "./openaiCompatible.ts";
+import { createPortkeyProvider } from "./portkey.ts";
 
 export interface ResolvedProvider {
   model: LanguageModel;
@@ -19,6 +20,7 @@ export function resolveProvider(
   config: ConfigData,
   providerOverride?: string,
   modelOverride?: string,
+  debug = false,
 ): ResolvedProvider {
   const providerName = providerOverride ?? config.default.provider;
   const providerConfig = config.providers[providerName];
@@ -28,7 +30,13 @@ export function resolveProvider(
   }
 
   const modelId = modelOverride ?? config.default.model;
-  const model = createModel(providerConfig, providerName, modelId);
+
+  logDebug(
+    `Provider config: ${JSON.stringify(providerConfig, null, 2)}`,
+    debug,
+  );
+
+  const model = createModel(providerConfig, providerName, modelId, debug);
 
   return {
     model,
@@ -44,6 +52,7 @@ function createModel(
   config: ProviderConfig,
   providerName: string,
   modelId: string,
+  debug = false,
 ): LanguageModel {
   switch (config.type) {
     case "openai": {
@@ -60,6 +69,10 @@ function createModel(
     }
     case "ollama": {
       const provider = createOllamaProvider(config);
+      return provider(modelId);
+    }
+    case "portkey": {
+      const provider = createPortkeyProvider(config, providerName, debug);
       return provider(modelId);
     }
   }
