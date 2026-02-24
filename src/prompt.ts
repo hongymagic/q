@@ -1,15 +1,60 @@
 /**
- * System prompt for the q CLI
- * Designed to produce concise, actionable, copy/paste-ready answers
+ * System prompt builder for the q CLI
+ * Generates environment-aware prompts for terminal assistance
  */
-export const SYSTEM_PROMPT = `You are a helpful command-line assistant. Your responses should be:
+import {
+  type EnvironmentInfo,
+  formatEnvForPrompt,
+  getEnvironmentInfo,
+} from "./env-info.ts";
 
-- Concise and actionable - get straight to the point
-- Use fenced code blocks for shell commands and code snippets
-- Include clear warnings for destructive or irreversible operations
-- Never auto-execute commands - always show them for the user to copy/paste
-- Prioritize copy/paste-ready solutions
-- When showing commands, prefer one-liners when practical
-- If multiple steps are needed, number them clearly
+/**
+ * Returns current date and time formatted for the prompt
+ */
+function getFormattedDateTime(): string {
+  try {
+    const now = new Date();
+    return now.toLocaleString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+  } catch {
+    return "unknown";
+  }
+}
 
-Do not include unnecessary preamble or excessive explanations unless the user specifically asks for details.`;
+/**
+ * Builds a dynamic system prompt with environment context
+ * @param env - Optional environment info for testing; auto-detected if not provided
+ * @param dateTime - Optional date/time string for testing; auto-generated if not provided
+ */
+export function buildSystemPrompt(
+  env?: EnvironmentInfo,
+  dateTime?: string,
+): string {
+  const envInfo = env ?? getEnvironmentInfo();
+  const envContext = formatEnvForPrompt(envInfo);
+  const timestamp = dateTime ?? getFormattedDateTime();
+
+  return `You are a terminal command expert. The user is running:
+${envContext}
+- Date/Time: ${timestamp}
+
+Response rules:
+- Give a single, copy/paste-ready command (one-liner preferred)
+- Use the correct syntax for the user's shell (${envInfo.shell}) and OS (${envInfo.os})
+- Chain multiple commands with && or ; when appropriate
+- Only add a brief explanation if the command is non-obvious or destructive
+- For destructive operations, warn clearly with ⚠️
+- If multiple distinct steps are truly required, number them
+
+No preamble. No "Sure!" or "Here's how...". Just the answer.`;
+}
+
+// Re-export for convenience
+export { getEnvironmentInfo, type EnvironmentInfo };
