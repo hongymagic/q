@@ -31,7 +31,7 @@ describe("System Prompt", () => {
       expect(prompt).toContain("Date/Time: Mon, Jan 1, 2024, 12:00 PM PST");
     });
 
-    it("should reference the user's shell in response rules", () => {
+    it("should reference the user's shell and OS in rules", () => {
       const fishEnv: EnvironmentInfo = {
         os: "Linux",
         osVersion: "5.15.0",
@@ -41,8 +41,7 @@ describe("System Prompt", () => {
       };
 
       const prompt = buildSystemPrompt(fishEnv, "test-date");
-      expect(prompt).toContain("fish");
-      expect(prompt).toContain("Linux");
+      expect(prompt).toContain("fish syntax for Linux");
     });
 
     it("should include one-liner preference", () => {
@@ -55,21 +54,16 @@ describe("System Prompt", () => {
       expect(prompt).toMatch(/no preamble/i);
     });
 
-    it("should mention shell syntax awareness", () => {
-      const prompt = buildSystemPrompt(mockEnv, "test-date");
-      expect(prompt).toContain("correct syntax for the user's shell (zsh)");
-    });
-
     it("should work without arguments (uses real env and time)", () => {
       const prompt = buildSystemPrompt();
       expect(prompt).toBeTruthy();
       expect(prompt.length).toBeGreaterThan(100);
-      // Should contain Date/Time line with some value
       expect(prompt).toContain("Date/Time:");
     });
 
     it("should include destructive operation warning rule", () => {
       const prompt = buildSystemPrompt(mockEnv, "test-date");
+      expect(prompt).toContain("WARNING:");
       expect(prompt).toContain("destructive");
     });
 
@@ -83,14 +77,27 @@ describe("System Prompt", () => {
       };
 
       const prompt = buildSystemPrompt(winEnv, "test-date");
-      expect(prompt).toContain("Windows");
-      expect(prompt).toContain("powershell");
+      expect(prompt).toContain("powershell syntax for Windows");
     });
 
     it("should instruct plain text output (no markdown)", () => {
       const prompt = buildSystemPrompt(mockEnv, "test-date");
       expect(prompt).toMatch(/plain text/i);
-      expect(prompt).toMatch(/no markdown/i);
+      expect(prompt).toMatch(/never use markdown/i);
+    });
+
+    it("should include multi-shot examples", () => {
+      const prompt = buildSystemPrompt(mockEnv, "test-date");
+      expect(prompt).toContain("<examples>");
+      expect(prompt).toContain("</examples>");
+      expect(prompt).toContain("User:");
+      expect(prompt).toContain("Output:");
+    });
+
+    it("should explicitly forbid backticks and code fences", () => {
+      const prompt = buildSystemPrompt(mockEnv, "test-date");
+      expect(prompt).toContain("backticks");
+      expect(prompt).toContain("code fences");
     });
   });
 });
