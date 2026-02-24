@@ -55,7 +55,7 @@ EXAMPLES:
   q config init
 `;
 
-const VERSION = "0.2.0";
+const VERSION = "0.3.0";
 
 export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
   const { values, positionals } = parseArgs({
