@@ -4,12 +4,16 @@ A fast, minimal CLI for getting AI answers directly in your terminal.
 
 ## Installation
 
-Download the latest binary for your platform from the [releases page](../../releases).
+```bash
+npm install -g @hongymagic/q
+```
+
+Or download a standalone binary from the [releases page](https://github.com/hongymagic/q/releases).
 
 Or build from source with [Bun](https://bun.sh):
 
 ```bash
-git clone <repo-url> && cd q
+git clone https://github.com/hongymagic/q.git && cd q
 bun install && bun run build
 ```
 
@@ -19,7 +23,6 @@ bun install && bun run build
 
 ```bash
 q config init
-# or copy config.example.toml to ~/.config/q/config.toml
 ```
 
 2. **Set your API key:**
@@ -73,7 +76,44 @@ See [config.example.toml](config.example.toml) for all options.
 | `openai` | OpenAI API |
 | `openai_compatible` | Any OpenAI-compatible API |
 | `ollama` | Local Ollama instance |
+| `portkey` | Portkey AI Gateway (self-hosted or cloud) |
 
-## License
+### Portkey Gateway Setup
+
+[Portkey](https://portkey.ai) is an AI gateway that provides unified access to multiple LLM providers with features like load balancing, caching, and observability. Use the `portkey` provider type for self-hosted or cloud deployments.
+
+**Self-hosted gateway:**
+
+```toml
+[default]
+provider = "portkey_internal"
+model = "us.anthropic.claude-sonnet-4-20250514-v1:0"
+
+[providers.portkey_internal]
+type = "portkey"
+base_url = "https://your-portkey-gateway.internal/v1"
+provider_slug = "@your-org/bedrock-provider"
+api_key_env = "PORTKEY_API_KEY"
+provider_api_key_env = "PROVIDER_API_KEY"
+```
+
+**Configuration options:**
+
+| Field | Description |
+|-------|-------------|
+| `base_url` | Your Portkey gateway URL |
+| `provider_slug` | Provider identifier (maps to `x-portkey-provider` header) |
+| `api_key_env` | Environment variable for Portkey API key (maps to `x-portkey-api-key` header) |
+| `provider_api_key_env` | Environment variable for underlying provider's API key (maps to `Authorization` header) |
+| `headers` | Additional custom headers (supports `${VAR}` interpolation) |
+
+**Environment variables:**
+
+```bash
+export PORTKEY_API_KEY="your-portkey-key"
+export PROVIDER_API_KEY="your-provider-key"
+```
+
+## Licence
 
 MIT
