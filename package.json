@@ -1,0 +1,43 @@
+{
+  "name": "q",
+  "version": "0.1.0",
+  "description": "Quick AI answers from the command line",
+  "module": "src/cli.ts",
+  "type": "module",
+  "bin": {
+    "q": "src/cli.ts"
+  },
+  "scripts": {
+    "start": "bun run src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "build": "bun build --compile --minify --sourcemap ./src/cli.ts --outfile dist/q",
+    "build:all": "bun run build:darwin-arm64 && bun run build:darwin-x64 && bun run build:linux-x64 && bun run build:linux-arm64 && bun run build:windows-x64",
+    "build:darwin-arm64": "bun build --compile --minify --target=bun-darwin-arm64 ./src/cli.ts --outfile dist/q-darwin-arm64",
+    "build:darwin-x64": "bun build --compile --minify --target=bun-darwin-x64 ./src/cli.ts --outfile dist/q-darwin-x64",
+    "build:linux-x64": "bun build --compile --minify --target=bun-linux-x64 ./src/cli.ts --outfile dist/q-linux-x64",
+    "build:linux-arm64": "bun build --compile --minify --target=bun-linux-arm64 ./src/cli.ts --outfile dist/q-linux-arm64",
+    "build:windows-x64": "bun build --compile --minify --target=bun-windows-x64 ./src/cli.ts --outfile dist/q-windows-x64.exe"
+  },
+  "dependencies": {
+    "ai": "^6.0.97",
+    "@ai-sdk/openai": "^3.0.31",
+    "@ai-sdk/anthropic": "^3.0.46",
+    "@ai-sdk/openai-compatible": "^2.0.30",
+    "ollama-ai-provider-v2": "^3.3.1",
+    "zod": "^4.3.6",
+    "clipboardy": "^5.3.0",
+    "@t3-oss/env-core": "^0.13.10"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.4",
+    "@types/bun": "latest",
+    "lefthook": "^2.1.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
