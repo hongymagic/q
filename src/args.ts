@@ -55,11 +55,8 @@ EXAMPLES:
   q config init
 `;
 
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 
-/**
- * Parse CLI arguments using util.parseArgs
- */
 export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
   const { values, positionals } = parseArgs({
     args: argv,
@@ -88,7 +85,6 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
     version: values.version ?? false,
   };
 
-  // Handle --help and --version flags
   if (options.help || options.version) {
     return {
       command: "query",
@@ -97,7 +93,6 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
     };
   }
 
-  // Detect subcommands
   const firstArg = positionals[0]?.toLowerCase();
 
   if (firstArg === "config") {
@@ -123,7 +118,6 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
     };
   }
 
-  // Default: query command - show help if no arguments
   if (positionals.length === 0) {
     return {
       command: "query",

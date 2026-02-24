@@ -128,7 +128,7 @@ src/
 - [x] **6. Update provider adapters**
   - Use `ConfigData` type for plain data interface
 
-- [x] **7. Fix empty args behavior**
+- [x] **7. Fix empty args behaviour**
   - Show help instead of error when no arguments
 
 - [x] **8. Update tests**
@@ -151,7 +151,7 @@ src/
 |----------|----------|
 | Config priority | ENV > CWD > XDG (merge cascade) |
 | Env var names | `Q_PROVIDER`, `Q_MODEL` |
-| API key handling | Via `api_key_env` in config (existing behavior) |
+| API key handling | Via `api_key_env` in config (existing behaviour) |
 | Interpolation scope | Only `base_url` and `headers` values |
 | Build targets | All platforms (macOS arm64/x64, Linux x64/arm64, Windows x64) |
 | Empty args | Show help |

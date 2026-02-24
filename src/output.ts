@@ -11,10 +11,6 @@ export interface JsonOutput {
   model: string;
 }
 
-/**
- * Format the output for display
- * Returns JSON if --json flag is set, otherwise plain text
- */
 export function formatOutput(options: OutputOptions): string {
   if (options.json) {
     const output: JsonOutput = {

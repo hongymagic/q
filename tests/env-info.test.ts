@@ -37,7 +37,6 @@ describe("Environment Detection", () => {
     });
 
     it("should never throw even if detection fails", () => {
-      // This test verifies the graceful error handling
       expect(() => getEnvironmentInfo()).not.toThrow();
     });
   });
