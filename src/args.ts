@@ -11,9 +11,7 @@ export interface ParsedArgs {
   options: {
     provider?: string;
     model?: string;
-    stream: boolean;
     copy: boolean;
-    json: boolean;
     debug: boolean;
     help: boolean;
     version: boolean;
@@ -31,9 +29,7 @@ USAGE:
 OPTIONS:
   -p, --provider <name>        Override the default provider
   -m, --model <id>             Override the default model
-  --stream                     Stream response tokens as they arrive
   --copy                       Copy answer to clipboard
-  --json                       Output structured JSON
   --debug                      Enable debug logging to stderr
   -h, --help                   Show this help message
   -v, --version                Show version
@@ -50,7 +46,6 @@ CONFIG:
 
 EXAMPLES:
   q how do I restart docker
-  q --stream explain git rebase
   q -p openai --model gpt-4o what is recursion
   q config init
 `;
@@ -63,9 +58,7 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
     options: {
       provider: { type: "string", short: "p" },
       model: { type: "string", short: "m" },
-      stream: { type: "boolean", default: false },
       copy: { type: "boolean", default: false },
-      json: { type: "boolean", default: false },
       debug: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
       version: { type: "boolean", short: "v", default: false },
@@ -77,9 +70,7 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
   const options = {
     provider: values.provider,
     model: values.model,
-    stream: values.stream ?? false,
     copy: values.copy ?? false,
-    json: values.json ?? false,
     debug: values.debug ?? false,
     help: values.help ?? false,
     version: values.version ?? false,

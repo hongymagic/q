@@ -4,7 +4,6 @@ import { getHelpText, getVersion, parseCliArgs } from "./args.ts";
 import { getConfigPath, initConfig, loadConfig } from "./config/index.ts";
 import { formatEnvForDebug, getEnvironmentInfo } from "./env-info.ts";
 import { logDebug, logError, QError, UsageError } from "./errors.ts";
-import { formatOutput } from "./output.ts";
 import { buildSystemPrompt } from "./prompt.ts";
 import { listProviders, resolveProvider } from "./providers/index.ts";
 import { runQuery } from "./run.ts";
@@ -76,36 +75,14 @@ async function main(): Promise<void> {
     const envInfo = getEnvironmentInfo();
     logDebug(`Query: ${query}`, debug);
     logDebug(`Provider: ${providerName}, Model: ${modelId}`, debug);
-    logDebug(`Stream: ${args.options.stream}`, debug);
     logDebug(formatEnvForDebug(envInfo), debug);
 
-    // Run the query
+    // Run the query (streams directly to stdout)
     const result = await runQuery({
       model,
       query,
       systemPrompt: buildSystemPrompt(envInfo),
-      stream: args.options.stream,
     });
-
-    // Format and output (skip if streaming - already printed)
-    if (!args.options.stream) {
-      const output = formatOutput({
-        text: result.text,
-        providerName,
-        modelId,
-        json: args.options.json,
-      });
-      console.log(output);
-    } else if (args.options.json) {
-      // For streaming + json, output JSON after stream completes
-      const output = formatOutput({
-        text: result.text,
-        providerName,
-        modelId,
-        json: true,
-      });
-      console.log(output);
-    }
 
     // Copy to clipboard if requested
     if (args.options.copy) {

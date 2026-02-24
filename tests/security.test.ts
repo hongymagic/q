@@ -171,10 +171,10 @@ describe("security", () => {
     });
 
     it("should allow known options mixed with positional args", () => {
-      const args = parseCliArgs(["hello", "--stream", "world"]);
+      const args = parseCliArgs(["hello", "--copy", "world"]);
       expect(args.query).toContain("hello");
       expect(args.query).toContain("world");
-      expect(args.options.stream).toBe(true);
+      expect(args.options.copy).toBe(true);
     });
   });
 });

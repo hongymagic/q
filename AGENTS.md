@@ -12,7 +12,7 @@
 - Read config from TOML (multiple providers supported)
 - Use Vercel AI SDK to call the configured provider + model
 - Print the AI response to stdout
-- Optional flags: `--copy`, `--stream`, `--json`
+- Optional flags: `--copy`
 - Build standalone executables for all platforms
 
 ---
@@ -44,16 +44,14 @@ q providers                 # List configured providers + default
 
 - `-p`, `--provider <name>`: override the configured provider
 - `-m`, `--model <id>`: override the configured model
-- `--stream`: stream answer tokens as they arrive
 - `--copy`: copy final answer to clipboard
-- `--json`: output structured JSON instead of raw text
 - `--debug`: write debug logs to stderr
 - `-h`, `--help`: show help
 - `-v`, `--version`: show version
 
 ### I/O contract
 
-- **stdout**: answer text (or JSON)
+- **stdout**: answer text (streamed)
 - **stderr**: logs, warnings, errors
 
 ---
@@ -148,7 +146,7 @@ Adapters:
 - `ollama` → `ollama-ai-provider-v2`
 - `portkey` → `@ai-sdk/openai` (with Portkey-specific headers for internal/cloud gateways)
 
-Each adapter should expose a unified interface for `generateText` and `streamText`.
+Each adapter should expose a unified interface for `streamText`.
 
 ---
 
@@ -180,8 +178,7 @@ src/
 │   ├── openaiCompatible.ts
 │   ├── ollama.ts
 │   └── portkey.ts      # Portkey AI Gateway provider
-├── run.ts              # AI execution (generateText/streamText)
-├── output.ts           # stdout formatting
+├── run.ts              # AI execution (streamText)
 ├── prompt.ts           # System prompt builder (dynamic, env-aware)
 └── errors.ts           # Typed errors + exit codes
 ```
@@ -280,7 +277,7 @@ Test cases cover:
 - TOML parsing + Zod validation
 - CLI parsing edge cases
 - Provider resolution and overrides
-- `--json`, `--stream`, `--copy` behaviour
+- `--copy` behaviour
 - Empty args shows help
 
 Run tests:
@@ -327,7 +324,7 @@ bunx lefthook install
 - **Never execute model output automatically**
 - **Do not send local files or environment vars without explicit intent**
 - **Secrets must be redacted in logs**
-- **Keep stdout pure** (only answer or JSON)
+- **Keep stdout pure** (answer text only)
 
 
 ## grepai - Semantic Code Search

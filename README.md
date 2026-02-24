@@ -35,7 +35,6 @@ export ANTHROPIC_API_KEY="your-key-here"
 
 ```bash
 q how do I restart docker
-q --stream explain git rebase
 q --copy what is a kubernetes pod
 ```
 
@@ -45,9 +44,7 @@ q --copy what is a kubernetes pod
 |--------|-------------|
 | `-p, --provider <name>` | Override the default provider |
 | `-m, --model <id>` | Override the default model |
-| `--stream` | Stream response as it arrives |
 | `--copy` | Copy answer to clipboard |
-| `--json` | Output structured JSON |
 | `-h, --help` | Show help message |
 
 ### Commands

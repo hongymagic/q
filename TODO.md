@@ -65,6 +65,7 @@ src/
 ├── cli.ts              # Entrypoint
 ├── args.ts             # CLI parsing (empty args → help)
 ├── env.ts              # NEW: t3-env type-safe env vars
+├── env-info.ts         # Environment detection (OS, shell, terminal)
 ├── config/
 │   └── index.ts        # Config class (consolidated)
 ├── providers/
@@ -72,9 +73,9 @@ src/
 │   ├── openai.ts
 │   ├── anthropic.ts
 │   ├── openaiCompatible.ts
-│   └── ollama.ts
-├── run.ts              # AI execution
-├── output.ts           # Output formatting
+│   ├── ollama.ts
+│   └── portkey.ts      # Portkey AI Gateway provider
+├── run.ts              # AI execution (streamText)
 ├── prompt.ts           # System prompt
 └── errors.ts           # Typed errors
 ```

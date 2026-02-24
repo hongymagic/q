@@ -8,9 +8,7 @@ describe("CLI argument parsing", () => {
       const args = parseCliArgs(["how", "do", "I", "restart", "docker"]);
       expect(args.command).toBe("query");
       expect(args.query).toEqual(["how", "do", "I", "restart", "docker"]);
-      expect(args.options.stream).toBe(false);
       expect(args.options.copy).toBe(false);
-      expect(args.options.json).toBe(false);
     });
 
     it("should parse --provider and -p option", () => {
@@ -29,19 +27,9 @@ describe("CLI argument parsing", () => {
       expect(args2.options.model).toBe("claude-3");
     });
 
-    it("should parse --stream flag", () => {
-      const args = parseCliArgs(["--stream", "test"]);
-      expect(args.options.stream).toBe(true);
-    });
-
     it("should parse --copy flag", () => {
       const args = parseCliArgs(["--copy", "test"]);
       expect(args.options.copy).toBe(true);
-    });
-
-    it("should parse --json flag", () => {
-      const args = parseCliArgs(["--json", "test"]);
-      expect(args.options.json).toBe(true);
     });
 
     it("should parse --debug flag", () => {
@@ -71,7 +59,6 @@ describe("CLI argument parsing", () => {
         "openai",
         "-m",
         "gpt-4o",
-        "--stream",
         "--copy",
         "what",
         "is",
@@ -79,7 +66,6 @@ describe("CLI argument parsing", () => {
       ]);
       expect(args.options.provider).toBe("openai");
       expect(args.options.model).toBe("gpt-4o");
-      expect(args.options.stream).toBe(true);
       expect(args.options.copy).toBe(true);
       expect(args.query).toEqual(["what", "is", "recursion"]);
     });
@@ -126,7 +112,7 @@ describe("CLI argument parsing", () => {
       expect(help).toContain("q - Quick AI answers");
       expect(help).toContain("--provider");
       expect(help).toContain("--model");
-      expect(help).toContain("--stream");
+      expect(help).toContain("--copy");
     });
   });
 
