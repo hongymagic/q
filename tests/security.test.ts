@@ -27,6 +27,9 @@ describe("security", () => {
       delete process.env.AWS_SECRET_ACCESS_KEY;
       delete process.env.PORTKEY_BASE_URL;
       delete process.env.NOT_ALLOWED;
+      delete process.env.GITHUB_TOKEN;
+      delete process.env.MCP_TOKEN;
+      delete process.env.GITLAB_TOKEN;
     });
 
     it("should reject non-allowlisted env vars in interpolation", () => {
@@ -95,6 +98,40 @@ describe("security", () => {
       expect(() => interpolateValue("${NOT_ALLOWED}")).toThrow(
         /PORTKEY_API_KEY/,
       );
+    });
+
+    // MCP-specific env var interpolation tests
+    it("should allow GITHUB_TOKEN in interpolation for MCP headers", () => {
+      process.env.GITHUB_TOKEN = "ghp_test_token_123";
+
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: Testing literal interpolation syntax
+      const result = interpolateValue("Bearer ${GITHUB_TOKEN}");
+      expect(result).toBe("Bearer ghp_test_token_123");
+    });
+
+    it("should allow MCP_TOKEN in interpolation for MCP headers", () => {
+      process.env.MCP_TOKEN = "mcp_secret_token";
+
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: Testing literal interpolation syntax
+      const result = interpolateValue("${MCP_TOKEN}");
+      expect(result).toBe("mcp_secret_token");
+    });
+
+    it("should allow GITLAB_TOKEN in interpolation for MCP headers", () => {
+      process.env.GITLAB_TOKEN = "glpat_test_token";
+
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: Testing literal interpolation syntax
+      const result = interpolateValue("${GITLAB_TOKEN}");
+      expect(result).toBe("glpat_test_token");
+    });
+
+    it("should allow multiple MCP tokens in the same header value", () => {
+      process.env.GITHUB_TOKEN = "gh_token";
+      process.env.MCP_TOKEN = "mcp_token";
+
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: Testing literal interpolation syntax
+      const result = interpolateValue("gh:${GITHUB_TOKEN},mcp:${MCP_TOKEN}");
+      expect(result).toBe("gh:gh_token,mcp:mcp_token");
     });
   });
 

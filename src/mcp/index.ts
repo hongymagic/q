@@ -31,8 +31,13 @@ export class McpManager {
         try {
           await this.connectServer(name, serverConfig);
         } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          logWarn(`MCP server '${name}': ${message}`);
+          // McpError already includes the server name prefix
+          if (err instanceof McpError) {
+            logWarn(err.message);
+          } else {
+            const message = err instanceof Error ? err.message : String(err);
+            logWarn(`MCP server '${name}': ${message}`);
+          }
         }
       },
     );

@@ -6,6 +6,18 @@ import { buildUserPrompt } from "./prompt.ts";
 
 const MAX_DEBUG_OUTPUT_LENGTH = 500;
 
+function safeStringify(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    // Handle circular references or objects with throwing toJSON()
+    return String(value);
+  }
+}
+
 export interface RunOptions {
   model: LanguageModel;
   query: string;
@@ -78,7 +90,7 @@ async function runWithTools(options: RunOptions): Promise<RunResult> {
 
         if (debug) {
           process.stderr.write("\n");
-          process.stderr.write(`[mcp] Input: ${JSON.stringify(input)}\n`);
+          process.stderr.write(`[mcp] Input: ${safeStringify(input)}\n`);
         }
       },
 
@@ -95,10 +107,7 @@ async function runWithTools(options: RunOptions): Promise<RunResult> {
         } else {
           process.stderr.write(`\r✓ ${toolName} (${duration}s)\n`);
           if (debug && "output" in event) {
-            const outputStr =
-              typeof event.output === "string"
-                ? event.output
-                : JSON.stringify(event.output);
+            const outputStr = safeStringify(event.output);
             const truncated =
               outputStr.length > MAX_DEBUG_OUTPUT_LENGTH
                 ? `${outputStr.slice(0, MAX_DEBUG_OUTPUT_LENGTH)}... (truncated)`

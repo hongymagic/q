@@ -16,7 +16,7 @@ import {
   resolveInput,
 } from "./stdin.ts";
 
-async function main(): Promise<void> {
+async function main(): Promise<number> {
   let debug = false;
   const mcpManager = new McpManager();
 
@@ -26,29 +26,32 @@ async function main(): Promise<void> {
     mcpManager.debug = debug;
 
     // Handle --version (before stdin to avoid blocking)
+    // No MCP connections exist yet, safe to exit directly
     if (args.options.version) {
       console.log(getVersion());
-      process.exit(0);
+      return 0;
     }
 
     // Handle config subcommands (before stdin to avoid blocking)
+    // No MCP connections exist yet, safe to exit directly
     if (args.command === "config") {
       if (args.subcommand === "path") {
         console.log(getConfigPath());
-        process.exit(0);
+        return 0;
       }
       if (args.subcommand === "init") {
         const result = await initConfig();
         console.log(result);
-        process.exit(0);
+        return 0;
       }
     }
 
     // Handle providers command (before stdin to avoid blocking)
+    // No MCP connections exist yet, safe to exit directly
     if (args.command === "providers") {
       const config = await loadConfig();
       console.log(listProviders(config));
-      process.exit(0);
+      return 0;
     }
 
     // Read stdin if piped (do this before help check)
@@ -56,9 +59,10 @@ async function main(): Promise<void> {
 
     // Handle --help (after stdin check for proper stdin-only mode)
     // Show help if explicitly requested OR if no query and no stdin
+    // No MCP connections exist yet, safe to exit directly
     if (args.options.help && !stdinInput.hasInput && args.query.length === 0) {
       console.log(getHelpText());
-      process.exit(0);
+      return 0;
     }
 
     // Resolve input mode and extract query/context
@@ -135,11 +139,11 @@ async function main(): Promise<void> {
       logDebug("Copied to clipboard", debug);
     }
 
-    process.exit(0);
+    return 0;
   } catch (err) {
     if (err instanceof QError) {
       logError(err.message);
-      process.exit(err.exitCode);
+      return err.exitCode;
     }
 
     // Unexpected error
@@ -150,11 +154,13 @@ async function main(): Promise<void> {
       logError(err.stack);
     }
 
-    process.exit(1);
+    return 1;
   } finally {
     // Always cleanup MCP connections
     await mcpManager.close();
   }
 }
 
-main();
+main().then((exitCode) => {
+  process.exit(exitCode);
+});

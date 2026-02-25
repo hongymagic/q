@@ -319,7 +319,6 @@ src/
 | `@ai-sdk/azure` | Azure OpenAI provider |
 | `@ai-sdk/amazon-bedrock` | AWS Bedrock provider |
 | `@ai-sdk/mcp` | MCP client for tool integration |
-| `@modelcontextprotocol/sdk` | MCP protocol SDK |
 | `zod` | Schema validation (v4) |
 | `clipboardy` | Clipboard support |
 | `@t3-oss/env-core` | Type-safe env vars |

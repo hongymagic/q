@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   ConfigSchema,
   formatZodErrors,
+  McpConfigSchema,
+  McpServerConfigSchema,
   ProviderConfigSchema,
 } from "../src/config/index.ts";
 
@@ -189,6 +191,151 @@ describe("config schema", () => {
         expect(formatted).toContain("default.model");
         // Zod 4 error message format
         expect(formatted).toContain("expected string");
+      }
+    });
+  });
+
+  describe("McpServerConfigSchema", () => {
+    it("should validate a minimal server config", () => {
+      const config = {
+        url: "http://localhost:3001/mcp",
+      };
+      const result = McpServerConfigSchema.safeParse(config);
+      expect(result.success).toBe(true);
+    });
+
+    it("should validate a server config with headers", () => {
+      const config = {
+        url: "http://localhost:3001/mcp",
+        headers: {
+          Authorization: "Bearer token",
+          "X-Custom-Header": "value",
+        },
+      };
+      const result = McpServerConfigSchema.safeParse(config);
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject server config without url", () => {
+      const config = {
+        headers: { Authorization: "Bearer token" },
+      };
+      const result = McpServerConfigSchema.safeParse(config);
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("McpConfigSchema", () => {
+    it("should validate a complete MCP config", () => {
+      const config = {
+        enabled: true,
+        servers: {
+          filesystem: { url: "http://localhost:3001/mcp" },
+          github: {
+            url: "http://localhost:3002/mcp",
+            headers: { Authorization: "Bearer token" },
+          },
+        },
+      };
+      const result = McpConfigSchema.safeParse(config);
+      expect(result.success).toBe(true);
+    });
+
+    it("should default enabled to true when not specified", () => {
+      const config = {
+        servers: {
+          filesystem: { url: "http://localhost:3001/mcp" },
+        },
+      };
+      const result = McpConfigSchema.safeParse(config);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.enabled).toBe(true);
+      }
+    });
+
+    it("should allow enabled to be false", () => {
+      const config = {
+        enabled: false,
+        servers: {
+          filesystem: { url: "http://localhost:3001/mcp" },
+        },
+      };
+      const result = McpConfigSchema.safeParse(config);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.enabled).toBe(false);
+      }
+    });
+
+    it("should default servers to empty object when not specified", () => {
+      const config = {
+        enabled: true,
+      };
+      const result = McpConfigSchema.safeParse(config);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.servers).toEqual({});
+      }
+    });
+
+    it("should allow empty servers object", () => {
+      const config = {
+        enabled: true,
+        servers: {},
+      };
+      const result = McpConfigSchema.safeParse(config);
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("ConfigSchema with MCP", () => {
+    it("should validate config with MCP section", () => {
+      const config = {
+        default: {
+          provider: "anthropic",
+          model: "claude-sonnet-4-20250514",
+        },
+        providers: {
+          anthropic: {
+            type: "anthropic",
+            api_key_env: "ANTHROPIC_API_KEY",
+          },
+        },
+        mcp: {
+          enabled: true,
+          servers: {
+            filesystem: { url: "http://localhost:3001/mcp" },
+          },
+        },
+      };
+      const result = ConfigSchema.safeParse(config);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.mcp?.enabled).toBe(true);
+        expect(result.data.mcp?.servers?.filesystem?.url).toBe(
+          "http://localhost:3001/mcp",
+        );
+      }
+    });
+
+    it("should validate config without MCP section (optional)", () => {
+      const config = {
+        default: {
+          provider: "anthropic",
+          model: "claude-sonnet-4-20250514",
+        },
+        providers: {
+          anthropic: {
+            type: "anthropic",
+            api_key_env: "ANTHROPIC_API_KEY",
+          },
+        },
+      };
+      const result = ConfigSchema.safeParse(config);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.mcp).toBeUndefined();
       }
     });
   });
