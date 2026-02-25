@@ -540,3 +540,19 @@ await retry(request, { maxAttempts: 3, backoff: 'exponential' });
 - Prefer early returns over nested conditionals
 - Use TypeScript's type system; avoid `any`
 - Function and variable names should be descriptive but not verbose
+
+---
+
+## Cursor Cloud specific instructions
+
+### Environment
+
+- **Runtime**: Bun (installed at `~/.bun/bin/bun`). The update script handles installation if missing.
+- **No external services** are required — this is a pure CLI tool. Tests run entirely offline.
+- All standard dev commands are documented in `package.json` scripts and the sections above (Linting & Formatting, Tests, Build).
+
+### Gotchas
+
+- The CLI waits on stdin when run without piped input. When running the CLI in a non-interactive shell, pipe empty input to avoid hangs: `echo "" | bun run src/cli.ts --help`.
+- End-to-end query testing (actually calling an LLM) requires `ANTHROPIC_API_KEY` or another provider's API key. Unit tests (`bun run test`) do **not** need any API keys.
+- The `--help` flag works but the process will block on stdin; use `echo "" | bun run src/cli.ts --help` to avoid this.
