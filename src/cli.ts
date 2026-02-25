@@ -7,6 +7,12 @@ import { logDebug, logError, QError, UsageError } from "./errors.ts";
 import { buildSystemPrompt } from "./prompt.ts";
 import { listProviders, resolveProvider } from "./providers/index.ts";
 import { runQuery } from "./run.ts";
+import {
+  MAX_CONTEXT_LENGTH,
+  MAX_QUERY_LENGTH,
+  readStdin,
+  resolveInput,
+} from "./stdin.ts";
 
 async function main(): Promise<void> {
   let debug = false;
@@ -15,19 +21,13 @@ async function main(): Promise<void> {
     const args = parseCliArgs();
     debug = args.options.debug;
 
-    // Handle --help
-    if (args.options.help) {
-      console.log(getHelpText());
-      process.exit(0);
-    }
-
-    // Handle --version
+    // Handle --version (before stdin to avoid blocking)
     if (args.options.version) {
       console.log(getVersion());
       process.exit(0);
     }
 
-    // Handle config subcommands
+    // Handle config subcommands (before stdin to avoid blocking)
     if (args.command === "config") {
       if (args.subcommand === "path") {
         console.log(getConfigPath());
@@ -40,21 +40,38 @@ async function main(): Promise<void> {
       }
     }
 
-    // Handle providers command
+    // Handle providers command (before stdin to avoid blocking)
     if (args.command === "providers") {
       const config = await loadConfig();
       console.log(listProviders(config));
       process.exit(0);
     }
 
-    // Main query flow
-    const query = args.query.join(" ");
+    // Read stdin if piped (do this before help check)
+    const stdinInput = await readStdin();
+
+    // Handle --help (after stdin check for proper stdin-only mode)
+    // Show help if explicitly requested OR if no query and no stdin
+    if (args.options.help && !stdinInput.hasInput && args.query.length === 0) {
+      console.log(getHelpText());
+      process.exit(0);
+    }
+
+    // Resolve input mode and extract query/context
+    const { mode, query, context } = resolveInput(stdinInput, args.query);
+    logDebug(`Mode: ${mode}`, debug);
 
     // Security: Limit query length to prevent abuse and excessive API costs
-    const MAX_QUERY_LENGTH = 5000;
     if (query.length > MAX_QUERY_LENGTH) {
       throw new UsageError(
         `Query too long (${query.length} characters). Maximum is ${MAX_QUERY_LENGTH}.`,
+      );
+    }
+
+    // Security: Limit context length
+    if (context && context.length > MAX_CONTEXT_LENGTH) {
+      throw new UsageError(
+        `Context too long (${context.length} characters). Maximum is ${MAX_CONTEXT_LENGTH}.`,
       );
     }
 
@@ -81,6 +98,7 @@ async function main(): Promise<void> {
     const result = await runQuery({
       model,
       query,
+      context,
       systemPrompt: buildSystemPrompt(envInfo),
     });
 

@@ -40,6 +40,37 @@ q config init               # Generate an example config file
 q providers                 # List configured providers + default
 ```
 
+### Stdin/Pipe Support
+
+`q` supports reading from stdin for flexible workflows:
+
+```bash
+# Pipe content as context with a question
+cat error.log | q "what's wrong here?"
+git diff | q "summarise these changes"
+pbpaste | q "explain this code"
+
+# Pipe query itself (no arguments)
+echo "how do I restart docker" | q
+
+# Heredoc for multiline context
+q "explain this function" << 'EOF'
+function fibonacci(n) {
+  return n <= 1 ? n : fibonacci(n-1) + fibonacci(n-2);
+}
+EOF
+```
+
+**Input modes:**
+| Scenario | stdin | args | Behaviour |
+|----------|-------|------|-----------|
+| `q how do I...` | empty | query | Normal: args = query |
+| `cat log \| q "explain"` | content | query | Context mode: stdin = context, args = query |
+| `echo "question" \| q` | content | none | Query mode: stdin = query |
+| `q` (no input) | empty | none | Show help |
+
+**Limits:** Query max 5,000 chars, context max 50,000 chars.
+
 ### Options
 
 - `-p`, `--provider <name>`: override the configured provider

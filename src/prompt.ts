@@ -82,4 +82,23 @@ lsof -ti:3000 | xargs kill -9
 REMEMBER: Plain text only. No markdown. No backticks. Just the command.`;
 }
 
+/**
+ * Build the user prompt, optionally wrapping with context.
+ */
+export function buildUserPrompt(
+  query: string,
+  context?: string | null,
+): string {
+  if (!context) {
+    return query;
+  }
+
+  return `Context:
+\`\`\`
+${context}
+\`\`\`
+
+Question: ${query}`;
+}
+
 export { getEnvironmentInfo, type EnvironmentInfo };

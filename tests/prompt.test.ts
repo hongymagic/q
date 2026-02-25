@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EnvironmentInfo } from "../src/env-info.ts";
-import { buildSystemPrompt } from "../src/prompt.ts";
+import { buildSystemPrompt, buildUserPrompt } from "../src/prompt.ts";
 
 describe("System Prompt", () => {
   describe("buildSystemPrompt", () => {
@@ -98,6 +98,37 @@ describe("System Prompt", () => {
       const prompt = buildSystemPrompt(mockEnv, "test-date");
       expect(prompt).toContain("backticks");
       expect(prompt).toContain("code fences");
+    });
+  });
+
+  describe("buildUserPrompt", () => {
+    it("should return query as-is when no context", () => {
+      const result = buildUserPrompt("what is docker");
+      expect(result).toBe("what is docker");
+    });
+
+    it("should return query as-is when context is null", () => {
+      const result = buildUserPrompt("what is docker", null);
+      expect(result).toBe("what is docker");
+    });
+
+    it("should return query as-is when context is undefined", () => {
+      const result = buildUserPrompt("what is docker", undefined);
+      expect(result).toBe("what is docker");
+    });
+
+    it("should wrap context in code block with question", () => {
+      const result = buildUserPrompt("explain this", "const x = 1;");
+      expect(result).toContain("Context:");
+      expect(result).toContain("```");
+      expect(result).toContain("const x = 1;");
+      expect(result).toContain("Question: explain this");
+    });
+
+    it("should preserve multiline context", () => {
+      const context = "line 1\nline 2\nline 3";
+      const result = buildUserPrompt("explain", context);
+      expect(result).toContain("line 1\nline 2\nline 3");
     });
   });
 });

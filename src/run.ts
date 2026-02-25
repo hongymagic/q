@@ -1,11 +1,13 @@
 import type { LanguageModel } from "ai";
 import { streamText } from "ai";
 import { ProviderError } from "./errors.ts";
+import { buildUserPrompt } from "./prompt.ts";
 
 export interface RunOptions {
   model: LanguageModel;
   query: string;
   systemPrompt: string;
+  context?: string | null;
 }
 
 export interface RunResult {
@@ -13,13 +15,14 @@ export interface RunResult {
 }
 
 export async function runQuery(options: RunOptions): Promise<RunResult> {
-  const { model, query, systemPrompt } = options;
+  const { model, query, systemPrompt, context } = options;
+  const userPrompt = buildUserPrompt(query, context);
 
   try {
     const result = streamText({
       model,
       system: systemPrompt,
-      prompt: query,
+      prompt: userPrompt,
     });
 
     let fullText = "";
