@@ -89,6 +89,10 @@ See [config.example.toml](config.example.toml) for all options.
 | `openai_compatible` | Any OpenAI-compatible API |
 | `ollama` | Local Ollama instance |
 | `portkey` | Portkey AI Gateway (self-hosted or cloud) |
+| `google` | Google Gemini API |
+| `groq` | Groq (ultra-fast Llama, Mixtral inference) |
+| `azure` | Azure OpenAI deployments |
+| `bedrock` | AWS Bedrock (Claude, Titan, Llama) |
 
 ### Portkey Gateway Setup
 

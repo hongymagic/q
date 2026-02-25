@@ -1,6 +1,7 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { ProviderConfig } from "../config/index.ts";
-import { ConfigValidationError, MissingApiKeyError } from "../errors.ts";
+import { ConfigValidationError } from "../errors.ts";
+import { resolveApiKey } from "./index.ts";
 
 export function createOpenAICompatibleProvider(
   config: ProviderConfig,
@@ -12,19 +13,10 @@ export function createOpenAICompatibleProvider(
     );
   }
 
-  let apiKey: string | undefined;
-
-  if (config.api_key_env) {
-    apiKey = process.env[config.api_key_env];
-    if (!apiKey) {
-      throw new MissingApiKeyError(config.api_key_env, providerName);
-    }
-  }
-
   return createOpenAICompatible({
     name: providerName,
     baseURL: config.base_url,
-    apiKey,
+    apiKey: resolveApiKey(config.api_key_env, providerName),
     headers: config.headers,
   });
 }

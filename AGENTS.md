@@ -159,13 +159,20 @@ Implement a provider resolver:
 
 ```typescript
 type ProviderConfig = {
-  type: "openai" | "anthropic" | "openai_compatible" | "ollama" | "portkey"
+  type: "openai" | "anthropic" | "openai_compatible" | "ollama" | "portkey" | "google" | "groq" | "azure" | "bedrock"
   api_key_env?: string
   base_url?: string
   headers?: Record<string, string>
   // Portkey-specific fields
   provider_slug?: string       // Maps to x-portkey-provider header
   provider_api_key_env?: string // Maps to Authorization: Bearer header
+  // Azure-specific fields
+  resource_name?: string       // Azure resource name
+  api_version?: string         // Azure API version (defaults to 'v1')
+  // Bedrock-specific fields
+  region?: string              // AWS region (defaults to AWS_REGION)
+  access_key_env?: string      // Custom env var for AWS access key
+  secret_key_env?: string      // Custom env var for AWS secret key
 }
 ```
 
@@ -176,6 +183,10 @@ Adapters:
 - `openai_compatible` → `@ai-sdk/openai-compatible`
 - `ollama` → `ollama-ai-provider-v2`
 - `portkey` → `@ai-sdk/openai` (with Portkey-specific headers for internal/cloud gateways)
+- `google` → `@ai-sdk/google` (Google Gemini models)
+- `groq` → `@ai-sdk/groq` (ultra-fast Llama, Mixtral inference)
+- `azure` → `@ai-sdk/azure` (Azure OpenAI deployments)
+- `bedrock` → `@ai-sdk/amazon-bedrock` (AWS-native Claude, Titan, Llama)
 
 Each adapter should expose a unified interface for `streamText`.
 
@@ -208,7 +219,11 @@ src/
 │   ├── anthropic.ts
 │   ├── openaiCompatible.ts
 │   ├── ollama.ts
-│   └── portkey.ts      # Portkey AI Gateway provider
+│   ├── portkey.ts      # Portkey AI Gateway provider
+│   ├── google.ts       # Google Gemini provider
+│   ├── groq.ts         # Groq provider
+│   ├── azure.ts        # Azure OpenAI provider
+│   └── bedrock.ts      # AWS Bedrock provider
 ├── run.ts              # AI execution (streamText)
 ├── prompt.ts           # System prompt builder (dynamic, env-aware)
 └── errors.ts           # Typed errors + exit codes
@@ -225,6 +240,10 @@ src/
 | `@ai-sdk/anthropic` | Anthropic provider |
 | `@ai-sdk/openai-compatible` | OpenAI-compatible provider |
 | `ollama-ai-provider-v2` | Ollama provider |
+| `@ai-sdk/google` | Google Gemini provider |
+| `@ai-sdk/groq` | Groq provider |
+| `@ai-sdk/azure` | Azure OpenAI provider |
+| `@ai-sdk/amazon-bedrock` | AWS Bedrock provider |
 | `zod` | Schema validation (v4) |
 | `clipboardy` | Clipboard support |
 | `@t3-oss/env-core` | Type-safe env vars |
@@ -450,7 +469,19 @@ You MUST update this file to reflect those changes. This file serves as the auth
 3. **Dependencies**: Update the "Key Dependencies" table
 4. **CLI Changes**: Update the "CLI UX" section (commands, options)
 5. **Config Changes**: Update the "Config" section
-6. **README.md**: Add user-facing documentation for new features (keep it concise)
+6. **README.md**: Update user-facing documentation (see below)
+
+### Keeping README.md in Sync
+
+The README.md is the user-facing documentation. Update it when:
+
+- **New providers added**: Update the "Provider Types" table
+- **New CLI options added**: Update the "Options" table
+- **New commands added**: Update the "Commands" section
+- **Configuration changes**: Update the "Configuration" section
+- **New features**: Add usage examples if user-visible
+
+Keep README.md concise - it should be a quick-start guide, not comprehensive docs.
 
 ### Completing Features from `todo/`
 

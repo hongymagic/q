@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfigData } from "../src/config/index.ts";
 import { MissingApiKeyError, ProviderNotFoundError } from "../src/errors.ts";
-import { listProviders, resolveProvider } from "../src/providers/index.ts";
+import {
+  listProviders,
+  resolveApiKey,
+  resolveProvider,
+} from "../src/providers/index.ts";
 
 // Mock the provider creation functions
 vi.mock("@ai-sdk/openai", () => ({
@@ -123,6 +127,33 @@ describe("provider resolution", () => {
       expect(output).toContain("local");
       expect(output).toContain("ollama");
       expect(output).toContain("claude-sonnet-4-20250514");
+    });
+  });
+
+  describe("resolveApiKey", () => {
+    it("should return undefined when envVarName is undefined", () => {
+      const result = resolveApiKey(undefined, "test-provider");
+      expect(result).toBeUndefined();
+    });
+
+    it("should return API key when env var is set", () => {
+      process.env.TEST_API_KEY = "my-secret-key";
+      const result = resolveApiKey("TEST_API_KEY", "test-provider");
+      expect(result).toBe("my-secret-key");
+      delete process.env.TEST_API_KEY;
+    });
+
+    it("should throw MissingApiKeyError when env var is not set", () => {
+      delete process.env.NONEXISTENT_KEY;
+      expect(() => resolveApiKey("NONEXISTENT_KEY", "test-provider")).toThrow(
+        MissingApiKeyError,
+      );
+    });
+
+    it("should include provider name in error message", () => {
+      expect(() => resolveApiKey("MISSING_KEY", "my-provider")).toThrow(
+        /my-provider/,
+      );
     });
   });
 });

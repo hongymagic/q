@@ -42,13 +42,12 @@ describe("security", () => {
       );
     });
 
-    it("should reject AWS credentials in interpolation", () => {
+    it("should allow AWS credentials in interpolation (needed for Bedrock)", () => {
       process.env.AWS_SECRET_ACCESS_KEY = "secret-key";
 
       // biome-ignore lint/suspicious/noTemplateCurlyInString: Testing literal interpolation syntax
-      expect(() => interpolateValue("${AWS_SECRET_ACCESS_KEY}")).toThrow(
-        ConfigValidationError,
-      );
+      const result = interpolateValue("${AWS_SECRET_ACCESS_KEY}");
+      expect(result).toBe("secret-key");
     });
 
     it("should allow PORTKEY_BASE_URL in interpolation", () => {

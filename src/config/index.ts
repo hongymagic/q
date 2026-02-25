@@ -14,6 +14,10 @@ export const ProviderType = z.enum([
   "openai_compatible",
   "ollama",
   "portkey",
+  "google",
+  "groq",
+  "azure",
+  "bedrock",
 ]);
 export type ProviderType = z.infer<typeof ProviderType>;
 
@@ -22,8 +26,16 @@ export const ProviderConfigSchema = z.object({
   api_key_env: z.string().optional(),
   base_url: z.string().optional(),
   headers: z.record(z.string(), z.string()).optional(),
+  // Portkey fields
   provider_slug: z.string().optional(),
   provider_api_key_env: z.string().optional(),
+  // Azure fields
+  resource_name: z.string().optional(),
+  api_version: z.string().optional(),
+  // Bedrock fields
+  region: z.string().optional(),
+  access_key_env: z.string().optional(),
+  secret_key_env: z.string().optional(),
 });
 export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
 
@@ -194,12 +206,22 @@ const ALLOWED_INTERPOLATION_VARS = new Set([
   "ANTHROPIC_API_KEY",
   "OPENAI_API_KEY",
   "PORTKEY_API_KEY",
+  "GOOGLE_GENERATIVE_AI_API_KEY",
+  "GROQ_API_KEY",
+  "AZURE_API_KEY",
   // Provider base URLs
   "ANTHROPIC_BASE_URL",
   "OPENAI_BASE_URL",
   "PORTKEY_BASE_URL",
   // Portkey-specific
   "PORTKEY_PROVIDER",
+  // Azure-specific
+  "AZURE_RESOURCE_NAME",
+  // AWS credentials (for Bedrock)
+  "AWS_ACCESS_KEY_ID",
+  "AWS_SECRET_ACCESS_KEY",
+  "AWS_SESSION_TOKEN",
+  "AWS_REGION",
   // Proxy settings
   "HTTP_PROXY",
   "HTTPS_PROXY",
@@ -289,6 +311,33 @@ api_key_env = "OPENAI_API_KEY"
 # [providers.ollama]
 # type = "ollama"
 # base_url = "http://localhost:11434"
+
+# Example: Google Gemini
+# [providers.google]
+# type = "google"
+# api_key_env = "GOOGLE_GENERATIVE_AI_API_KEY"
+# # Models: gemini-2.5-pro, gemini-2.5-flash, gemini-2.0-flash
+
+# Example: Groq (ultra-fast inference)
+# [providers.groq]
+# type = "groq"
+# api_key_env = "GROQ_API_KEY"
+# # Models: llama-3.3-70b-versatile, qwen-qwq-32b, deepseek-r1-distill-llama-70b
+
+# Example: Azure OpenAI
+# [providers.azure]
+# type = "azure"
+# resource_name = "my-azure-resource"  # Or use base_url instead
+# api_key_env = "AZURE_API_KEY"
+# api_version = "v1"  # Optional, defaults to v1
+# # Model = deployment name (e.g., "gpt-4o-deployment")
+
+# Example: AWS Bedrock
+# [providers.bedrock]
+# type = "bedrock"
+# region = "us-east-1"  # Optional, defaults to AWS_REGION env var
+# # Uses standard AWS env vars: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+# # Models: anthropic.claude-3-5-sonnet-20241022-v2:0, us.amazon.nova-pro-v1:0
 `;
 
 export async function initConfig(): Promise<string> {

@@ -1,7 +1,15 @@
 import type { LanguageModel } from "ai";
 import type { ConfigData, ProviderConfig } from "../config/index.ts";
-import { logDebug, ProviderNotFoundError } from "../errors.ts";
+import {
+  logDebug,
+  MissingApiKeyError,
+  ProviderNotFoundError,
+} from "../errors.ts";
 import { createAnthropicProvider } from "./anthropic.ts";
+import { createAzureProvider } from "./azure.ts";
+import { createBedrockProvider } from "./bedrock.ts";
+import { createGoogleProvider } from "./google.ts";
+import { createGroqProvider } from "./groq.ts";
 import { createOllamaProvider } from "./ollama.ts";
 import { createOpenAIProvider } from "./openai.ts";
 import { createOpenAICompatibleProvider } from "./openaiCompatible.ts";
@@ -38,6 +46,27 @@ export function filterSensitiveFields(
       );
     }),
   );
+}
+
+/**
+ * Resolve an API key from an environment variable name.
+ * Returns undefined if envVarName is not provided.
+ * Throws MissingApiKeyError if envVarName is provided but the env var is not set.
+ */
+export function resolveApiKey(
+  envVarName: string | undefined,
+  providerName: string,
+): string | undefined {
+  if (!envVarName) {
+    return undefined;
+  }
+
+  const apiKey = process.env[envVarName];
+  if (!apiKey) {
+    throw new MissingApiKeyError(envVarName, providerName);
+  }
+
+  return apiKey;
 }
 
 /**
@@ -100,6 +129,22 @@ function createModel(
     }
     case "portkey": {
       const provider = createPortkeyProvider(config, providerName, debug);
+      return provider(modelId);
+    }
+    case "google": {
+      const provider = createGoogleProvider(config, providerName);
+      return provider(modelId);
+    }
+    case "groq": {
+      const provider = createGroqProvider(config, providerName);
+      return provider(modelId);
+    }
+    case "azure": {
+      const provider = createAzureProvider(config, providerName);
+      return provider(modelId);
+    }
+    case "bedrock": {
+      const provider = createBedrockProvider(config, providerName);
       return provider(modelId);
     }
   }

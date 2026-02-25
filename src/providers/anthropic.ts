@@ -1,22 +1,13 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import type { ProviderConfig } from "../config/index.ts";
-import { MissingApiKeyError } from "../errors.ts";
+import { resolveApiKey } from "./index.ts";
 
 export function createAnthropicProvider(
   config: ProviderConfig,
   providerName: string,
 ) {
-  let apiKey: string | undefined;
-
-  if (config.api_key_env) {
-    apiKey = process.env[config.api_key_env];
-    if (!apiKey) {
-      throw new MissingApiKeyError(config.api_key_env, providerName);
-    }
-  }
-
   return createAnthropic({
-    apiKey,
+    apiKey: resolveApiKey(config.api_key_env, providerName),
     baseURL: config.base_url,
     headers: config.headers,
   });
