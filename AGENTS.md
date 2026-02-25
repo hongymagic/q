@@ -552,8 +552,18 @@ You MUST update this file to reflect those changes. This file serves as the auth
 2. **Scripts**: Update the "Linting & Formatting" or "Build" sections
 3. **Dependencies**: Update the "Key Dependencies" table
 4. **CLI Changes**: Update the "CLI UX" section (commands, options)
-5. **Config Changes**: Update the "Config" section
+5. **Config Changes**: Update the "Config" section and `config.example.toml`
 6. **README.md**: Update user-facing documentation (see below)
+
+### Keeping config.example.toml in Sync
+
+When modifying the config schema (`src/config/index.ts`):
+
+1. Update the `EXAMPLE_CONFIG` constant in `src/config/index.ts`
+2. Update `config.example.toml` in the project root with matching examples
+3. Update the "Schema (TOML)" section in this file
+
+All three locations should have consistent examples and documentation.
 
 ### Keeping README.md in Sync
 
