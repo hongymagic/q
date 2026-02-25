@@ -45,10 +45,22 @@ describe("stdin module", () => {
         configurable: true,
       });
 
+      // Mock Bun global if it doesn't exist (Node environment)
+      // biome-ignore lint/suspicious/noExplicitAny: Mocking global
+      const globalAny = globalThis as any;
+      const originalBun = globalAny.Bun;
+
+      if (!originalBun) {
+        globalAny.Bun = {
+          stdin: {
+            stream: () => {},
+          },
+        };
+      }
+
       // Mock Bun.stdin.stream
-      const originalStream = Bun.stdin.stream;
-      // @ts-expect-error Mocking read-only property
-      Bun.stdin.stream = () => {
+      const originalStream = globalAny.Bun.stdin.stream;
+      globalAny.Bun.stdin.stream = () => {
         return {
           [Symbol.asyncIterator]: async function* () {
             // Yield a chunk larger than MAX_CONTEXT_LENGTH
@@ -62,8 +74,13 @@ describe("stdin module", () => {
       try {
         await expect(readStdin()).rejects.toThrow(UsageError);
       } finally {
-        // @ts-expect-error Restore read-only property
-        Bun.stdin.stream = originalStream;
+        // Restore
+        if (originalBun) {
+          globalAny.Bun.stdin.stream = originalStream;
+        } else {
+          delete globalAny.Bun;
+        }
+
         Object.defineProperty(process.stdin, "isTTY", {
           value: originalIsTTY,
           configurable: true,
