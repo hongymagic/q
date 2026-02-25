@@ -13,6 +13,7 @@ export interface ParsedArgs {
     provider?: string;
     model?: string;
     copy: boolean;
+    noCopy: boolean;
     debug: boolean;
     help: boolean;
     version: boolean;
@@ -31,6 +32,7 @@ OPTIONS:
   -p, --provider <name>        Override the default provider
   -m, --model <id>             Override the default model
   --copy                       Copy answer to clipboard
+  --no-copy                    Disable copy (overrides config)
   --debug                      Enable debug logging to stderr
   -h, --help                   Show this help message
   -v, --version                Show version
@@ -38,12 +40,13 @@ OPTIONS:
 ENVIRONMENT:
   Q_PROVIDER                   Override default provider
   Q_MODEL                      Override default model
+  Q_COPY                       Override default copy behaviour (true/false)
 
 CONFIG:
   Config is loaded from (in order, later overrides earlier):
     1. ~/.config/q/config.toml (or $XDG_CONFIG_HOME/q/config.toml)
     2. ./config.toml (current directory)
-    3. Environment variables (Q_PROVIDER, Q_MODEL)
+    3. Environment variables (Q_PROVIDER, Q_MODEL, Q_COPY)
 
 EXAMPLES:
   q how do I restart docker
@@ -60,6 +63,7 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
       provider: { type: "string", short: "p" },
       model: { type: "string", short: "m" },
       copy: { type: "boolean", default: false },
+      "no-copy": { type: "boolean", default: false },
       debug: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
       version: { type: "boolean", short: "v", default: false },
@@ -72,6 +76,7 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
     provider: values.provider,
     model: values.model,
     copy: values.copy ?? false,
+    noCopy: values["no-copy"] ?? false,
     debug: values.debug ?? false,
     help: values.help ?? false,
     version: values.version ?? false,

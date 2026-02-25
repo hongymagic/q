@@ -103,7 +103,11 @@ async function main(): Promise<void> {
     });
 
     // Copy to clipboard if requested
-    if (args.options.copy) {
+    // Resolution: --no-copy > --copy > Q_COPY env > config.default.copy > false
+    const shouldCopy =
+      !args.options.noCopy && (args.options.copy || config.default.copy);
+
+    if (shouldCopy) {
       await clipboard.write(result.text);
       logDebug("Copied to clipboard", debug);
     }

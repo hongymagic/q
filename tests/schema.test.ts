@@ -86,6 +86,68 @@ describe("config schema", () => {
       expect(result.success).toBe(true);
     });
 
+    it("should validate config with copy option", () => {
+      const config = {
+        default: {
+          provider: "anthropic",
+          model: "claude-sonnet-4-20250514",
+          copy: true,
+        },
+        providers: {
+          anthropic: {
+            type: "anthropic",
+            api_key_env: "ANTHROPIC_API_KEY",
+          },
+        },
+      };
+      const result = ConfigSchema.safeParse(config);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.default.copy).toBe(true);
+      }
+    });
+
+    it("should allow copy to be false", () => {
+      const config = {
+        default: {
+          provider: "anthropic",
+          model: "claude-sonnet-4-20250514",
+          copy: false,
+        },
+        providers: {
+          anthropic: {
+            type: "anthropic",
+            api_key_env: "ANTHROPIC_API_KEY",
+          },
+        },
+      };
+      const result = ConfigSchema.safeParse(config);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.default.copy).toBe(false);
+      }
+    });
+
+    it("should allow copy to be omitted (optional)", () => {
+      const config = {
+        default: {
+          provider: "anthropic",
+          model: "claude-sonnet-4-20250514",
+        },
+        providers: {
+          anthropic: {
+            type: "anthropic",
+            api_key_env: "ANTHROPIC_API_KEY",
+          },
+        },
+      };
+      const result = ConfigSchema.safeParse(config);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.default.copy).toBeUndefined();
+      }
+    });
+
     it("should reject config without default section", () => {
       const config = {
         providers: {

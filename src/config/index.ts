@@ -42,6 +42,7 @@ export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
 export const DefaultConfigSchema = z.object({
   provider: z.string(),
   model: z.string(),
+  copy: z.boolean().optional(),
 });
 export type DefaultConfig = z.infer<typeof DefaultConfigSchema>;
 
@@ -88,7 +89,7 @@ export function getConfigDir(): string {
 }
 
 export class Config {
-  readonly default: { provider: string; model: string };
+  readonly default: { provider: string; model: string; copy?: boolean };
   readonly providers: Record<string, ProviderConfig>;
 
   private constructor(data: ConfigData) {
@@ -117,6 +118,7 @@ export class Config {
       ...mergedDefault,
       ...(env.Q_PROVIDER ? { provider: env.Q_PROVIDER } : {}),
       ...(env.Q_MODEL ? { model: env.Q_MODEL } : {}),
+      ...(env.Q_COPY !== undefined ? { copy: env.Q_COPY } : {}),
     };
 
     const merged = {
@@ -278,11 +280,12 @@ export const EXAMPLE_CONFIG = `# q configuration file
 # Config resolution order (later overrides earlier):
 #   1. This file (XDG_CONFIG_HOME/q/config.toml or ~/.config/q/config.toml)
 #   2. ./config.toml in current directory (project-specific)
-#   3. Environment variables: Q_PROVIDER, Q_MODEL
+#   3. Environment variables: Q_PROVIDER, Q_MODEL, Q_COPY
 
 [default]
 provider = "anthropic"
 model = "claude-sonnet-4-20250514"
+# copy = true  # Always copy answer to clipboard (override with --no-copy)
 
 [providers.anthropic]
 type = "anthropic"

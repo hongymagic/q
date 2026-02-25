@@ -4,11 +4,12 @@
 # Config resolution order (later overrides earlier):
 #   1. XDG config: ~/.config/q/config.toml (or $XDG_CONFIG_HOME/q/config.toml)
 #   2. Project config: ./config.toml in current directory
-#   3. Environment variables: Q_PROVIDER, Q_MODEL
+#   3. Environment variables: Q_PROVIDER, Q_MODEL, Q_COPY
 
 [default]
 provider = "anthropic"
 model = "claude-sonnet-4-20250514"
+# copy = true  # Always copy answer to clipboard (override with --no-copy)
 
 [providers.anthropic]
 type = "anthropic"
@@ -45,3 +46,30 @@ api_key_env = "OPENAI_API_KEY"
 # [providers.ollama]
 # type = "ollama"
 # base_url = "http://localhost:11434"
+
+# Google Gemini
+# [providers.google]
+# type = "google"
+# api_key_env = "GOOGLE_GENERATIVE_AI_API_KEY"
+# # Models: gemini-2.5-pro, gemini-2.5-flash, gemini-2.0-flash
+
+# Groq (ultra-fast inference)
+# [providers.groq]
+# type = "groq"
+# api_key_env = "GROQ_API_KEY"
+# # Models: llama-3.3-70b-versatile, qwen-qwq-32b, deepseek-r1-distill-llama-70b
+
+# Azure OpenAI
+# [providers.azure]
+# type = "azure"
+# resource_name = "my-azure-resource"  # Or use base_url instead
+# api_key_env = "AZURE_API_KEY"
+# api_version = "v1"  # Optional, defaults to v1
+# # Model = deployment name (e.g., "gpt-4o-deployment")
+
+# AWS Bedrock
+# [providers.bedrock]
+# type = "bedrock"
+# region = "us-east-1"  # Optional, defaults to AWS_REGION env var
+# # Uses standard AWS env vars: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+# # Models: anthropic.claude-3-5-sonnet-20241022-v2:0, us.amazon.nova-pro-v1:0

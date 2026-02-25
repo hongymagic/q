@@ -60,6 +60,7 @@ echo "how do I restart docker" | q
 | `-p, --provider <name>` | Override the default provider |
 | `-m, --model <id>` | Override the default model |
 | `--copy` | Copy answer to clipboard |
+| `--no-copy` | Disable copy (overrides config) |
 | `-h, --help` | Show help message |
 
 ### Commands
@@ -76,7 +77,7 @@ Config is loaded from (later overrides earlier):
 
 1. `~/.config/q/config.toml`
 2. `./config.toml` (project-specific)
-3. Environment: `Q_PROVIDER`, `Q_MODEL`
+3. Environment: `Q_PROVIDER`, `Q_MODEL`, `Q_COPY`
 
 See [config.example.toml](config.example.toml) for all options.
 
