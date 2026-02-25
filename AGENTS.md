@@ -450,6 +450,14 @@ You MUST update this file to reflect those changes. This file serves as the auth
 3. **Dependencies**: Update the "Key Dependencies" table
 4. **CLI Changes**: Update the "CLI UX" section (commands, options)
 5. **Config Changes**: Update the "Config" section
+6. **README.md**: Add user-facing documentation for new features (keep it concise)
+
+### Completing Features from `todo/`
+
+When a feature from `todo/` is fully implemented:
+
+1. Rename the file to mark it complete: `mv todo/001-feature.md todo/001-feature.done.md`
+2. Or delete it if no longer needed for reference
 
 ---
 

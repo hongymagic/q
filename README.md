@@ -38,6 +38,21 @@ q how do I restart docker
 q --copy what is a kubernetes pod
 ```
 
+### Piping Content
+
+Pipe content as context for your question:
+
+```bash
+cat error.log | q "what's wrong here?"
+git diff | q "summarise these changes"
+```
+
+Or pipe the query itself:
+
+```bash
+echo "how do I restart docker" | q
+```
+
 ### Options
 
 | Option | Description |
