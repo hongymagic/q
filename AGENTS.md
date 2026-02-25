@@ -113,8 +113,9 @@ Support `${VAR_NAME}` syntax in specific fields for allowlisted variables only:
 - `base_url`
 - `headers` values
 - `provider_slug` (Portkey-specific)
+- MCP server `headers` values
 
-**Allowlisted variables:** `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `PORTKEY_API_KEY`, `PORTKEY_BASE_URL`, `PORTKEY_PROVIDER`, `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`, `HOME`, `USER`, `HOSTNAME`
+**Allowlisted variables:** `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `PORTKEY_API_KEY`, `PORTKEY_BASE_URL`, `PORTKEY_PROVIDER`, `MCP_TOKEN`, `GITHUB_TOKEN`, `GITLAB_TOKEN`, `SLACK_TOKEN`, `DISCORD_TOKEN`, `LINEAR_TOKEN`, `NOTION_TOKEN`, `JIRA_TOKEN`, `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`, `HOME`, `USER`, `HOSTNAME`
 
 ### Schema (TOML)
 
@@ -148,6 +149,17 @@ headers = { "x-portkey-trace-id" = "${HOSTNAME}" }
 [providers.ollama]
 type = "ollama"
 base_url = "http://localhost:11434"
+
+# MCP Server Configuration (optional)
+[mcp]
+# enabled = false  # Uncomment to disable all MCP tools
+
+[mcp.servers.filesystem]
+url = "http://localhost:3001/mcp"
+
+# [mcp.servers.github]
+# url = "https://mcp.example.com/github"
+# headers = { "Authorization" = "Bearer ${GITHUB_TOKEN}" }
 ```
 
 ### Secrets

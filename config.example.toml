@@ -73,3 +73,19 @@ api_key_env = "OPENAI_API_KEY"
 # region = "us-east-1"  # Optional, defaults to AWS_REGION env var
 # # Uses standard AWS env vars: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 # # Models: anthropic.claude-3-5-sonnet-20241022-v2:0, us.amazon.nova-pro-v1:0
+
+# ============================================================================
+# MCP (Model Context Protocol) Server Configuration
+# ============================================================================
+# MCP servers provide tools that q can use to answer queries.
+# q supports Streamable HTTP transport only. OIDC authentication is not supported.
+#
+# [mcp]
+# enabled = true  # Set to false to disable all MCP tools
+#
+# [mcp.servers.filesystem]
+# url = "http://localhost:3001/mcp"
+#
+# [mcp.servers.github]
+# url = "https://mcp.example.com/github"
+# headers = { "Authorization" = "Bearer ${GITHUB_TOKEN}" }
