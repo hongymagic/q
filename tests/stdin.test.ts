@@ -33,6 +33,43 @@ describe("stdin module", () => {
         expect(result.content).toBeNull();
       }
     });
+
+    it("should throw UsageError if input is too long", async () => {
+      const { readStdin, MAX_CONTEXT_LENGTH } = await import("../src/stdin.ts");
+      const { UsageError } = await import("../src/errors.ts");
+
+      // Mock process.stdin.isTTY
+      const originalIsTTY = process.stdin.isTTY;
+      Object.defineProperty(process.stdin, "isTTY", {
+        value: false,
+        configurable: true,
+      });
+
+      // Mock Bun.stdin.stream
+      const originalStream = Bun.stdin.stream;
+      // @ts-expect-error Mocking read-only property
+      Bun.stdin.stream = () => {
+        return {
+          [Symbol.asyncIterator]: async function* () {
+            // Yield a chunk larger than MAX_CONTEXT_LENGTH
+            const largeString = "a".repeat(MAX_CONTEXT_LENGTH + 1000);
+            yield new TextEncoder().encode(largeString);
+          },
+          // biome-ignore lint/suspicious/noExplicitAny: Mocking Bun stream
+        } as any;
+      };
+
+      try {
+        await expect(readStdin()).rejects.toThrow(UsageError);
+      } finally {
+        // @ts-expect-error Restore read-only property
+        Bun.stdin.stream = originalStream;
+        Object.defineProperty(process.stdin, "isTTY", {
+          value: originalIsTTY,
+          configurable: true,
+        });
+      }
+    });
   });
 
   describe("resolveInput", () => {
