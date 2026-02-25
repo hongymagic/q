@@ -14,6 +14,7 @@ export interface ParsedArgs {
     model?: string;
     copy: boolean;
     noCopy: boolean;
+    noTools: boolean;
     debug: boolean;
     help: boolean;
     version: boolean;
@@ -33,6 +34,7 @@ OPTIONS:
   -m, --model <id>             Override the default model
   --copy                       Copy answer to clipboard
   --no-copy                    Disable copy (overrides config)
+  --no-tools                   Disable MCP tools for this query
   --debug                      Enable debug logging to stderr
   -h, --help                   Show this help message
   -v, --version                Show version
@@ -51,6 +53,7 @@ CONFIG:
 EXAMPLES:
   q how do I restart docker
   q -p openai --model gpt-4o what is recursion
+  q --no-tools what is the capital of France
   q config init
 `;
 
@@ -64,6 +67,7 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
       model: { type: "string", short: "m" },
       copy: { type: "boolean", default: false },
       "no-copy": { type: "boolean", default: false },
+      "no-tools": { type: "boolean", default: false },
       debug: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
       version: { type: "boolean", short: "v", default: false },
@@ -77,6 +81,7 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
     model: values.model,
     copy: values.copy ?? false,
     noCopy: values["no-copy"] ?? false,
+    noTools: values["no-tools"] ?? false,
     debug: values.debug ?? false,
     help: values.help ?? false,
     version: values.version ?? false,

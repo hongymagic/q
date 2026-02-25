@@ -77,6 +77,7 @@ EOF
 - `-m`, `--model <id>`: override the configured model
 - `--copy`: copy final answer to clipboard
 - `--no-copy`: disable copy (overrides config)
+- `--no-tools`: disable MCP tools for this query
 - `--debug`: write debug logs to stderr
 - `-h`, `--help`: show help
 - `-v`, `--version`: show version
@@ -195,6 +196,62 @@ Each adapter should expose a unified interface for `streamText`.
 
 ---
 
+## MCP (Model Context Protocol) Support
+
+`q` supports connecting to MCP servers to use their tools when answering queries. This transforms `q` from a simple Q&A tool into an agent that can leverage external capabilities.
+
+### Transport
+
+- **Streamable HTTP only**: The modern MCP transport over HTTP
+- **OIDC not supported**: Use header-based authentication instead
+
+### Configuration
+
+Add MCP servers to your config:
+
+```toml
+[mcp]
+# enabled = false  # Uncomment to disable all MCP tools
+
+[mcp.servers.filesystem]
+url = "http://localhost:3001/mcp"
+
+[mcp.servers.github]
+url = "https://mcp.example.com/github"
+headers = { "Authorization" = "Bearer ${GITHUB_TOKEN}" }
+```
+
+### CLI Options
+
+- `--no-tools`: Disable MCP tools for this query (fast path for simple questions)
+
+### Tool Namespacing
+
+Tools from multiple servers are namespaced as `servername.toolname` to avoid collisions:
+- `filesystem.read_file`
+- `github.create_issue`
+
+### Behaviour
+
+- Maximum 5 tool-calling steps per query
+- Tool activity shown to stderr: `⏳ toolname...` → `✓ toolname (1.2s)`
+- With `--debug`: full tool inputs/outputs logged
+- Connection failures warn but don't abort; query continues without that server's tools
+
+### Key Files
+
+- `src/mcp/index.ts` - MCP client manager
+- `src/config/index.ts` - MCP config schema
+- `src/run.ts` - Tool-calling logic with `generateText`
+
+### Allowed Environment Variables for MCP Headers
+
+In addition to existing allowlisted variables, MCP headers can interpolate:
+- `MCP_TOKEN`, `GITHUB_TOKEN`, `GITLAB_TOKEN`, `SLACK_TOKEN`
+- `DISCORD_TOKEN`, `LINEAR_TOKEN`, `NOTION_TOKEN`, `JIRA_TOKEN`
+
+---
+
 ## Prompt Strategy
 
 - System prompt: concise, command-first
@@ -216,6 +273,8 @@ src/
 ├── env-info.ts         # Environment detection (OS, shell, terminal)
 ├── config/
 │   └── index.ts        # Config class, schemas, paths (consolidated)
+├── mcp/
+│   └── index.ts        # MCP client manager
 ├── providers/
 │   ├── index.ts        # Provider factory
 │   ├── openai.ts
@@ -227,7 +286,7 @@ src/
 │   ├── groq.ts         # Groq provider
 │   ├── azure.ts        # Azure OpenAI provider
 │   └── bedrock.ts      # AWS Bedrock provider
-├── run.ts              # AI execution (streamText)
+├── run.ts              # AI execution (streamText/generateText with tools)
 ├── prompt.ts           # System prompt builder (dynamic, env-aware)
 └── errors.ts           # Typed errors + exit codes
 ```
@@ -247,6 +306,8 @@ src/
 | `@ai-sdk/groq` | Groq provider |
 | `@ai-sdk/azure` | Azure OpenAI provider |
 | `@ai-sdk/amazon-bedrock` | AWS Bedrock provider |
+| `@ai-sdk/mcp` | MCP client for tool integration |
+| `@modelcontextprotocol/sdk` | MCP protocol SDK |
 | `zod` | Schema validation (v4) |
 | `clipboardy` | Clipboard support |
 | `@t3-oss/env-core` | Type-safe env vars |
@@ -254,6 +315,14 @@ src/
 ---
 
 ## Build
+
+### Adding Dependencies
+
+When adding new dependencies, use exact versions with `--no-cache` to avoid timeouts:
+
+```bash
+bun add --exact --no-cache <package>@<version>
+```
 
 ### Scripts
 

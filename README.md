@@ -61,6 +61,7 @@ echo "how do I restart docker" | q
 | `-m, --model <id>` | Override the default model |
 | `--copy` | Copy answer to clipboard |
 | `--no-copy` | Disable copy (overrides config) |
+| `--no-tools` | Disable MCP tools for this query |
 | `-h, --help` | Show help message |
 
 ### Commands
@@ -130,6 +131,38 @@ provider_api_key_env = "PROVIDER_API_KEY"
 export PORTKEY_API_KEY="your-portkey-key"
 export PROVIDER_API_KEY="your-provider-key"
 ```
+
+## MCP Tools (Optional)
+
+`q` can connect to [MCP (Model Context Protocol)](https://modelcontextprotocol.io) servers to use external tools when answering queries.
+
+### Setup
+
+Add MCP servers to your config:
+
+```toml
+[mcp.servers.filesystem]
+url = "http://localhost:3001/mcp"
+
+[mcp.servers.github]
+url = "https://mcp.example.com/github"
+headers = { "Authorization" = "Bearer ${GITHUB_TOKEN}" }
+```
+
+### Usage
+
+```bash
+# q automatically uses available tools
+q "list files in the current directory"
+
+# Skip tools for simple queries
+q --no-tools "what is the capital of France"
+```
+
+### Limitations
+
+- **Transport**: Only Streamable HTTP is supported
+- **Authentication**: OIDC is not supported; use header-based auth
 
 ## Licence
 

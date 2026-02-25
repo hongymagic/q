@@ -72,8 +72,22 @@ export class UsageError extends QError {
   }
 }
 
+export class McpError extends QError {
+  constructor(
+    public readonly serverName: string,
+    message: string,
+  ) {
+    super(`MCP server '${serverName}': ${message}`, 1);
+    this.name = "McpError";
+  }
+}
+
 export function logError(message: string): void {
   console.error(message);
+}
+
+export function logWarn(message: string): void {
+  console.error(`[warn] ${message}`);
 }
 
 export function logDebug(message: string, debug: boolean): void {

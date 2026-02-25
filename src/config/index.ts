@@ -46,9 +46,22 @@ export const DefaultConfigSchema = z.object({
 });
 export type DefaultConfig = z.infer<typeof DefaultConfigSchema>;
 
+export const McpServerConfigSchema = z.object({
+  url: z.string(),
+  headers: z.record(z.string(), z.string()).optional(),
+});
+export type McpServerConfig = z.infer<typeof McpServerConfigSchema>;
+
+export const McpConfigSchema = z.object({
+  enabled: z.boolean().optional().default(true),
+  servers: z.record(z.string(), McpServerConfigSchema).optional().default({}),
+});
+export type McpConfig = z.infer<typeof McpConfigSchema>;
+
 export const ConfigSchema = z.object({
   default: DefaultConfigSchema,
   providers: z.record(z.string(), ProviderConfigSchema),
+  mcp: McpConfigSchema.optional(),
 });
 export type ConfigData = z.infer<typeof ConfigSchema>;
 
@@ -56,6 +69,12 @@ const PartialConfigSchema = z
   .object({
     default: DefaultConfigSchema.partial().optional(),
     providers: z.record(z.string(), ProviderConfigSchema).optional(),
+    mcp: z
+      .object({
+        enabled: z.boolean().optional(),
+        servers: z.record(z.string(), McpServerConfigSchema).optional(),
+      })
+      .optional(),
   })
   .optional();
 type PartialConfig = z.infer<typeof PartialConfigSchema>;
@@ -91,10 +110,12 @@ export function getConfigDir(): string {
 export class Config {
   readonly default: { provider: string; model: string; copy?: boolean };
   readonly providers: Record<string, ProviderConfig>;
+  readonly mcp?: McpConfig;
 
   private constructor(data: ConfigData) {
     this.default = data.default;
     this.providers = data.providers;
+    this.mcp = data.mcp;
   }
 
   static async load(): Promise<Config> {
@@ -113,6 +134,13 @@ export class Config {
       ...(xdgConfig?.providers ?? {}),
       ...(cwdConfig?.providers ?? {}),
     };
+    const mergedMcp = {
+      enabled: cwdConfig?.mcp?.enabled ?? xdgConfig?.mcp?.enabled ?? true,
+      servers: {
+        ...(xdgConfig?.mcp?.servers ?? {}),
+        ...(cwdConfig?.mcp?.servers ?? {}),
+      },
+    };
 
     const finalDefault = {
       ...mergedDefault,
@@ -124,6 +152,7 @@ export class Config {
     const merged = {
       default: finalDefault,
       providers: mergedProviders,
+      mcp: mergedMcp,
     };
 
     const result = ConfigSchema.safeParse(merged);
@@ -191,6 +220,17 @@ export class Config {
       }
     }
 
+    // Interpolate MCP server headers
+    if (result.mcp?.servers) {
+      for (const [, server] of Object.entries(result.mcp.servers)) {
+        if (server.headers) {
+          for (const [key, value] of Object.entries(server.headers)) {
+            server.headers[key] = Config.interpolate(value);
+          }
+        }
+      }
+    }
+
     return result;
   }
 
@@ -224,6 +264,15 @@ const ALLOWED_INTERPOLATION_VARS = new Set([
   "AWS_SECRET_ACCESS_KEY",
   "AWS_SESSION_TOKEN",
   "AWS_REGION",
+  // MCP server authentication tokens
+  "MCP_TOKEN",
+  "GITHUB_TOKEN",
+  "GITLAB_TOKEN",
+  "SLACK_TOKEN",
+  "DISCORD_TOKEN",
+  "LINEAR_TOKEN",
+  "NOTION_TOKEN",
+  "JIRA_TOKEN",
   // Proxy settings
   "HTTP_PROXY",
   "HTTPS_PROXY",
@@ -341,6 +390,22 @@ api_key_env = "OPENAI_API_KEY"
 # region = "us-east-1"  # Optional, defaults to AWS_REGION env var
 # # Uses standard AWS env vars: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 # # Models: anthropic.claude-3-5-sonnet-20241022-v2:0, us.amazon.nova-pro-v1:0
+
+# ============================================================================
+# MCP (Model Context Protocol) Server Configuration
+# ============================================================================
+# MCP servers provide tools that q can use to answer queries.
+# q supports Streamable HTTP transport only. OIDC authentication is not supported.
+#
+# [mcp]
+# enabled = true  # Set to false to disable all MCP tools
+#
+# [mcp.servers.filesystem]
+# url = "http://localhost:3001/mcp"
+#
+# [mcp.servers.github]
+# url = "https://mcp.example.com/github"
+# headers = { "Authorization" = "Bearer \${GITHUB_TOKEN}" }
 `;
 
 export async function initConfig(): Promise<string> {

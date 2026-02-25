@@ -1,9 +1,11 @@
 #!/usr/bin/env bun
+import type { ToolSet } from "ai";
 import clipboard from "clipboardy";
 import { getHelpText, getVersion, parseCliArgs } from "./args.ts";
 import { getConfigPath, initConfig, loadConfig } from "./config/index.ts";
 import { formatEnvForDebug, getEnvironmentInfo } from "./env-info.ts";
 import { logDebug, logError, QError, UsageError } from "./errors.ts";
+import { McpManager } from "./mcp/index.ts";
 import { buildSystemPrompt } from "./prompt.ts";
 import { listProviders, resolveProvider } from "./providers/index.ts";
 import { runQuery } from "./run.ts";
@@ -16,10 +18,12 @@ import {
 
 async function main(): Promise<void> {
   let debug = false;
+  const mcpManager = new McpManager();
 
   try {
     const args = parseCliArgs();
     debug = args.options.debug;
+    mcpManager.debug = debug;
 
     // Handle --version (before stdin to avoid blocking)
     if (args.options.version) {
@@ -94,12 +98,31 @@ async function main(): Promise<void> {
     logDebug(`Provider: ${providerName}, Model: ${modelId}`, debug);
     logDebug(formatEnvForDebug(envInfo), debug);
 
+    // Connect to MCP servers (unless disabled)
+    let tools: ToolSet = {};
+    if (!args.options.noTools) {
+      await mcpManager.connect(config.mcp);
+      tools = await mcpManager.getTools();
+
+      if (mcpManager.serverCount > 0) {
+        logDebug(
+          `MCP servers: ${mcpManager.connectedServers.join(", ")}`,
+          debug,
+        );
+        logDebug(`Tools available: ${Object.keys(tools).length}`, debug);
+      }
+    } else {
+      logDebug("MCP tools disabled via --no-tools", debug);
+    }
+
     // Run the query (streams directly to stdout)
     const result = await runQuery({
       model,
       query,
       context,
       systemPrompt: buildSystemPrompt(envInfo),
+      tools,
+      debug,
     });
 
     // Copy to clipboard if requested
@@ -128,6 +151,9 @@ async function main(): Promise<void> {
     }
 
     process.exit(1);
+  } finally {
+    // Always cleanup MCP connections
+    await mcpManager.close();
   }
 }
 
