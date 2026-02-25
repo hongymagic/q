@@ -30,6 +30,19 @@ describe("CLI argument parsing", () => {
     it("should parse --copy flag", () => {
       const args = parseCliArgs(["--copy", "test"]);
       expect(args.options.copy).toBe(true);
+      expect(args.options.noCopy).toBe(false);
+    });
+
+    it("should parse --no-copy flag", () => {
+      const args = parseCliArgs(["--no-copy", "test"]);
+      expect(args.options.noCopy).toBe(true);
+      expect(args.options.copy).toBe(false);
+    });
+
+    it("should parse both --copy and --no-copy flags", () => {
+      const args = parseCliArgs(["--copy", "--no-copy", "test"]);
+      expect(args.options.copy).toBe(true);
+      expect(args.options.noCopy).toBe(true);
     });
 
     it("should parse --debug flag", () => {
@@ -113,6 +126,8 @@ describe("CLI argument parsing", () => {
       expect(help).toContain("--provider");
       expect(help).toContain("--model");
       expect(help).toContain("--copy");
+      expect(help).toContain("--no-copy");
+      expect(help).toContain("Q_COPY");
     });
   });
 

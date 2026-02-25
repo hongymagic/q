@@ -76,6 +76,7 @@ EOF
 - `-p`, `--provider <name>`: override the configured provider
 - `-m`, `--model <id>`: override the configured model
 - `--copy`: copy final answer to clipboard
+- `--no-copy`: disable copy (overrides config)
 - `--debug`: write debug logs to stderr
 - `-h`, `--help`: show help
 - `-v`, `--version`: show version
@@ -95,7 +96,7 @@ Config is loaded from multiple sources. Later sources override earlier ones:
 
 1. **XDG config**: `$XDG_CONFIG_HOME/q/config.toml` or `~/.config/q/config.toml`
 2. **CWD config**: `./config.toml` in current directory
-3. **Environment variables**: `Q_PROVIDER`, `Q_MODEL`
+3. **Environment variables**: `Q_PROVIDER`, `Q_MODEL`, `Q_COPY`
 
 ### Environment Variables
 
@@ -103,6 +104,7 @@ Config is loaded from multiple sources. Later sources override earlier ones:
 |----------|-------------|
 | `Q_PROVIDER` | Override default provider |
 | `Q_MODEL` | Override default model |
+| `Q_COPY` | Override default copy behaviour (true/false) |
 
 ### Env Var Interpolation
 
@@ -119,6 +121,7 @@ Support `${VAR_NAME}` syntax in specific fields for allowlisted variables only:
 [default]
 provider = "anthropic"
 model = "claude-sonnet-4-20250514"
+# copy = true  # Always copy answer to clipboard (override with --no-copy)
 
 [providers.anthropic]
 type = "anthropic"
