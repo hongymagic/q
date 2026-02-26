@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-import clipboard from "clipboardy";
 import { getHelpText, getVersion, parseCliArgs } from "./args.ts";
 import { getConfigPath, initConfig, loadConfig } from "./config/index.ts";
 import { formatEnvForDebug, getEnvironmentInfo } from "./env-info.ts";
@@ -108,6 +107,7 @@ async function main(): Promise<void> {
       !args.options.noCopy && (args.options.copy || config.default.copy);
 
     if (shouldCopy) {
+      const { default: clipboard } = await import("clipboardy");
       await clipboard.write(result.text);
       logDebug("Copied to clipboard", debug);
     }
