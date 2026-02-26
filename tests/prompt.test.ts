@@ -119,9 +119,9 @@ describe("System Prompt", () => {
 
     it("should wrap context in code block with question", () => {
       const result = buildUserPrompt("explain this", "const x = 1;");
-      expect(result).toContain("Context:");
-      expect(result).toContain("```");
+      expect(result).toContain("<context>");
       expect(result).toContain("const x = 1;");
+      expect(result).toContain("</context>");
       expect(result).toContain("Question: explain this");
     });
 

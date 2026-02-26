@@ -93,10 +93,13 @@ export function buildUserPrompt(
     return query;
   }
 
-  return `Context:
-\`\`\`
-${context}
-\`\`\`
+  // Sanitize context to prevent XML tag injection
+  // We replace </context> with <\/context> to break the closing tag
+  const safeContext = context.replace(/<\/context>/gi, "<\\/context>");
+
+  return `<context>
+${safeContext}
+</context>
 
 Question: ${query}`;
 }
