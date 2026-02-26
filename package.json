@@ -1,6 +1,6 @@
 {
   "name": "@hongymagic/q",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Quick AI answers from the command line",
   "main": "dist/q.js",
   "type": "module",
