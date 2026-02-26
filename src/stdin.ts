@@ -1,3 +1,5 @@
+import { UsageError } from "./errors.ts";
+
 /** Maximum length for query input (characters) */
 export const MAX_QUERY_LENGTH = 5_000;
 
@@ -7,6 +9,18 @@ export const MAX_CONTEXT_LENGTH = 50_000;
 export interface StdinInput {
   content: string | null;
   hasInput: boolean;
+}
+
+/**
+ * Checks if the input length exceeds the maximum allowed length.
+ * @throws UsageError if length exceeds the limit
+ */
+function checkLength(currentLength: number, maxLength: number) {
+  if (currentLength > maxLength) {
+    throw new UsageError(
+      `Input too long. Length ${currentLength} exceeds maximum of ${maxLength} characters.`,
+    );
+  }
 }
 
 /**
@@ -22,9 +36,21 @@ export async function readStdin(): Promise<StdinInput> {
   // Read stdin
   const chunks: string[] = [];
   const decoder = new TextDecoder();
+  let totalLength = 0;
 
   for await (const chunk of Bun.stdin.stream()) {
-    chunks.push(decoder.decode(chunk));
+    const text = decoder.decode(chunk, { stream: true });
+    totalLength += text.length;
+    checkLength(totalLength, MAX_CONTEXT_LENGTH);
+    chunks.push(text);
+  }
+
+  // Flush remaining text
+  const final = decoder.decode();
+  if (final) {
+    totalLength += final.length;
+    checkLength(totalLength, MAX_CONTEXT_LENGTH);
+    chunks.push(final);
   }
 
   const content = chunks.join("").trim();
