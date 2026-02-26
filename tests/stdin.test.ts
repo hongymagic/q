@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   MAX_CONTEXT_LENGTH,
   MAX_QUERY_LENGTH,
@@ -26,8 +26,9 @@ describe("stdin module", () => {
     it("should return hasInput false when stdin is TTY", async () => {
       const { readStdin } = await import("../src/stdin.ts");
       // In test environment with TTY, should return no input
-      // Note: When Bun global is not available (Node/vitest), we skip
-      if (process.stdin.isTTY && typeof globalThis.Bun !== "undefined") {
+      // Note: When Bun global is not available (Node/vitest), we check if mocked
+      if (process.stdin.isTTY) {
+        // If Bun is not available and we are in TTY, readStdin will return early
         const result = await readStdin();
         expect(result.hasInput).toBe(false);
         expect(result.content).toBeNull();
@@ -36,7 +37,6 @@ describe("stdin module", () => {
 
     it("should throw UsageError if input is too long", async () => {
       const { readStdin, MAX_CONTEXT_LENGTH } = await import("../src/stdin.ts");
-      const { UsageError } = await import("../src/errors.ts");
 
       // Mock process.stdin.isTTY
       const originalIsTTY = process.stdin.isTTY;
@@ -45,41 +45,41 @@ describe("stdin module", () => {
         configurable: true,
       });
 
-      // Mock Bun global if it doesn't exist (Node environment)
-      // biome-ignore lint/suspicious/noExplicitAny: Mocking global
-      const globalAny = globalThis as any;
-      const originalBun = globalAny.Bun;
-
-      if (!originalBun) {
-        globalAny.Bun = {
-          stdin: {
-            stream: () => {},
-          },
-        };
-      }
-
-      // Mock Bun.stdin.stream
-      const originalStream = globalAny.Bun.stdin.stream;
-      globalAny.Bun.stdin.stream = () => {
-        return {
-          [Symbol.asyncIterator]: async function* () {
-            // Yield a chunk larger than MAX_CONTEXT_LENGTH
-            const largeString = "a".repeat(MAX_CONTEXT_LENGTH + 1000);
-            yield new TextEncoder().encode(largeString);
-          },
-          // biome-ignore lint/suspicious/noExplicitAny: Mocking Bun stream
-        } as any;
+      // Prepare large input stream mock
+      const mockStream = {
+        [Symbol.asyncIterator]: async function* () {
+          // Yield a chunk larger than MAX_CONTEXT_LENGTH
+          const largeString = "a".repeat(MAX_CONTEXT_LENGTH + 1000);
+          yield new TextEncoder().encode(largeString);
+        },
       };
 
+      // Mock Bun global if it doesn't exist (Node environment) or spy on it
+      // biome-ignore lint/suspicious/noExplicitAny: Mocking Bun
+      const globalAny = globalThis as any;
+
+      if (!globalAny.Bun) {
+        // Node/Vitest environment
+        vi.stubGlobal("Bun", {
+          stdin: {
+            stream: () => mockStream,
+          },
+        });
+      } else {
+        // Bun environment
+        vi.spyOn(globalAny.Bun.stdin, "stream").mockImplementation(
+          () => mockStream,
+        );
+      }
+
       try {
-        await expect(readStdin()).rejects.toThrow(UsageError);
+        await expect(readStdin()).rejects.toThrow(
+          /Input too long\. Length \d+ exceeds maximum of \d+ characters\./,
+        );
       } finally {
         // Restore
-        if (originalBun) {
-          globalAny.Bun.stdin.stream = originalStream;
-        } else {
-          delete globalAny.Bun;
-        }
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
 
         Object.defineProperty(process.stdin, "isTTY", {
           value: originalIsTTY,

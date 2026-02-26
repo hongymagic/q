@@ -12,6 +12,18 @@ export interface StdinInput {
 }
 
 /**
+ * Checks if the input length exceeds the maximum allowed length.
+ * @throws UsageError if length exceeds the limit
+ */
+function checkLength(currentLength: number, maxLength: number) {
+  if (currentLength > maxLength) {
+    throw new UsageError(
+      `Input too long. Length ${currentLength} exceeds maximum of ${maxLength} characters.`,
+    );
+  }
+}
+
+/**
  * Read input from stdin if piped (non-TTY).
  * Returns null content if stdin is a TTY (interactive terminal).
  */
@@ -29,12 +41,7 @@ export async function readStdin(): Promise<StdinInput> {
   for await (const chunk of Bun.stdin.stream()) {
     const text = decoder.decode(chunk, { stream: true });
     totalLength += text.length;
-
-    if (totalLength > MAX_CONTEXT_LENGTH) {
-      throw new UsageError(
-        `Input too long. Maximum is ${MAX_CONTEXT_LENGTH} characters.`,
-      );
-    }
+    checkLength(totalLength, MAX_CONTEXT_LENGTH);
     chunks.push(text);
   }
 
@@ -42,11 +49,7 @@ export async function readStdin(): Promise<StdinInput> {
   const final = decoder.decode();
   if (final) {
     totalLength += final.length;
-    if (totalLength > MAX_CONTEXT_LENGTH) {
-      throw new UsageError(
-        `Input too long. Maximum is ${MAX_CONTEXT_LENGTH} characters.`,
-      );
-    }
+    checkLength(totalLength, MAX_CONTEXT_LENGTH);
     chunks.push(final);
   }
 
