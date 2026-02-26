@@ -44,7 +44,9 @@
     "build:darwin-x64": "bun build --compile --minify --target=bun-darwin-x64 ./src/cli.ts --outfile dist/q-darwin-x64",
     "build:linux-x64": "bun build --compile --minify --target=bun-linux-x64 ./src/cli.ts --outfile dist/q-linux-x64",
     "build:linux-arm64": "bun build --compile --minify --target=bun-linux-arm64 ./src/cli.ts --outfile dist/q-linux-arm64",
-    "build:windows-x64": "bun build --compile --minify --target=bun-windows-x64 ./src/cli.ts --outfile dist/q-windows-x64.exe"
+    "build:windows-x64": "bun build --compile --minify --target=bun-windows-x64 ./src/cli.ts --outfile dist/q-windows-x64.exe",
+    "release": "bun run scripts/release.ts",
+    "release:dry": "bun run scripts/release.ts --dry-run"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "4.0.64",

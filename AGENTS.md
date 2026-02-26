@@ -245,6 +245,11 @@ src/
 ├── run.ts              # AI execution (streamText)
 ├── prompt.ts           # System prompt builder (dynamic, env-aware)
 └── errors.ts           # Typed errors + exit codes
+
+scripts/
+├── calver.ts           # CalVer utility functions
+├── calver.test.ts      # Tests for CalVer utilities
+└── release.ts          # Release script (creates CalVer tags)
 ```
 
 ---
@@ -306,17 +311,49 @@ q "how do I rewrite git history"
 
 ### Release Process
 
-Releases are automated via GitHub Actions using npm Trusted Publishers (OIDC). To publish a new version:
+This project uses **CalVer** (Calendar Versioning) with the format `YYYY.MMDD.PATCH`:
 
-1. Update version in `package.json`
-2. Commit: `git commit -am "chore: bump version to X.Y.Z"`
-3. Tag: `git tag vX.Y.Z`
-4. Push: `git push && git push --tags`
+- `2026.0226.0` — First release on Feb 26, 2026
+- `2026.0226.1` — Second release on Feb 26, 2026
+- `2026.0227.0` — First release on Feb 27, 2026
+
+#### Creating a Stable Release
+
+Use the release script to create and push a CalVer tag:
+
+```bash
+bun run release           # Interactive: shows next version, confirms before pushing
+bun run release:dry       # Preview only, no changes made
+```
+
+Or manually:
+
+```bash
+git tag v2026.0226.0
+git push origin v2026.0226.0
+```
 
 The release workflow will:
+- Validate the tag matches today's date (UTC)
 - Build standalone binaries for all platforms
-- Create a GitHub Release with binaries attached
-- Publish the package to npm with provenance attestation
+- Create a GitHub Release with auto-generated notes
+- Publish the package to npm with `@latest` tag
+- Commit the updated version back to `main`
+
+#### Pre-releases (Automatic)
+
+Every push to `main` automatically publishes a pre-release to npm:
+
+- Version format: `YYYY.MMDD.PATCH-next.{short-sha}`
+- npm tag: `next`
+- Install pre-release: `npm install -g @hongymagic/q@next`
+
+#### npm Tags
+
+| Tag | Description | Install Command |
+|-----|-------------|-----------------|
+| `latest` | Stable releases | `npm install -g @hongymagic/q` |
+| `next` | Pre-releases from main | `npm install -g @hongymagic/q@next` |
 
 ### Trusted Publisher Setup (One-Time)
 

@@ -1,0 +1,60 @@
+name: Pre-release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: prerelease-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  prerelease:
+    name: Publish pre-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Generate CalVer pre-release version
+        id: version
+        run: |
+          DATE=$(date -u +"%Y.%m%d")
+          SHORT_SHA=$(git rev-parse --short HEAD)
+
+          # Find today's latest stable tag to calculate PATCH
+          LATEST_TAG=$(git tag -l "v${DATE}.*" 2>/dev/null | grep -v '-' | sort -V | tail -1)
+          if [ -z "$LATEST_TAG" ]; then
+            PATCH=0
+          else
+            PATCH=$((${LATEST_TAG##*.} + 1))
+          fi
+
+          VERSION="${DATE}.${PATCH}-next.${SHORT_SHA}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "::notice::Pre-release version: $VERSION"
+
+      - name: Set package version
+        run: npm version ${{ steps.version.outputs.version }} --no-git-tag-version
+
+      - name: Build for npm
+        run: bun run build:npm
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Publish to npm (next)
+        run: npm publish --provenance --access public --tag next
