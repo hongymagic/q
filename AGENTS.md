@@ -214,6 +214,7 @@ src/
 ├── args.ts             # CLI argument parsing (util.parseArgs)
 ├── env.ts              # Type-safe env vars (@t3-oss/env-core)
 ├── env-info.ts         # Environment detection (OS, shell, terminal)
+├── stdin.ts            # Stdin/pipe input handling
 ├── config/
 │   └── index.ts        # Config class, schemas, paths (consolidated)
 ├── providers/

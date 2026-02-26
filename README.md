@@ -1,5 +1,9 @@
 # q — Quick AI Answers from the Command Line
 
+[![CI](https://github.com/hongymagic/q/actions/workflows/ci.yml/badge.svg)](https://github.com/hongymagic/q/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/@hongymagic/q.svg)](https://www.npmjs.com/package/@hongymagic/q)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A fast, minimal CLI for getting AI answers directly in your terminal.
 
 ## Installation
@@ -61,7 +65,9 @@ echo "how do I restart docker" | q
 | `-m, --model <id>` | Override the default model |
 | `--copy` | Copy answer to clipboard |
 | `--no-copy` | Disable copy (overrides config) |
+| `--debug` | Enable debug logging to stderr |
 | `-h, --help` | Show help message |
+| `-v, --version` | Show version |
 
 ### Commands
 
@@ -129,6 +135,37 @@ provider_api_key_env = "PROVIDER_API_KEY"
 ```bash
 export PORTKEY_API_KEY="your-portkey-key"
 export PROVIDER_API_KEY="your-provider-key"
+```
+
+## Troubleshooting
+
+**"Missing API key" error:**
+
+Ensure your API key environment variable is set:
+
+```bash
+export ANTHROPIC_API_KEY="your-key-here"
+```
+
+**"Config file not found" error:**
+
+Run `q config init` to create a default configuration file.
+
+**Debug mode:**
+
+Use `--debug` to see detailed logs on stderr:
+
+```bash
+q --debug "how do I list docker containers"
+```
+
+**Piped content not working:**
+
+Ensure you're piping content correctly. The query should be in arguments:
+
+```bash
+cat file.txt | q "explain this"   # Correct
+cat file.txt | q                   # Uses stdin as query (no context)
 ```
 
 ## Licence

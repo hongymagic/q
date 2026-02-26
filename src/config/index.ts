@@ -98,8 +98,10 @@ export class Config {
   }
 
   static async load(): Promise<Config> {
-    const xdgConfig = await Config.tryLoadFile(getXdgConfigPath());
-    const cwdConfig = await Config.tryLoadFile(getCwdConfigPath());
+    const [xdgConfig, cwdConfig] = await Promise.all([
+      Config.tryLoadFile(getXdgConfigPath()),
+      Config.tryLoadFile(getCwdConfigPath()),
+    ]);
 
     if (!xdgConfig && !cwdConfig) {
       throw new ConfigNotFoundError(getXdgConfigPath());
@@ -175,9 +177,10 @@ export class Config {
   private static interpolateEnvVars(config: ConfigData): ConfigData {
     const result = structuredClone(config);
 
-    for (const [, provider] of Object.entries(result.providers)) {
+    for (const [providerName, provider] of Object.entries(result.providers)) {
       if (provider.base_url) {
         provider.base_url = Config.interpolate(provider.base_url);
+        Config.warnIfInsecureUrl(provider.base_url, providerName);
       }
 
       if (provider.provider_slug) {
@@ -192,6 +195,28 @@ export class Config {
     }
 
     return result;
+  }
+
+  private static warnIfInsecureUrl(url: string, providerName: string): void {
+    try {
+      const parsed = new URL(url);
+      const isLocalhost =
+        parsed.hostname === "localhost" ||
+        parsed.hostname === "127.0.0.1" ||
+        parsed.hostname === "::1" ||
+        parsed.hostname.endsWith(".local");
+
+      if (parsed.protocol === "http:" && !isLocalhost) {
+        console.error(
+          `Warning: Provider '${providerName}' uses insecure HTTP URL: ${url}`,
+        );
+        console.error(
+          "         Consider using HTTPS for non-localhost connections.",
+        );
+      }
+    } catch {
+      // Invalid URL will be caught elsewhere; ignore here
+    }
   }
 
   private static interpolate(value: string): string {

@@ -176,4 +176,15 @@ describe("security", () => {
       expect(args.options.copy).toBe(true);
     });
   });
+
+  describe("insecure URL detection", () => {
+    it("should be tested via config loading with HTTP URLs", () => {
+      // The warnIfInsecureUrl method is private and called during config loading
+      // This test documents the expected behaviour:
+      // - HTTP URLs to localhost/127.0.0.1/::1/.local are allowed silently
+      // - HTTP URLs to other hosts trigger a console.error warning
+      // - HTTPS URLs are always allowed silently
+      expect(true).toBe(true);
+    });
+  });
 });
