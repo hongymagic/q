@@ -17,6 +17,20 @@
 
 ---
 
+## Quick Setup
+
+```bash
+bun install              # Install dependencies
+bun run test             # Run tests
+bun run typecheck        # Type check
+bun run lint             # Check lint/format
+bun run fix              # Auto-fix issues
+bun run build            # Build for current platform
+bunx lefthook install    # Install pre-commit hooks
+```
+
+---
+
 ## Constraints
 
 - Runtime: Bun
@@ -541,6 +555,42 @@ await retry(request, { maxAttempts: 3, backoff: 'exponential' });
 - Prefer early returns over nested conditionals
 - Use TypeScript's type system; avoid `any`
 - Function and variable names should be descriptive but not verbose
+
+---
+
+## Git Conventions
+
+### Conventional Commits (REQUIRED)
+
+ALWAYS use [Conventional Commits](https://www.conventionalcommits.org/) for all commits.
+
+**Format:** `<type>(<scope>): <description>`
+
+| Type | Use for |
+|------|---------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation only |
+| `style` | Formatting, no code change |
+| `refactor` | Code change, no new feature/fix |
+| `test` | Adding/updating tests |
+| `chore` | Build, config, dependencies |
+| `perf` | Performance improvement |
+
+**Scope** (optional): `cli`, `config`, `providers`, `stdin`, `deps`
+
+**Examples:**
+- `feat(providers): add Mistral AI provider`
+- `fix(stdin): handle empty pipe gracefully`
+- `chore(deps): bump ai-sdk to 6.1.0`
+- `docs: update README with new options`
+- `refactor(config): simplify cascade merge logic`
+
+### Pull Request Guidelines
+
+- **Title**: Use conventional commit format
+- **Pre-push**: Run `bun run test && bun run lint` before pushing
+- **Scope**: One logical change per PR
 
 ---
 
