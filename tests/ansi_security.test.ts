@@ -6,7 +6,7 @@ import * as run from "../src/run.ts";
 // or re-mock inside tests.
 const mockStreamText = vi.fn();
 vi.mock("ai", () => ({
-  streamText: (...args: any[]) => mockStreamText(...args),
+  streamText: (...args: unknown[]) => mockStreamText(...args),
 }));
 
 describe("runQuery Security", () => {
@@ -30,7 +30,8 @@ describe("runQuery Security", () => {
       .mockImplementation(() => true);
 
     const result = await run.runQuery({
-      model: {} as any,
+      // @ts-expect-error - mocking model
+      model: {},
       query: "test",
       systemPrompt: "test",
     });
@@ -60,7 +61,8 @@ describe("runQuery Security", () => {
       .mockImplementation(() => true);
 
     const result = await run.runQuery({
-      model: {} as any,
+      // @ts-expect-error - mocking model
+      model: {},
       query: "test",
       systemPrompt: "test",
     });

@@ -34,14 +34,13 @@ export function createAnsiStripper() {
     // ESC is \u001B or \u009B
     const lastEscIndex = Math.max(
       buffer.lastIndexOf("\u001B"),
-      buffer.lastIndexOf("\u009B")
+      buffer.lastIndexOf("\u009B"),
     );
 
     if (lastEscIndex !== -1) {
       // Check if this looks like an incomplete sequence
       // A complete sequence usually ends with a letter or specific symbols
       // We'll process up to the last ESC, strip ANSI from that part, and keep the rest
-      const potentialSequence = buffer.slice(lastEscIndex);
 
       // Heuristic: if the sequence is very long (>50 chars), it's probably not an ANSI code, just text containing ESC
       // but to be safe and simple, we'll try to strip what we have.

@@ -27,7 +27,7 @@
     "noPropertyAccessFromIndexSignature": false,
 
     // Types
-    "types": ["bun-types"]
+    "types": ["bun"]
   },
   "include": ["src/**/*", "tests/**/*", "scripts/**/*"],
   "exclude": ["node_modules", "dist"]

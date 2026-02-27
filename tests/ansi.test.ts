@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { stripAnsi, createAnsiStripper } from "../src/ansi.ts";
+import { createAnsiStripper } from "../src/ansi.ts";
 
 test("createAnsiStripper handles split chunks", () => {
   const stripper = createAnsiStripper();
