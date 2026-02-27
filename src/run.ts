@@ -1,5 +1,6 @@
 import type { LanguageModel } from "ai";
 import { streamText } from "ai";
+import { createAnsiStripper } from "./ansi.ts";
 import { ProviderError } from "./errors.ts";
 import { buildUserPrompt } from "./prompt.ts";
 
@@ -26,12 +27,19 @@ export async function runQuery(options: RunOptions): Promise<RunResult> {
     });
 
     let fullText = "";
+    const stripper = createAnsiStripper();
 
     for await (const textPart of result.textStream) {
-      process.stdout.write(textPart);
+      // Security: Strip ANSI codes to prevent terminal manipulation
+      // We keep original text in fullText for the return value (e.g. for clipboard)
+      // but sanitize stdout to protect the user's terminal
+      const safeText = stripper(textPart);
+      process.stdout.write(safeText);
       fullText += textPart;
     }
 
+    // Check against safeText buffer equivalent would be ideal but complex.
+    // Using simple check against stdout write logic:
     if (!fullText.endsWith("\n")) {
       process.stdout.write("\n");
     }
