@@ -6,6 +6,7 @@ import {
   resolveApiKey,
   resolveProvider,
 } from "../src/providers/index.ts";
+import { normaliseBaseURL } from "../src/providers/ollama.ts";
 
 // Mock the provider creation functions
 vi.mock("@ai-sdk/openai", () => ({
@@ -153,6 +154,42 @@ describe("provider resolution", () => {
     it("should include provider name in error message", () => {
       expect(() => resolveApiKey("MISSING_KEY", "my-provider")).toThrow(
         /my-provider/,
+      );
+    });
+  });
+
+  describe("ollama normaliseBaseURL", () => {
+    it("should default to http://localhost:11434/api when undefined", () => {
+      expect(normaliseBaseURL(undefined)).toBe("http://localhost:11434/api");
+    });
+
+    it("should append /api when missing", () => {
+      expect(normaliseBaseURL("http://localhost:11434")).toBe(
+        "http://localhost:11434/api",
+      );
+    });
+
+    it("should not double-append /api when already present", () => {
+      expect(normaliseBaseURL("http://localhost:11434/api")).toBe(
+        "http://localhost:11434/api",
+      );
+    });
+
+    it("should strip trailing slashes before appending", () => {
+      expect(normaliseBaseURL("http://localhost:11434/")).toBe(
+        "http://localhost:11434/api",
+      );
+    });
+
+    it("should handle custom host with /api suffix", () => {
+      expect(normaliseBaseURL("http://ollama.local:8080/api")).toBe(
+        "http://ollama.local:8080/api",
+      );
+    });
+
+    it("should handle custom host without /api suffix", () => {
+      expect(normaliseBaseURL("http://ollama.local:8080")).toBe(
+        "http://ollama.local:8080/api",
       );
     });
   });
