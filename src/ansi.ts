@@ -22,6 +22,27 @@ export function stripAnsi(str: string): string {
 }
 
 /**
+ * Sanitize text for the clipboard by stripping ANSI codes and escaping dangerous control characters.
+ * @param str The string to sanitize
+ * @returns The sanitized string safe for clipboard insertion
+ */
+export function sanitizeForClipboard(str: string): string {
+  if (!str) return str;
+
+  // First strip ANSI escape codes
+  const stripped = stripAnsi(str);
+
+  // Then replace dangerous control characters with their hex representation
+  // We want to escape C0 control chars (0x00-0x1F) and DEL (0x7F)
+  // But we want to PRESERVE safe whitespace: \t (0x09), \n (0x0A), \r (0x0D)
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally matching control characters for sanitization
+  return stripped.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, (char) => {
+    const hex = char.charCodeAt(0).toString(16).padStart(2, "0").toUpperCase();
+    return `\\x${hex}`;
+  });
+}
+
+/**
  * Creates a stateful ANSI stripper that handles split chunks.
  */
 export function createAnsiStripper() {
