@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
+import { sanitizeForClipboard } from "../src/ansi.ts";
 import * as run from "../src/run.ts";
 
 // Mock 'ai' module
@@ -73,5 +74,36 @@ describe("runQuery Security", () => {
 
     // return value should have codes
     expect(result.text).toBe("Start\u001b[31mRed\u001b[0m");
+  });
+});
+
+describe("sanitizeForClipboard", () => {
+  test("strips ANSI escape codes", () => {
+    const input = "\u001b[31mRed\u001b[0m Text";
+    expect(sanitizeForClipboard(input)).toBe("Red Text");
+  });
+
+  test("preserves safe whitespace (newlines, tabs, carriage returns)", () => {
+    const input = "Line 1\n\tIndented\r\nLine 2";
+    expect(sanitizeForClipboard(input)).toBe(input);
+  });
+
+  test("escapes dangerous C0 control characters to hex representation", () => {
+    const input = "Null\x00 Bell\x07 Backspace\x08 Escape\x1b";
+    // The ANSI code stripper will catch Escape if it's part of a sequence,
+    // but just the raw ESC char (0x1b) without sequence gets escaped to \x1B
+    expect(sanitizeForClipboard(input)).toBe(
+      "Null\\x00 Bell\\x07 Backspace\\x08 Escape\\x1B",
+    );
+  });
+
+  test("escapes DEL character (0x7F)", () => {
+    const input = "Delete\x7f";
+    expect(sanitizeForClipboard(input)).toBe("Delete\\x7F");
+  });
+
+  test("does not escape safe characters", () => {
+    const input = "Normal text !@#$%^&*()_+ 1234567890";
+    expect(sanitizeForClipboard(input)).toBe(input);
   });
 });
