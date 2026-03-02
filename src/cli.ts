@@ -108,7 +108,9 @@ async function main(): Promise<void> {
 
     if (shouldCopy) {
       const { default: clipboard } = await import("clipboardy");
-      await clipboard.write(result.text);
+      const { sanitizeForClipboard } = await import("./ansi.ts");
+      const safeClipboardText = sanitizeForClipboard(result.text);
+      await clipboard.write(safeClipboardText);
       logDebug("Copied to clipboard", debug);
     }
 
