@@ -27,7 +27,7 @@ jobs:
         run: bun install
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           # NOTE: PRs created with the default GITHUB_TOKEN won't trigger CI
           # workflows (GitHub's infinite-loop prevention). To auto-trigger CI,
