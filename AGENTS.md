@@ -371,6 +371,28 @@ This allows GitHub Actions to publish without storing npm tokens as secrets.
 
 ---
 
+## Dependency Updates
+
+Automated dependency updates are handled by two GitHub Actions workflows.
+
+### Custom Action (`deps-update.yml`)
+
+- **Schedule**: Daily at 00:00 UTC (10:00 AEST)
+- **Manual trigger**: `workflow_dispatch` via GitHub Actions UI
+- **Mechanism**: Runs `npx npm-check-updates -u` then `bun install`
+- **Output**: Creates/updates a PR on branch `deps/automated-update`
+- **CI**: Existing `ci.yml` validates the PR (lint, typecheck, test)
+- **Behaviour**: Skips PR creation if no packages changed; updates existing PR if one is already open
+
+### Copilot Agent (`deps-update-copilot.yml`)
+
+- **Manual trigger only**: `workflow_dispatch` via GitHub Actions UI
+- **Mechanism**: Creates a GitHub issue with update instructions, assigns `@copilot`
+- **Prerequisite**: Copilot Coding Agent must be enabled in repo settings (Settings > Copilot > Coding agent)
+- **Output**: Copilot creates a PR from the issue
+
+---
+
 ## Tests
 
 Use vitest (not Bun's test runner).
