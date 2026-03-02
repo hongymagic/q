@@ -14,3 +14,8 @@
 **Vulnerability:** The AI model's output was written directly to stdout without sanitization, allowing malicious models or prompt injections to inject ANSI escape codes that could manipulate the user's terminal (e.g., hiding text, changing colors, or potentially executing commands in vulnerable terminals).
 **Learning:** Output from LLMs is untrusted user input, even if it comes from a "trusted" provider. It must be sanitized before being displayed in a terminal.
 **Prevention:** Strip ANSI escape codes from all AI-generated output before writing to stdout.
+
+## 2025-03-02 - Pastejacking via Clipboard Output
+**Vulnerability:** The AI model's output was written directly to the user's clipboard without escaping C0 control characters (like Null, Bell, or Backspace), allowing a malicious model or prompt injection to hide text or manipulate the clipboard payload when pasted into a terminal.
+**Learning:** Text copied to the clipboard may eventually be pasted into a shell or text editor. Raw terminal control sequences can be harmful if not escaped properly.
+**Prevention:** Sanitize text before writing it to the clipboard by stripping ANSI codes and escaping dangerous C0 control characters (e.g., `\xNN`), while preserving safe whitespace like line feeds (`\x0A`), tabs (`\x09`), and carriage returns (`\x0D`).

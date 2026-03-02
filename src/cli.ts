@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { sanitizeForClipboard } from "./ansi.ts";
 import { getHelpText, getVersion, parseCliArgs } from "./args.ts";
 import { getConfigPath, initConfig, loadConfig } from "./config/index.ts";
 import { formatEnvForDebug, getEnvironmentInfo } from "./env-info.ts";
@@ -108,7 +109,8 @@ async function main(): Promise<void> {
 
     if (shouldCopy) {
       const { default: clipboard } = await import("clipboardy");
-      await clipboard.write(result.text);
+      const safeText = sanitizeForClipboard(result.text);
+      await clipboard.write(safeText);
       logDebug("Copied to clipboard", debug);
     }
 

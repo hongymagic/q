@@ -22,6 +22,28 @@ export function stripAnsi(str: string): string {
 }
 
 /**
+ * Sanitizes output for clipboard copying to prevent Pastejacking.
+ * Strips ANSI codes and escapes dangerous C0 control characters
+ * while preserving safe whitespace like line feeds and tabs.
+ */
+export function sanitizeForClipboard(text: string): string {
+  if (!text) return text;
+
+  // First strip any ANSI escape codes
+  const stripped = stripAnsi(text);
+
+  // Replace dangerous C0 control characters and DEL with hex equivalents
+  // Safe whitespace: \x09 (Tab), \x0A (LF), \x0D (CR) are NOT matched by this regex
+  return stripped.replace(
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally matching C0 control characters to escape them
+    /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g,
+    (char) => {
+      return `\\x${char.charCodeAt(0).toString(16).padStart(2, "0").toUpperCase()}`;
+    },
+  );
+}
+
+/**
  * Creates a stateful ANSI stripper that handles split chunks.
  */
 export function createAnsiStripper() {
