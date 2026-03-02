@@ -102,6 +102,10 @@ describe("sanitizeForClipboard", () => {
     expect(sanitizeForClipboard(input)).toBe("Delete\\x7F");
   });
 
+  test("escapes C1 control character U+009B (CSI)", () => {
+    const input = "CSI\u009B Test";
+    expect(sanitizeForClipboard(input)).toBe("CSI\\x9B Test");
+  });
   test("does not escape safe characters", () => {
     const input = "Normal text !@#$%^&*()_+ 1234567890";
     expect(sanitizeForClipboard(input)).toBe(input);

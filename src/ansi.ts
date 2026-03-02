@@ -33,10 +33,10 @@ export function sanitizeForClipboard(str: string): string {
   const stripped = stripAnsi(str);
 
   // Then replace dangerous control characters with their hex representation
-  // We want to escape C0 control chars (0x00-0x1F) and DEL (0x7F)
+  // We want to escape C0 control chars (0x00-0x1F), DEL (0x7F), and C1 control chars (0x80-0x9F)
   // But we want to PRESERVE safe whitespace: \t (0x09), \n (0x0A), \r (0x0D)
   // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally matching control characters for sanitization
-  return stripped.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, (char) => {
+  return stripped.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, (char) => {
     const hex = char.charCodeAt(0).toString(16).padStart(2, "0").toUpperCase();
     return `\\x${hex}`;
   });
