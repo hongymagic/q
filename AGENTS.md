@@ -22,11 +22,12 @@
 ```bash
 bun install              # Install dependencies
 bun run test             # Run tests
+bun run test:coverage    # Run tests with coverage report
 bun run typecheck        # Type check
 bun run lint             # Check lint/format
 bun run fix              # Auto-fix issues
 bun run build            # Build for current platform
-bunx lefthook install    # Install pre-commit hooks
+bunx lefthook install    # Install pre-commit + pre-push hooks
 ```
 
 ---
@@ -270,6 +271,10 @@ scripts/
 | `zod` | Schema validation (v4) |
 | `clipboardy` | Clipboard support |
 | `@t3-oss/env-core` | Type-safe env vars |
+| `vitest` | Test runner (dev) |
+| `@vitest/coverage-v8` | V8 code coverage reporter (dev) |
+| `@biomejs/biome` | Linter + formatter (dev) |
+| `lefthook` | Git hooks runner (dev) |
 
 ---
 
@@ -406,12 +411,23 @@ Test cases cover:
 - Provider resolution and overrides
 - `--copy` behaviour
 - Empty args shows help
+- Environment variable parsing (`Q_PROVIDER`, `Q_MODEL`, `Q_COPY` boolean coercion)
+- Core execution: streaming, error wrapping in `ProviderError`, trailing newline
+- ANSI stripping from stdout / clipboard sanitisation
+- Prompt injection prevention
+- CLI entry point: `--version`, `--help`, `config path`, error exit codes (subprocess-based)
+- Help text snapshot (catches unintended changes)
+- CalVer versioning utilities
 
 Run tests:
 
 ```bash
-bun run test
+bun run test             # Run all tests once
+bun run test:coverage    # Run tests with v8 coverage report (src/**/*.ts)
+bun run test:watch       # Watch mode for development
 ```
+
+Test files live in `tests/` and `scripts/`. Coverage is reported for `src/**` (excluding `src/cli.ts`).
 
 ---
 
@@ -424,9 +440,12 @@ bun run lint        # Check for issues (used in CI)
 bun run fix         # Fix all auto-fixable issues (lint + format)
 ```
 
-### Pre-commit Hooks
+### Pre-commit / Pre-push Hooks
 
-[Lefthook](https://github.com/evilmartians/lefthook) runs Biome check on staged files before each commit.
+[Lefthook](https://github.com/evilmartians/lefthook) runs checks automatically:
+
+- **pre-commit**: Biome check on staged `.ts/.js/.json/.jsonc` files
+- **pre-push**: `bun run typecheck` + `bun run test`
 
 To install hooks after cloning:
 

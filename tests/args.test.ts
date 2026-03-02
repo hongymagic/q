@@ -129,6 +129,10 @@ describe("CLI argument parsing", () => {
       expect(help).toContain("--no-copy");
       expect(help).toContain("Q_COPY");
     });
+
+    it("should match snapshot", () => {
+      expect(getHelpText()).toMatchSnapshot();
+    });
   });
 
   describe("getVersion", () => {
