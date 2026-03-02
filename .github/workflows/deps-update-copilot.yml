@@ -1,0 +1,49 @@
+name: Update Dependencies (Copilot)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  create-issue:
+    name: Create Update Issue for Copilot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create issue and assign Copilot
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat <<'BODY' > /tmp/issue-body.md
+          ## Task
+
+          Update all dependencies to their latest versions.
+
+          ### Steps
+
+          1. Run `npx npm-check-updates -u` to update version ranges in `package.json`
+          2. Run `bun install` to regenerate `bun.lock`
+          3. Commit both `package.json` and `bun.lock`
+
+          ### Constraints
+
+          - This project uses **Bun** as its package manager
+          - The lockfile is `bun.lock`
+          - Do NOT modify any source code — only `package.json` and `bun.lock`
+          - Do NOT run tests (CI handles that on the PR)
+          - Commit message: `chore(deps): automated dependency update`
+          BODY
+
+          ISSUE_URL=$(gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "chore(deps): automated dependency update $(date -u +%Y-%m-%d)" \
+            --body-file /tmp/issue-body.md)
+
+          ISSUE_NUMBER=$(echo "$ISSUE_URL" | grep -oE '[0-9]+$')
+          echo "Created issue #${ISSUE_NUMBER}: ${ISSUE_URL}"
+
+          gh issue edit "$ISSUE_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --add-assignee copilot

@@ -1,0 +1,50 @@
+name: Update Dependencies
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Daily at 00:00 UTC (10:00 AEST)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Update package versions
+        run: npx npm-check-updates -u
+
+      - name: Install updated dependencies
+        run: bun install
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          # NOTE: PRs created with the default GITHUB_TOKEN won't trigger CI
+          # workflows (GitHub's infinite-loop prevention). To auto-trigger CI,
+          # create a PAT with 'repo' scope stored as a secret, then use:
+          #   token: ${{ secrets.PAT_TOKEN }}
+          commit-message: "chore(deps): automated dependency update"
+          title: "chore(deps): automated dependency update"
+          body: |
+            Automated dependency update via `npm-check-updates`.
+
+            ### What changed
+            - `package.json` version bumps (all dependencies, including major)
+            - `bun.lock` regenerated
+
+            ### Review checklist
+            - [ ] CI passes (lint, typecheck, test)
+            - [ ] No unexpected breaking changes
+          branch: deps/automated-update
+          delete-branch: true
+          labels: dependencies
