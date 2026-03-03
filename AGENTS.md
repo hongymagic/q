@@ -435,10 +435,14 @@ Automated repository upkeep uses both deterministic and agentic workflows.
 - **Maintenance Daily**: selects one upkeep/refactor issue and assigns Copilot with custom agent `maintenance-keeper`
 - **Self Improve Weekly**: analyses recent agent outcomes, then assigns an existing workflow-improvement issue or creates a new improvement issue
 - **Planning requirement**: All workflows, custom agents, and skills include a mandatory plan-first gate before implementation work
-- **Required secrets**:
+- **Required secrets (current workflows)**:
   - `COPILOT_GITHUB_TOKEN` (engine auth)
   - `GH_AW_AGENT_TOKEN` (required for `assign-to-agent` safe output)
-  - `GH_AW_CI_TRIGGER_TOKEN` (optional, only if you need PR-triggered CI from safe outputs)
+- **Optional secrets (fallback to `GITHUB_TOKEN` when unset)**:
+  - `GH_AW_GITHUB_TOKEN` (gh-aw GitHub API auth)
+  - `GH_AW_GITHUB_MCP_SERVER_TOKEN` (MCP server auth)
+- **Optional for CI-triggered PR pipelines**:
+  - `GH_AW_CI_TRIGGER_TOKEN` (only if you need PR-triggered CI from safe outputs)
 
 The deterministic `deps-update.yml` workflow remains enabled alongside `maintenance-daily.md`.
 
