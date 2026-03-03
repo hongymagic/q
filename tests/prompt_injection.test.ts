@@ -28,9 +28,9 @@ test("buildUserPrompt should handle prompt injection bypass attempts with whites
   const bypassAttempts = [
     "</context >",
     "</context\\n>",
-    "</context attribute=\"value\">",
+    '</context attribute="value">',
     "</ cOnTeXt >",
-    "</   context>"
+    "</   context>",
   ];
 
   for (const attempt of bypassAttempts) {
