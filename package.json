@@ -58,7 +58,7 @@
     "@ai-sdk/openai": "3.0.38",
     "@ai-sdk/openai-compatible": "2.0.31",
     "@t3-oss/env-core": "0.13.10",
-    "ai": "6.0.106",
+    "ai": "6.0.107",
     "clipboardy": "5.3.1",
     "ollama-ai-provider-v2": "3.3.1",
     "zod": "4.3.6"
