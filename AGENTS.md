@@ -430,11 +430,12 @@ Automated repository upkeep uses both deterministic and agentic workflows.
 - **Source files**: `.github/workflows/security-daily.md`, `.github/workflows/feature-daily.md`, `.github/workflows/maintenance-daily.md`, `.github/workflows/self-improve-weekly.md`
 - **Compiled lock files**: matching `.lock.yml` files in `.github/workflows/`
 - **Compilation**: Run `gh aw compile --validate` after frontmatter changes
-- **Security Daily**: selects one high-value security issue and assigns Copilot with custom agent `security-hardener`
-- **Feature Daily**: selects one high-value enhancement issue and assigns Copilot with custom agent `feature-implementer`
-- **Maintenance Daily**: selects one upkeep/refactor issue and assigns Copilot with custom agent `maintenance-keeper`
+- **Security Daily**: performs a security-specialist review, then selects an existing issue or creates a new one; assigns Copilot with custom agent `security-hardener` when no active security PR exists, otherwise queues work
+- **Feature Daily**: performs a feature-specialist review, then selects an existing issue or creates a new one; assigns Copilot with custom agent `feature-implementer` when no active feature PR exists, otherwise queues work
+- **Maintenance Daily**: performs a maintenance-specialist review, then selects an existing issue or creates a new one; assigns Copilot with custom agent `maintenance-keeper` when no active maintenance PR exists, otherwise queues work
 - **Self Improve Weekly**: analyses recent agent outcomes, then assigns an existing workflow-improvement issue or creates a new improvement issue
 - **Planning requirement**: All workflows, custom agents, and skills include a mandatory plan-first gate before implementation work
+- **Operator visibility**: Daily workflows include a standard comment template for plan summary, findings, decision, and guardrails
 - **Required secrets (current workflows)**:
   - `COPILOT_GITHUB_TOKEN` (engine auth)
   - `GH_AW_AGENT_TOKEN` (required for `assign-to-agent` safe output)
