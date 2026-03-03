@@ -445,6 +445,8 @@ Automated repository upkeep uses both deterministic and agentic workflows.
 - **Optional for CI-triggered PR pipelines**:
   - `GH_AW_CI_TRIGGER_TOKEN` (only if you need PR-triggered CI from safe outputs)
 
+- **Prompt contract validation**: `scripts/check-workflow-contracts.ts` validates that all workflow markdown files include required guardrails: a `## Planning Gate` section, a plan-summary visible output requirement, and explicit `add_comment(item_number=...)` usage when `add-comment` is a safe output. The check runs as part of `bun run test` in CI.
+
 The deterministic `deps-update.yml` workflow remains enabled alongside `maintenance-daily.md`.
 
 ---
@@ -469,6 +471,7 @@ Test cases cover:
 - CLI entry point: `--version`, `--help`, `config path`, error exit codes (subprocess-based)
 - Help text snapshot (catches unintended changes)
 - CalVer versioning utilities
+- Workflow prompt contract validation (planning gate, plan-summary, `add_comment(item_number=...)` guardrails)
 
 Run tests:
 

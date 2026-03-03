@@ -89,7 +89,7 @@ Each run should produce at most one actionable workflow-system improvement.
    - If an existing issue already captures the top improvement and is not actively being worked on, select it.
 
 4. Choose exactly one action.
-   - If a suitable existing issue exists, call `add_comment` first with your plan summary and evidence, then call `assign_to_agent` with `agent="copilot"`.
+   - If a suitable existing issue exists, call `add_comment(item_number=<issue-number>, body=...)` first with your plan summary and evidence, then call `assign_to_agent` with `agent="copilot"`.
    - Otherwise, call `create_issue` with a clear problem statement, acceptance criteria, a concise implementation checklist, and a short plan summary.
    - Do not assign a newly created issue in the same run.
 
@@ -103,3 +103,5 @@ You must call at least one safe-output tool each run:
 
 - `assign_to_agent`, `create_issue`, or `add_comment` for concrete actions, or
 - `noop` when no action is required.
+
+When using `add_comment` in this scheduled workflow, always set `item_number` explicitly.
