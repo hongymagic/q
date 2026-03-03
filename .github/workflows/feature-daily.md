@@ -57,14 +57,14 @@ You are the feature triage orchestrator for `${{ github.repository }}`.
 
 ## Planning Gate (required)
 
-Before selecting any issue, create an internal plan with:
+Before selecting any issue, create a plan and prepare a visible summary for maintainers:
 
 1. Candidate discovery approach.
 2. Exclusion and deconfliction checks.
 3. Prioritisation criteria.
 4. Assignment and status communication flow.
 
-Do not assign any issue until this plan is complete.
+Do not assign any issue until this plan is complete and summarised in a comment.
 
 ## Goal
 
@@ -91,12 +91,16 @@ Assign at most one high-impact feature/enhancement issue to Copilot coding agent
    - Prefer lower implementation uncertainty.
    - Pick exactly one issue.
 
-5. Assign and notify.
-   - Use `assign_to_agent` with `agent="copilot"` for the chosen issue.
-   - Add an `add_comment` on the issue that includes:
+5. Publish plan summary before assignment.
+   - Add an `add_comment` on the selected issue before any assignment.
+   - Include in the comment:
+     - a concise summary of your 4-step plan,
      - why this issue was selected,
      - expected user value,
      - a reminder that implementation must begin with a plan.
+
+6. Assign the issue.
+   - After posting the plan summary comment, use `assign_to_agent` with `agent="copilot"` for the chosen issue.
 
 ## No Candidate Handling
 
@@ -106,5 +110,5 @@ If no suitable issue exists, call `noop` with a concise reason.
 
 You must call at least one safe-output tool each run:
 
-- `assign_to_agent` (+ optional `add_comment`) when assigning work, or
+- `add_comment` then `assign_to_agent` when assigning work, or
 - `noop` when no action is required.
