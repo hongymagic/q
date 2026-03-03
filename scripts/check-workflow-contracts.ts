@@ -16,7 +16,7 @@ export function parseWorkflowFile(content: string): {
 }
 
 export function hasAddCommentSafeOutput(frontmatter: string): boolean {
-  return /add-comment:/m.test(frontmatter);
+  return /add-comment:/.test(frontmatter);
 }
 
 export function hasPlanningGate(body: string): boolean {
@@ -24,9 +24,10 @@ export function hasPlanningGate(body: string): boolean {
 }
 
 export function hasPlanSummaryRequirement(body: string): boolean {
-  return /plan.+(?:visible|first).+output|(?:visible|first).+output.+plan|surfaced in output/im.test(
-    body,
-  );
+  // Matches: "plan...visible output", "plan...first...output", or "surfaced in output"
+  const planVisibleOutput = /plan.+(?:visible|first).+output/im;
+  const surfacedInOutput = /surfaced in output/im;
+  return planVisibleOutput.test(body) || surfacedInOutput.test(body);
 }
 
 export function hasExplicitItemNumber(body: string): boolean {

@@ -158,8 +158,15 @@ describe("check-workflow-contracts", () => {
 
   describe("validateAllWorkflows (integration)", () => {
     it("all workflow markdown files pass contract checks", () => {
-      const dirname = import.meta.dirname ?? ".";
-      const workflowDir = join(dirname, "..", ".github", "workflows");
+      if (!import.meta.dirname) {
+        throw new Error("import.meta.dirname is undefined");
+      }
+      const workflowDir = join(
+        import.meta.dirname,
+        "..",
+        ".github",
+        "workflows",
+      );
       const results = validateAllWorkflows(workflowDir);
 
       const allErrors = results.flatMap((r) => r.errors);
