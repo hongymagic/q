@@ -1,6 +1,6 @@
 ---
 name: Feature Daily
-description: Daily feature triage that assigns one high-impact enhancement issue to Copilot coding agent
+description: Daily feature review that finds, creates, and assigns or queues one high-impact enhancement task
 on:
   schedule:
     - cron: "23 0 * * *"
@@ -40,75 +40,108 @@ safe-outputs:
       Load and apply the feature-delivery skill.
       Validate changes before finishing.
     github-token: ${{ secrets.GH_AW_AGENT_TOKEN }}
+  create-issue:
+    title-prefix: "[feature][automation] "
+    max: 1
   add-comment:
     target: "*"
     max: 1
     hide-older-comments: true
   messages:
     footer: "> Automated by [{workflow_name}]({run_url}){history_link}"
-    run-started: "Daily feature triage started."
-    run-success: "Daily feature triage completed."
-    run-failure: "Daily feature triage failed: {status}."
+    run-started: "Daily feature review started."
+    run-success: "Daily feature review completed."
+    run-failure: "Daily feature review failed: {status}."
 ---
 
-# Feature Daily Triage
+# Feature Daily Review
 
-You are the feature triage orchestrator for `${{ github.repository }}`.
+You are the feature review orchestrator for `${{ github.repository }}`.
 
 ## Planning Gate (required)
 
-Before selecting any issue, create a plan and prepare a visible summary for maintainers:
+Before taking any action, create a plan and prepare a visible summary for maintainers:
 
 1. Candidate discovery approach.
 2. Exclusion and deconfliction checks.
 3. Prioritisation criteria.
 4. Assignment and status communication flow.
 
-Do not assign any issue until this plan is complete and summarised in a comment.
+Do not create or assign any issue until this plan is complete and included in your first visible output.
 
 ## Goal
 
-Assign at most one high-impact feature/enhancement issue to Copilot coding agent each run.
+Every run should perform feature-specialist review and produce at most one actionable feature/enhancement task.
+
+When possible, always move work forward by either:
+
+- assigning one task to Copilot, or
+- queuing one task when active Copilot feature work already exists.
 
 ## Step-by-Step Workflow
 
-1. Check for active Copilot feature work.
+1. Check for active Copilot feature implementation.
    - Search open pull requests authored by `app/copilot-swe-agent` with feature/enhancement signals.
-   - If active feature work exists, call `noop` and stop.
+   - Set `active_feature_pr=true` when one exists.
 
-2. Build candidate list (priority order).
-   - Query open issues labelled `enhancement`, `feature`, or `improvement`.
-   - Also query open issues with title/body keywords: `feature`, `add`, `support`, `improve`, `enhancement`.
+2. Run a feature-specialist review.
+   - Review open issues and recent pull requests for product opportunity signals: `feature`, `enhancement`, `improve`, `support`, `usability`, `UX`, `developer experience`.
+   - Identify one highest-value actionable feature/enhancement task.
 
-3. Apply exclusion filters.
-   - Skip issues with assignees.
-   - Skip issues with linked open pull requests.
-   - Skip issues with blocking labels: `wontfix`, `duplicate`, `invalid`, `question`, `discussion`, `on-hold`, `blocked`, `no-bot`.
-   - Skip issues that are clearly security-only or maintenance-only.
+3. Prefer existing issue; create only when needed.
+   - First, try to select an existing open issue.
+   - Exclude issues with assignees, linked open pull requests, or blocking labels: `wontfix`, `duplicate`, `invalid`, `question`, `discussion`, `on-hold`, `blocked`, `no-bot`.
+   - Exclude work that is clearly security-only or maintenance-only.
+   - If no suitable issue exists, create one with `create_issue`.
+   - Before creating, de-duplicate by checking for similar open automation/feature issues.
 
-4. Rank remaining candidates.
-   - Prefer clear user value and concrete acceptance criteria.
-   - Prefer lower implementation uncertainty.
-   - Pick exactly one issue.
+4. Build action-ready task details.
+   - Include problem statement, expected user value, acceptance criteria, and an implementation checklist.
+   - Include a concise summary of your 4-step plan in the first visible output:
+     - For existing issues: in `add_comment`.
+     - For new issues: in the `create_issue` body.
 
-5. Publish plan summary before assignment.
-   - Add an `add_comment` on the selected issue before any assignment.
-   - Include in the comment:
-     - a concise summary of your 4-step plan,
-     - why this issue was selected,
-     - expected user value,
-     - a reminder that implementation must begin with a plan.
-
-6. Assign the issue.
-   - After posting the plan summary comment, use `assign_to_agent` with `agent="copilot"` for the chosen issue.
+5. Apply queue-only assignment policy.
+   - If `active_feature_pr=true`:
+     - Do not call `assign_to_agent`.
+     - If using an existing issue, post `add_comment` with the plan summary, why selected, expected value, and queue reason.
+     - If creating a new issue, include queue reason in the issue body.
+   - If `active_feature_pr=false`:
+     - Existing issue path: call `add_comment`, then `assign_to_agent` with `agent="copilot"`.
+     - New issue path: call `create_issue` with `temporary_id`, then `assign_to_agent(issue_number=<temporary_id>, agent="copilot")`.
 
 ## No Candidate Handling
 
-If no suitable issue exists, call `noop` with a concise reason.
+Call `noop` only when you cannot identify any reliable, actionable feature task after review.
 
 ## Critical Rule
 
 You must call at least one safe-output tool each run:
 
-- `add_comment` then `assign_to_agent` when assigning work, or
-- `noop` when no action is required.
+- `add_comment` and optionally `assign_to_agent` for existing issues,
+- `create_issue` and optionally `assign_to_agent` for newly discovered work, or
+- `noop` only when no actionable feature work can be produced.
+
+## Comment Template (for `add_comment`)
+
+When posting a comment on an existing issue, use this structure:
+
+```markdown
+### Plan Summary
+1. Candidate discovery approach: <short summary>
+2. Exclusion and deconfliction checks: <short summary>
+3. Prioritisation criteria: <short summary>
+4. Assignment and status communication: <short summary>
+
+### Review Findings
+- Selected issue: #<issue-number>
+- Why selected: <reason>
+- Expected user value: <value>
+
+### Decision
+- Action: <Assigned to Copilot | Queued>
+- Queue reason (if queued): <reason>
+
+### Implementation Guardrails
+- The coding agent must produce a plan before implementation.
+```
