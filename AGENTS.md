@@ -27,6 +27,7 @@ bun run typecheck        # Type check
 bun run lint             # Check lint/format
 bun run fix              # Auto-fix issues
 bun run build            # Build for current platform
+gh aw compile --validate # Compile and validate gh-aw workflows
 bunx lefthook install    # Install pre-commit + pre-push hooks
 ```
 
@@ -251,6 +252,28 @@ scripts/
 ├── calver.ts           # CalVer utility functions
 ├── calver.test.ts      # Tests for CalVer utilities
 └── release.ts          # Release script (creates CalVer tags)
+
+.github/
+├── aw/
+│   └── actions-lock.json   # Cached action pin resolutions from gh-aw compile
+├── agents/
+│   ├── security-hardener.agent.md
+│   ├── feature-implementer.agent.md
+│   └── maintenance-keeper.agent.md
+├── skills/
+│   ├── security-patch/SKILL.md
+│   ├── feature-delivery/SKILL.md
+│   └── maintenance-update/SKILL.md
+└── workflows/
+    ├── ci.yml
+    ├── release.yml
+    ├── deps-update.yml
+    ├── deps-update-copilot.yml
+    ├── security-daily.md
+    ├── feature-daily.md
+    ├── maintenance-daily.md
+    ├── self-improve-weekly.md
+    └── *.lock.yml       # Compiled gh-aw workflow lock files
 ```
 
 ---
@@ -384,9 +407,9 @@ This allows GitHub Actions to publish without storing npm tokens as secrets.
 
 ## Dependency Updates
 
-Automated dependency updates are handled by two GitHub Actions workflows.
+Automated repository upkeep uses both deterministic and agentic workflows.
 
-### Custom Action (`deps-update.yml`)
+### Deterministic updater (`deps-update.yml`)
 
 - **Schedule**: Daily at 00:00 UTC (10:00 AEST)
 - **Manual trigger**: `workflow_dispatch` via GitHub Actions UI
@@ -395,12 +418,29 @@ Automated dependency updates are handled by two GitHub Actions workflows.
 - **CI**: Existing `ci.yml` validates the PR (lint, typecheck, test)
 - **Behaviour**: Skips PR creation if no packages changed; updates existing PR if one is already open
 
-### Copilot Agent (`deps-update-copilot.yml`)
+### Copilot issue handoff (`deps-update-copilot.yml`)
 
 - **Manual trigger only**: `workflow_dispatch` via GitHub Actions UI
 - **Mechanism**: Creates a GitHub issue with update instructions, assigns `@copilot`
 - **Prerequisite**: Copilot Coding Agent must be enabled in repo settings (Settings > Copilot > Coding agent)
 - **Output**: Copilot creates a PR from the issue
+
+### Agentic workflows (`gh-aw`)
+
+- **Source files**: `.github/workflows/security-daily.md`, `.github/workflows/feature-daily.md`, `.github/workflows/maintenance-daily.md`, `.github/workflows/self-improve-weekly.md`
+- **Compiled lock files**: matching `.lock.yml` files in `.github/workflows/`
+- **Compilation**: Run `gh aw compile --validate` after frontmatter changes
+- **Security Daily**: selects one high-value security issue and assigns Copilot with custom agent `security-hardener`
+- **Feature Daily**: selects one high-value enhancement issue and assigns Copilot with custom agent `feature-implementer`
+- **Maintenance Daily**: selects one upkeep/refactor issue and assigns Copilot with custom agent `maintenance-keeper`
+- **Self Improve Weekly**: analyses recent agent outcomes, then assigns an existing workflow-improvement issue or creates a new improvement issue
+- **Planning requirement**: All workflows, custom agents, and skills include a mandatory plan-first gate before implementation work
+- **Required secrets**:
+  - `COPILOT_GITHUB_TOKEN` (engine auth)
+  - `GH_AW_AGENT_TOKEN` (required for `assign-to-agent` safe output)
+  - `GH_AW_CI_TRIGGER_TOKEN` (optional, only if you need PR-triggered CI from safe outputs)
+
+The deterministic `deps-update.yml` workflow remains enabled alongside `maintenance-daily.md`.
 
 ---
 
