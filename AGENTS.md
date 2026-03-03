@@ -324,7 +324,20 @@ This project uses **CalVer** (Calendar Versioning) with the format `YYYY.MMDD.PA
 
 #### Creating a Stable Release
 
-Use the release script to create and push a CalVer tag:
+Stable releases are automated via GitHub Actions (`release.yml`):
+
+- **Schedule**: Daily at 00:00 UTC
+- **Manual trigger**: `workflow_dispatch` via GitHub Actions UI
+- **Behaviour**: Creates a stable release only when there are commits since the latest stable tag (ignoring automated version bump commits)
+
+The release workflow will:
+- Calculate the next CalVer version (`YYYY.MMDD.PATCH`)
+- Build standalone binaries for all platforms
+- Create a GitHub Release with auto-generated notes
+- Publish the package to npm with `@latest` tag
+- Commit the updated version back to `main`
+
+For out-of-band/manual tagged releases, you can still use the release script:
 
 ```bash
 bun run release           # Interactive: shows next version, confirms before pushing
@@ -337,13 +350,6 @@ Or manually:
 git tag v2026.0226.0
 git push origin v2026.0226.0
 ```
-
-The release workflow will:
-- Validate the tag matches today's date (UTC)
-- Build standalone binaries for all platforms
-- Create a GitHub Release with auto-generated notes
-- Publish the package to npm with `@latest` tag
-- Commit the updated version back to `main`
 
 #### Pre-releases (Automatic)
 
@@ -434,6 +440,8 @@ Test files live in `tests/` and `scripts/`. Coverage is reported for `src/**` (e
 ## Linting & Formatting
 
 This project uses [Biome](https://biomejs.dev/) for linting and formatting.
+
+`biome.jsonc` should reference the local schema file (`./node_modules/@biomejs/biome/configuration_schema.json`) to avoid CLI/schema version drift warnings.
 
 ```bash
 bun run lint        # Check for issues (used in CI)
