@@ -104,10 +104,10 @@ When possible, always move work forward by either:
 5. Apply queue-only assignment policy.
    - If `active_feature_pr=true`:
      - Do not call `assign_to_agent`.
-     - If using an existing issue, post `add_comment` with the plan summary, why selected, expected value, and queue reason.
+     - If using an existing issue, call `add_comment(item_number=<issue-number>, body=...)` with the plan summary, why selected, expected value, and queue reason.
      - If creating a new issue, include queue reason in the issue body.
    - If `active_feature_pr=false`:
-     - Existing issue path: call `add_comment`, then `assign_to_agent` with `agent="copilot"`.
+     - Existing issue path: call `add_comment(item_number=<issue-number>, body=...)`, then `assign_to_agent` with `agent="copilot"`.
      - New issue path: call `create_issue` with `temporary_id`, then `assign_to_agent(issue_number=<temporary_id>, agent="copilot")`.
 
 ## No Candidate Handling
@@ -122,9 +122,13 @@ You must call at least one safe-output tool each run:
 - `create_issue` and optionally `assign_to_agent` for newly discovered work, or
 - `noop` only when no actionable feature work can be produced.
 
+When using `add_comment` in this scheduled workflow, always set `item_number` explicitly.
+
 ## Comment Template (for `add_comment`)
 
 When posting a comment on an existing issue, use this structure:
+
+Use `add_comment(item_number=<issue-number>, body=...)`.
 
 ```markdown
 ### Plan Summary
