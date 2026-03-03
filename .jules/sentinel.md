@@ -19,3 +19,8 @@
 **Vulnerability:** The AI model's output was copied to the clipboard without full sanitization. While ANSI codes are visible in standard text editors, dangerous C0 control characters (like Null `\x00`, Backspace `\x08`, or Escape `\x1B` without sequences) and the DEL character (`\x7F`) might be silently executed or interpreted when pasted into a terminal or text editor, leading to unintended command execution.
 **Learning:** Output destined for the clipboard needs stricter sanitization than output destined for stdout, as the context of pasting is unknown and potentially dangerous.
 **Prevention:** Implement a dedicated clipboard sanitizer that not only strips ANSI escape codes but also replaces dangerous, non-printable control characters with their hex representation, while preserving safe whitespace.
+
+## 2025-02-19 - Prompt Injection Bypass via Whitespace
+**Vulnerability:** The fix for prompt injection (escaping `</context>`) used a strict regex `/<\/context>/gi` which failed to match valid XML variations like `</context >`, `</context\n>`, or invalid but LLM-parseable variations like `</context ignore-this>`. This allowed an attacker to bypass the prevention and execute prompt injection.
+**Learning:** XML parsers and heuristic LLM tokenizers allow whitespace and other attributes in closing tags. A strict literal regex match is insufficient for sanitizing structural delimiters in untrusted input.
+**Prevention:** Use a more robust regular expression (e.g., `/<\/\s*context[^>]*>/gi`) to strip any potential variation of the closing tag.
