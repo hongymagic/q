@@ -30,22 +30,35 @@ const SENSITIVE_FIELD_PATTERNS = [
   "credential",
 ];
 
+function isSensitiveKey(key: string): boolean {
+  const lowerKey = key.toLowerCase();
+  return SENSITIVE_FIELD_PATTERNS.some((pattern) => lowerKey.includes(pattern));
+}
+
 /**
  * Filter sensitive fields from a provider config for safe logging.
- * Removes any field containing: key, secret, token, password, auth, credential
+ * Removes any field containing: key, secret, token, password, auth, credential.
+ * Also recursively filters nested objects like headers.
  * @internal Exported for testing only
  */
 export function filterSensitiveFields(
-  config: ProviderConfig,
+  config: Record<string, unknown>,
 ): Record<string, unknown> {
-  return Object.fromEntries(
-    Object.entries(config).filter(([key]) => {
-      const lowerKey = key.toLowerCase();
-      return !SENSITIVE_FIELD_PATTERNS.some((pattern) =>
-        lowerKey.includes(pattern),
-      );
-    }),
-  );
+  const result: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(config)) {
+    if (isSensitiveKey(key)) {
+      continue;
+    }
+
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      result[key] = filterSensitiveFields(value as Record<string, unknown>);
+    } else {
+      result[key] = value;
+    }
+  }
+
+  return result;
 }
 
 /**

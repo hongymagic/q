@@ -19,3 +19,8 @@
 **Vulnerability:** The AI model's output was copied to the clipboard without full sanitization. While ANSI codes are visible in standard text editors, dangerous C0 control characters (like Null `\x00`, Backspace `\x08`, or Escape `\x1B` without sequences) and the DEL character (`\x7F`) might be silently executed or interpreted when pasted into a terminal or text editor, leading to unintended command execution.
 **Learning:** Output destined for the clipboard needs stricter sanitization than output destined for stdout, as the context of pasting is unknown and potentially dangerous.
 **Prevention:** Implement a dedicated clipboard sanitizer that not only strips ANSI escape codes but also replaces dangerous, non-printable control characters with their hex representation, while preserving safe whitespace.
+
+## 2025-02-18 - Secret Leakage in Debug Logs via Nested Config Properties
+**Vulnerability:** The `filterSensitiveFields` function properly filtered top-level sensitive keys but failed to recursively redact fields, meaning nested objects (like `headers` which may contain `Authorization` or `x-api-key`) were logged in plaintext in debug mode.
+**Learning:** Log sanitization functions must recursively inspect properties, especially in complex objects like request headers where standard sensitive tokens are frequently sent.
+**Prevention:** Implement a recursive key checker in log redaction/filtering functions that handles nested structures properly.

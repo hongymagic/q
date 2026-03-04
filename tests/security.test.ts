@@ -153,6 +153,33 @@ describe("security", () => {
       expect(filtered).not.toHaveProperty("API_KEY_ENV");
       expect(filtered).not.toHaveProperty("SECRET_VALUE");
     });
+
+    it("should recursively filter sensitive fields in nested objects like headers", () => {
+      const testConfig = {
+        type: "openai_compatible" as const,
+        base_url: "https://api.example.com",
+        headers: {
+          Authorization: "Bearer secret-token",
+          "x-api-key": "secret-key",
+          "Content-Type": "application/json",
+          "x-custom-header": "safe-value",
+        },
+      };
+
+      const filtered = filterSensitiveFields(
+        testConfig as unknown as Parameters<typeof filterSensitiveFields>[0],
+      );
+
+      expect(filtered).toHaveProperty("type");
+      expect(filtered).toHaveProperty("base_url");
+      expect(filtered).toHaveProperty("headers");
+
+      const filteredHeaders = filtered.headers as Record<string, string>;
+      expect(filteredHeaders).toHaveProperty("Content-Type");
+      expect(filteredHeaders).toHaveProperty("x-custom-header");
+      expect(filteredHeaders).not.toHaveProperty("Authorization");
+      expect(filteredHeaders).not.toHaveProperty("x-api-key");
+    });
   });
 
   describe("CLI argument safety", () => {
