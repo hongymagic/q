@@ -20,7 +20,13 @@
 **Learning:** Output destined for the clipboard needs stricter sanitization than output destined for stdout, as the context of pasting is unknown and potentially dangerous.
 **Prevention:** Implement a dedicated clipboard sanitizer that not only strips ANSI escape codes but also replaces dangerous, non-printable control characters with their hex representation, while preserving safe whitespace.
 
+## 2025-02-18 - Secret Leakage in Debug Logs via Nested Config Properties
+**Vulnerability:** The `filterSensitiveFields` function properly filtered top-level sensitive keys but failed to recursively redact fields, meaning nested objects (like `headers` which may contain `Authorization` or `x-api-key`) were logged in plaintext in debug mode.
+**Learning:** Log sanitization functions must recursively inspect properties, especially in complex objects like request headers where standard sensitive tokens are frequently sent.
+**Prevention:** Implement a recursive key checker in log redaction/filtering functions that handles nested structures properly.
+
 ## 2025-02-19 - Prompt Injection Bypass via Whitespace
 **Vulnerability:** The fix for prompt injection (escaping `</context>`) used a strict regex `/<\/context>/gi` which failed to match valid XML variations like `</context >`, `</context\n>`, or invalid but LLM-parseable variations like `</context ignore-this>`. This allowed an attacker to bypass the prevention and execute prompt injection.
 **Learning:** XML parsers and heuristic LLM tokenizers allow whitespace and other attributes in closing tags. A strict literal regex match is insufficient for sanitizing structural delimiters in untrusted input.
 **Prevention:** Use a more robust regular expression (e.g., `/<\/\s*context[^>]*>/gi`) to strip any potential variation of the closing tag.
+>>>>>>> Stashed changes
