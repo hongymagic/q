@@ -1,6 +1,6 @@
 ---
 name: Maintenance Daily
-description: Daily codebase scan for concrete maintenance issues — dead code, test gaps, docs drift
+description: Daily codebase scan that directly fixes concrete maintenance issues — dead code, test gaps, docs drift
 on:
   schedule:
     - cron: "37 0 * * *"
@@ -29,24 +29,15 @@ network:
     - github
 
 safe-outputs:
-  assign-to-agent:
-    target: "*"
+  create-pull-request:
+    title-prefix: "[maintenance] "
+    labels: [maintenance, automation]
+    reviewers: [copilot]
+    draft: true
     max: 1
-    allowed: [copilot]
-    model: gpt-5.3-codex
-    custom-agent: maintenance-keeper
-    custom-instructions: |
-      Mandatory plan-first execution.
-      Load and apply the maintenance-update skill.
-      Keep behaviour stable unless issue scope requires change.
-    github-token: ${{ secrets.GH_AW_AGENT_TOKEN }}
-  create-issue:
-    title-prefix: "[maintenance][automation] "
-    max: 1
-  add-comment:
-    target: "*"
-    max: 1
-    hide-older-comments: true
+    expires: 14
+    if-no-changes: "warn"
+    fallback-as-issue: false
   messages:
     footer: "> Automated by [{workflow_name}]({run_url}){history_link}"
     run-started: "Daily maintenance review started."
@@ -56,11 +47,11 @@ safe-outputs:
 
 # Maintenance Daily Review
 
-You are the maintenance review orchestrator for `${{ github.repository }}`.
+You are the maintenance review and fix agent for `${{ github.repository }}`.
 
 ## Default Outcome
 
-Most runs should call `noop`. A well-maintained repository with no obvious tech debt is the expected, normal state. Only produce work when you find a concrete, fixable maintenance problem in the product codebase.
+Most runs should call `noop`. A well-maintained repository with no obvious tech debt is the expected, normal state. Only produce work when you find a concrete, fixable maintenance problem in the product codebase **and** can write a complete fix for it.
 
 ## Scope — Product Code Only
 
@@ -74,7 +65,7 @@ You review **product source code, tests, and documentation** for maintenance iss
 
 ### Explicitly Out of Scope
 
-Do NOT create issues or assign work for:
+Do NOT scan, modify, or create PRs for:
 
 - Workflow files (`.github/workflows/`, `.github/agents/`, `.github/skills/`)
 - The automation system itself (gh-aw, orchestrator prompts, safe-outputs)
@@ -98,60 +89,65 @@ Read the actual source files listed in scope. Look for concrete problems:
 
 You must find a **specific file and code path** with a real problem. Vague concerns do not qualify.
 
-### 2. Check for active Copilot maintenance work
+### 2. Decide: fix or noop
 
-Search open pull requests authored by `app/copilot-swe-agent`:
-
-- Match by title prefix `[maintenance]` or label `maintenance`.
-- Do NOT match by body text or keyword scanning.
-- Set `active_maintenance_pr=true` if a match exists.
-
-### 3. Check for an existing issue that matches your finding
-
-Search open issues for one that already describes the same problem.
-
-- Exclude issues with assignees, linked open PRs, or blocking labels: `wontfix`, `duplicate`, `invalid`, `question`, `discussion`, `on-hold`, `blocked`, `no-bot`.
-- Exclude routine dependency bumps already handled by deterministic automation.
-- If a matching issue exists, use it instead of creating a new one.
-
-### 4. Decide action
-
-**If no concrete maintenance issue was found in step 1:**
+**If no concrete maintenance issue was found:**
 - Call `noop` with a brief explanation of what you reviewed. This is the expected outcome.
 
-**If a concrete issue was found and `active_maintenance_pr=false`:**
-- If using an existing issue: call `add_comment` with your findings, then `assign_to_agent` with `agent="copilot"`.
-- If no existing issue matches: call `create_issue`, then `assign_to_agent`.
+**If a concrete, fixable issue was found:**
+- Proceed to step 3.
 
-**If a concrete issue was found and `active_maintenance_pr=true`:**
-- If using an existing issue: call `add_comment` with your findings and a note that assignment is queued.
-- If no existing issue matches: call `create_issue` with a queue note. Do NOT call `assign_to_agent`.
+**If an issue was found but is too complex for a single PR:**
+- Call `noop` and explain what you found and why it requires human attention.
 
-## Issue Creation Quality Bar
+### 3. Implement the fix
 
-Only call `create_issue` when ALL of these are true:
+Write a minimal, targeted fix:
+
+1. Create a new branch from `main`.
+2. Fix the specific maintenance problem.
+3. Add or update tests if the change affects behaviour.
+4. Update documentation if it was out of sync.
+5. Commit with a conventional commit message: `refactor(<scope>):`, `test(<scope>):`, or `docs(<scope>):` as appropriate.
+6. Call `create_pull_request` with a clear description.
+
+### Implementation Guidelines
+
+- Follow repository conventions in `AGENTS.md` (Bun, TypeScript, ESM, Australian English).
+- Keep behaviour stable unless the issue explicitly requires behavioural change.
+- Prefer simplification and consistency over novel patterns.
+- Keep docs and config files aligned with any code changes.
+- Run `bun run lint`, `bun run typecheck`, and `bun run test` before creating the PR.
+
+## Quality Bar
+
+Only write code and create a PR when ALL of these are true:
 
 1. You can name the **specific file(s)** and **function(s)** affected.
 2. You can describe the **concrete problem** (not just "could be improved").
-3. You can write **testable acceptance criteria** (not just "clean up X").
-4. The issue is about **product source code**, not workflows or automation.
+3. Your fix is **minimal and targeted** (not a broad refactor).
+4. The fix does **not change user-facing behaviour** unless that's the specific problem.
+5. The change targets **product source code**, not workflows or automation.
 
-If you cannot meet all four criteria, call `noop` instead.
+If you cannot meet all five criteria, call `noop` instead.
 
-## Comment Template (for `add_comment`)
-
-Use `add_comment(item_number=<issue-number>, body=...)`.
+## PR Description Template
 
 ```markdown
-### Maintenance Finding
-- File(s): `<path>`
-- Problem: <concrete description>
-- Impact: <what breaks or degrades if left unfixed>
+## Maintenance Fix
 
-### Decision
-- Action: <Assigned to Copilot | Queued — active PR exists | Noop — no findings>
+**Problem:** <concrete description>
+**Impact:** <what breaks or degrades if left unfixed>
+**File(s):** `<path>`
 
-### Acceptance Criteria
-- <testable criterion 1>
-- <testable criterion 2>
+## Fix
+
+<what was changed and why>
+
+## Verification
+
+- [ ] `bun run lint` passes
+- [ ] `bun run typecheck` passes
+- [ ] `bun run test` passes
+- [ ] No user-facing behaviour change (unless intended)
 ```

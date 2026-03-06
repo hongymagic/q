@@ -1,6 +1,6 @@
 ---
 name: Feature Daily
-description: Daily codebase review that identifies and assigns concrete feature gaps via Copilot
+description: Daily codebase review that directly implements concrete feature gaps
 on:
   schedule:
     - cron: "23 0 * * *"
@@ -29,24 +29,15 @@ network:
     - github
 
 safe-outputs:
-  assign-to-agent:
-    target: "*"
+  create-pull-request:
+    title-prefix: "[feature] "
+    labels: [enhancement, automation]
+    reviewers: [copilot]
+    draft: true
     max: 1
-    allowed: [copilot]
-    model: gpt-5.3-codex
-    custom-agent: feature-implementer
-    custom-instructions: |
-      Mandatory plan-first execution.
-      Load and apply the feature-delivery skill.
-      Validate changes before finishing.
-    github-token: ${{ secrets.GH_AW_AGENT_TOKEN }}
-  create-issue:
-    title-prefix: "[feature][automation] "
-    max: 1
-  add-comment:
-    target: "*"
-    max: 1
-    hide-older-comments: true
+    expires: 14
+    if-no-changes: "warn"
+    fallback-as-issue: false
   messages:
     footer: "> Automated by [{workflow_name}]({run_url}){history_link}"
     run-started: "Daily feature review started."
@@ -56,11 +47,11 @@ safe-outputs:
 
 # Feature Daily Review
 
-You are the feature review orchestrator for `${{ github.repository }}`.
+You are the feature review and implementation agent for `${{ github.repository }}`.
 
 ## Default Outcome
 
-Most runs should call `noop`. A small, focused CLI tool with no obvious feature gaps is the expected, normal state. Only produce work when you find a concrete, implementable enhancement in the product codebase.
+Most runs should call `noop`. A small, focused CLI tool with no obvious feature gaps is the expected, normal state. Only produce work when you find a concrete, implementable enhancement in the product codebase **and** can write a complete implementation for it.
 
 ## Scope — Product Code Only
 
@@ -76,7 +67,7 @@ You review **product source code and documentation** for feature opportunities. 
 
 ### Explicitly Out of Scope
 
-Do NOT create issues or assign work for:
+Do NOT scan, modify, or create PRs for:
 
 - Workflow files (`.github/workflows/`, `.github/agents/`, `.github/skills/`)
 - The automation system itself (gh-aw, orchestrator prompts, safe-outputs)
@@ -99,61 +90,66 @@ Read the actual source files listed in scope. Look for concrete gaps:
 
 You must identify a **specific file and code path** where the gap exists. Vague feature ideas do not qualify.
 
-### 2. Check for active Copilot feature work
+### 2. Decide: implement or noop
 
-Search open pull requests authored by `app/copilot-swe-agent`:
-
-- Match by title prefix `[feature]` or label `feature` or `enhancement`.
-- Do NOT match by body text or keyword scanning.
-- Set `active_feature_pr=true` if a match exists.
-
-### 3. Check for an existing issue that matches your finding
-
-Search open issues for one that already describes the same gap.
-
-- Exclude issues with assignees, linked open PRs, or blocking labels: `wontfix`, `duplicate`, `invalid`, `question`, `discussion`, `on-hold`, `blocked`, `no-bot`.
-- Exclude work that is clearly security-only or maintenance-only.
-- If a matching issue exists, use it instead of creating a new one.
-
-### 4. Decide action
-
-**If no concrete feature gap was found in step 1:**
+**If no concrete feature gap was found:**
 - Call `noop` with a brief explanation of what you reviewed. This is the expected outcome.
 
-**If a concrete gap was found and `active_feature_pr=false`:**
-- If using an existing issue: call `add_comment` with your findings, then `assign_to_agent` with `agent="copilot"`.
-- If no existing issue matches: call `create_issue`, then `assign_to_agent`.
+**If a concrete, implementable gap was found:**
+- Proceed to step 3.
 
-**If a concrete gap was found and `active_feature_pr=true`:**
-- If using an existing issue: call `add_comment` with your findings and a note that assignment is queued.
-- If no existing issue matches: call `create_issue` with a queue note. Do NOT call `assign_to_agent`.
+**If a gap was found but is too complex for a single PR:**
+- Call `noop` and explain what you found and why it requires human planning.
 
-## Issue Creation Quality Bar
+### 3. Implement the feature
 
-Only call `create_issue` when ALL of these are true:
+Write a complete, minimal implementation:
 
-1. You can name the **specific file(s)** where the change would go.
-2. You can describe the **user-facing behaviour** the feature would add.
-3. You can write **testable acceptance criteria** (not just "add support for X").
-4. The issue is about **product source code**, not workflows or automation.
+1. Create a new branch from `main`.
+2. Implement the feature in the appropriate files.
+3. Add tests for the new behaviour.
+4. Update `README.md` and/or `AGENTS.md` if the feature is user-visible.
+5. Commit with a conventional commit message: `feat(<scope>): <description>`.
+6. Call `create_pull_request` with a clear description.
 
-If you cannot meet all four criteria, call `noop` instead.
+### Implementation Guidelines
 
-## Comment Template (for `add_comment`)
+- Follow repository conventions in `AGENTS.md` (Bun, TypeScript, ESM, Australian English).
+- Match existing architecture and naming conventions.
+- Prefer incremental, reviewable changes over large rewrites.
+- Maintain backward compatibility unless the gap explicitly requires breaking behaviour.
+- Run `bun run lint`, `bun run typecheck`, and `bun run test` before creating the PR.
 
-Use `add_comment(item_number=<issue-number>, body=...)`.
+## Quality Bar
+
+Only write code and create a PR when ALL of these are true:
+
+1. You can name the **specific file(s)** where the change goes.
+2. You can describe the **user-facing behaviour** the feature adds.
+3. Your implementation is **complete and testable** (not a stub or skeleton).
+4. You have **tests** that verify the new behaviour.
+5. The change targets **product source code**, not workflows or automation.
+
+If you cannot meet all five criteria, call `noop` instead.
+
+## PR Description Template
 
 ```markdown
-### Feature Gap
-- File(s): `<path>`
-- Current behaviour: <what happens now>
-- Expected behaviour: <what should happen>
-- User value: <why this matters>
+## Feature
 
-### Decision
-- Action: <Assigned to Copilot | Queued — active PR exists | Noop — no findings>
+**Gap:** <what's missing today>
+**User value:** <why this matters>
+**File(s):** `<path>`
 
-### Acceptance Criteria
-- <testable criterion 1>
-- <testable criterion 2>
+## Implementation
+
+<what was added and how it works>
+
+## Verification
+
+- [ ] `bun run lint` passes
+- [ ] `bun run typecheck` passes
+- [ ] `bun run test` passes
+- [ ] New tests cover the feature behaviour
+- [ ] Documentation updated (if user-visible)
 ```

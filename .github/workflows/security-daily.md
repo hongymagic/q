@@ -1,6 +1,6 @@
 ---
 name: Security Daily
-description: Daily codebase security scan that assigns concrete, testable fixes via Copilot
+description: Daily codebase security scan that directly fixes concrete, testable vulnerabilities
 on:
   schedule:
     - cron: "11 0 * * *"
@@ -29,24 +29,15 @@ network:
     - github
 
 safe-outputs:
-  assign-to-agent:
-    target: "*"
+  create-pull-request:
+    title-prefix: "[security] "
+    labels: [security, automation]
+    reviewers: [copilot]
+    draft: true
     max: 1
-    allowed: [copilot]
-    model: gpt-5.3-codex
-    custom-agent: security-hardener
-    custom-instructions: |
-      Mandatory plan-first execution.
-      Load and apply the security-patch skill.
-      Do not start implementation before a written plan.
-    github-token: ${{ secrets.GH_AW_AGENT_TOKEN }}
-  create-issue:
-    title-prefix: "[security][automation] "
-    max: 1
-  add-comment:
-    target: "*"
-    max: 1
-    hide-older-comments: true
+    expires: 14
+    if-no-changes: "warn"
+    fallback-as-issue: false
   messages:
     footer: "> Automated by [{workflow_name}]({run_url}){history_link}"
     run-started: "Daily security review started."
@@ -56,11 +47,11 @@ safe-outputs:
 
 # Security Daily Review
 
-You are the security review orchestrator for `${{ github.repository }}`.
+You are the security review and fix agent for `${{ github.repository }}`.
 
 ## Default Outcome
 
-Most runs should call `noop`. A healthy repository with no security findings is the expected, normal state. Only produce work when you find a concrete, testable security issue in the product codebase.
+Most runs should call `noop`. A healthy repository with no security findings is the expected, normal state. Only produce work when you find a concrete, testable security issue in the product codebase **and** can write a complete fix for it.
 
 ## Scope — Product Code Only
 
@@ -77,7 +68,7 @@ You review **product source code** for security issues. Your scope is:
 
 ### Explicitly Out of Scope
 
-Do NOT create issues or assign work for:
+Do NOT scan, modify, or create PRs for:
 
 - Workflow files (`.github/workflows/`, `.github/agents/`, `.github/skills/`)
 - The automation system itself (gh-aw, orchestrator prompts, safe-outputs)
@@ -101,60 +92,65 @@ Read the actual source files listed in scope above. Look for concrete problems:
 
 You must find a **specific file, function, and code path** with a real issue. Vague concerns do not qualify.
 
-### 2. Check for active Copilot security work
+### 2. Decide: fix or noop
 
-Search open pull requests authored by `app/copilot-swe-agent`:
-
-- Match by title prefix `[security]` or label `security`.
-- Do NOT match by body text or keyword scanning.
-- Set `active_security_pr=true` if a match exists.
-
-### 3. Check for an existing issue that matches your finding
-
-Search open issues for one that already describes the same problem.
-
-- Exclude issues with assignees, linked open PRs, or blocking labels: `wontfix`, `duplicate`, `invalid`, `question`, `discussion`, `on-hold`, `blocked`, `no-bot`.
-- If a matching issue exists, use it instead of creating a new one.
-
-### 4. Decide action
-
-**If no concrete security issue was found in step 1:**
+**If no concrete security issue was found:**
 - Call `noop` with a brief explanation of what you reviewed. This is the expected outcome.
 
-**If a concrete issue was found and `active_security_pr=false`:**
-- If using an existing issue: call `add_comment` with your findings, then `assign_to_agent` with `agent="copilot"`.
-- If no existing issue matches: call `create_issue`, then `assign_to_agent`.
+**If a concrete, fixable issue was found:**
+- Proceed to step 3.
 
-**If a concrete issue was found and `active_security_pr=true`:**
-- If using an existing issue: call `add_comment` with your findings and a note that assignment is queued.
-- If no existing issue matches: call `create_issue` with a queue note. Do NOT call `assign_to_agent`.
+**If an issue was found but is too complex for a single PR:**
+- Call `noop` and explain what you found and why it requires human attention.
 
-## Issue Creation Quality Bar
+### 3. Implement the fix
 
-Only call `create_issue` when ALL of these are true:
+Write a minimal, targeted fix for the security issue:
+
+1. Create a new branch from `main`.
+2. Edit only the files necessary to fix the specific vulnerability.
+3. Add or update tests to validate the fix.
+4. Commit with a conventional commit message: `fix(<scope>): <description>`.
+5. Call `create_pull_request` with a clear description.
+
+### Implementation Guidelines
+
+- Follow repository conventions in `AGENTS.md` (Bun, TypeScript, ESM, Australian English).
+- Keep changes minimal — fix the vulnerability, nothing more.
+- Prioritise input validation, secret safety, and prompt-injection resistance.
+- Run `bun run lint`, `bun run typecheck`, and `bun run test` before creating the PR.
+- If tests fail, fix them or explain why they fail in the PR description.
+
+## Quality Bar
+
+Only write code and create a PR when ALL of these are true:
 
 1. You can name the **specific file(s)** and **function(s)** affected.
 2. You can describe a **concrete attack vector or failure mode**.
-3. You can write **testable acceptance criteria** (not just "improve security").
-4. The issue is about **product source code**, not workflows or automation.
+3. Your fix is **minimal and targeted** (not a broad refactor).
+4. You have **tests** that demonstrate the fix works.
+5. The fix targets **product source code**, not workflows or automation.
 
-If you cannot meet all four criteria, call `noop` instead.
+If you cannot meet all five criteria, call `noop` instead.
 
-## Comment Template (for `add_comment`)
-
-Use `add_comment(item_number=<issue-number>, body=...)`.
+## PR Description Template
 
 ```markdown
-### Security Finding
-- File(s): `<path>`
-- Function/area: `<name>`
-- Issue: <concrete description>
-- Attack vector: <how this could be exploited>
+## Security Fix
 
-### Decision
-- Action: <Assigned to Copilot | Queued — active PR exists | Noop — no findings>
+**Vulnerability:** <concrete description>
+**Attack vector:** <how this could be exploited>
+**File(s):** `<path>`
+**Function/area:** `<name>`
 
-### Acceptance Criteria
-- <testable criterion 1>
-- <testable criterion 2>
+## Fix
+
+<what was changed and why>
+
+## Verification
+
+- [ ] `bun run lint` passes
+- [ ] `bun run typecheck` passes
+- [ ] `bun run test` passes
+- [ ] New/updated tests cover the vulnerability
 ```
