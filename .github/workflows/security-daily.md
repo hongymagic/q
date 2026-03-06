@@ -78,11 +78,37 @@ When possible, always move work forward by either:
 - assigning one task to Copilot, or
 - queuing one task when active Copilot security work already exists.
 
+## Active Security PR Classification Rules
+
+A Copilot-authored open PR is classified as active security work **only** when it satisfies at least one STRONG positive indicator.
+Body-only keyword matches are **not** sufficient on their own — boilerplate text (e.g., "GitHub Advanced Security", CI report footers, automated comments) frequently contains security keywords in non-security PRs.
+
+**Strong positive indicators (any one is sufficient):**
+
+1. **Title prefix** — title starts with (case-insensitive):
+   - `[security]`, `[sec]`, `security:`, `sec:`
+   - `fix(security)`, `fix(sec)`, `feat(security)`, `feat(sec)`
+2. **Security label** — PR has one of these labels (case-insensitive):
+   - `security`, `vulnerability`, `cve`, `security-fix`, `security-patch`, `sec`
+
+**Exclusions — do NOT use these as signals:**
+
+- Presence of words like "security", "CVE", "vulnerability", or "Advanced Security" in the PR body alone.
+- Footer blockquote lines containing "GitHub Advanced Security", "Advanced Security", or "Automated by … Security Daily".
+- HTML comment blocks in the PR body.
+- Labels like `dependencies`, `automated`, `maintenance` even if accompanied by body security prose.
+
+**Rationale:** Incidental boilerplate references to "Advanced Security" in otherwise non-security dependency PRs caused `active_security_pr` to be set incorrectly, blocking real security task assignment.
+The classification logic is codified and tested in `scripts/security-pr-classifier.ts`.
+
 ## Step-by-Step Workflow
 
 1. Check for active Copilot security implementation.
-   - Search open pull requests authored by `app/copilot-swe-agent` with security signals in title/body/labels.
-   - Set `active_security_pr=true` when one exists.
+   - Search open pull requests authored by `app/copilot-swe-agent`.
+   - Apply the **Active Security PR Classification Rules** above directly:
+     check the PR title for a security prefix, then check its labels for a
+     security label. Do not inspect the PR body for keyword signals.
+   - Set `active_security_pr=true` only when a title-prefix or label signal is found.
 
 2. Run a security-specialist review.
    - Review open issues and recent pull requests for security risk signals: `security`, `vulnerability`, `CVE`, `injection`, `secret`, `credential`, `abuse`, `auth`, `permission`.
