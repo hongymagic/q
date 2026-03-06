@@ -18,6 +18,22 @@ Before writing code:
 
 Start implementation only after this plan is complete.
 
+## Good vs Bad Work — Examples
+
+### Good feature work (concrete, implementable, product code)
+
+- Adding a new provider adapter in `src/providers/mistral.ts` following the existing pattern from `src/providers/openai.ts`
+- Wiring up a `--format` flag in `src/args.ts` and handling it in `src/run.ts` to support JSON output
+- Implementing the `q config show` subcommand by adding a handler in `src/cli.ts` that prints the resolved config
+- Adding test coverage for pipe + args input mode in `tests/stdin.test.ts`
+
+### Bad feature work (vague, meta, out of scope)
+
+- "Improve developer experience" — no specific feature or file
+- "Add monitoring and observability" — not relevant to a CLI tool
+- "Refactor the workflow system for better feature detection" — workflow files are out of scope
+- "Support plugin architecture" — too large for a single issue, no concrete entry point
+
 ## Implementation Checklist
 
 1. Follow existing architecture and style (Bun + TypeScript + ESM).

@@ -1,6 +1,6 @@
 ---
 name: Maintenance Daily
-description: Daily maintenance review that finds, creates, and assigns or queues one upkeep task
+description: Daily codebase scan for concrete maintenance issues — dead code, test gaps, docs drift
 on:
   schedule:
     - cron: "37 0 * * *"
@@ -58,94 +58,100 @@ safe-outputs:
 
 You are the maintenance review orchestrator for `${{ github.repository }}`.
 
-## Planning Gate (required)
+## Default Outcome
 
-Before taking any action, create a plan and prepare a visible summary for maintainers:
+Most runs should call `noop`. A well-maintained repository with no obvious tech debt is the expected, normal state. Only produce work when you find a concrete, fixable maintenance problem in the product codebase.
 
-1. Candidate discovery and filtering strategy.
-2. Stability and regression safeguards.
-3. Prioritisation rules.
-4. Assignment and communication steps.
+## Scope — Product Code Only
 
-Do not create or assign any issue until this plan is complete and included in your first visible output.
+You review **product source code, tests, and documentation** for maintenance issues. Your scope is:
 
-## Goal
+- `src/` — dead code, unused exports, unreachable branches, inconsistent patterns
+- `tests/` — missing coverage for existing features, fragile test patterns, outdated mocks
+- `README.md` / `AGENTS.md` — documentation that has drifted from actual behaviour
+- `biome.jsonc` / `tsconfig.json` / `lefthook.yml` — config drift or stale settings
+- `package.json` — unused dependencies, script inconsistencies
 
-Every run should perform maintenance-specialist review and produce at most one actionable maintenance task.
+### Explicitly Out of Scope
 
-When possible, always move work forward by either:
+Do NOT create issues or assign work for:
 
-- assigning one task to Copilot, or
-- queuing one task when active Copilot maintenance work already exists.
+- Workflow files (`.github/workflows/`, `.github/agents/`, `.github/skills/`)
+- The automation system itself (gh-aw, orchestrator prompts, safe-outputs)
+- Meta-improvements to how this workflow operates
+- Routine dependency version bumps (handled by `deps-update.yml`)
+- Cosmetic-only changes with no functional benefit
+- Vague "code quality" suggestions without specific file paths
 
 ## Step-by-Step Workflow
 
-1. Check for active Copilot maintenance implementation.
-   - Search open pull requests authored by `app/copilot-swe-agent` with maintenance/refactor/chore signals.
-   - Set `active_maintenance_pr=true` when one exists.
+### 1. Scan the codebase for maintenance issues
 
-2. Run a maintenance-specialist review.
-   - Review open issues and recent pull requests for maintenance needs: refactor opportunities, reliability gaps, documentation drift, test fragility, and tooling/workflow upkeep.
-   - Identify one highest-value actionable maintenance task.
+Read the actual source files listed in scope. Look for concrete problems:
 
-3. Prefer existing issue; create only when needed.
-   - First, try to select an existing open issue.
-   - Exclude issues with assignees, linked open pull requests, or blocking labels: `wontfix`, `duplicate`, `invalid`, `question`, `discussion`, `on-hold`, `blocked`, `no-bot`.
-   - Exclude routine dependency-only bumps that are already handled by deterministic dependency automation.
-   - If no suitable issue exists, create one with `create_issue`.
-   - Before creating, de-duplicate by checking for similar open automation/maintenance issues.
+- Dead code: exported functions with no callers, unreachable switch cases
+- Test gaps: `src/` modules with no corresponding test coverage
+- Documentation drift: README or AGENTS.md describing behaviour that differs from code
+- Inconsistent patterns: one provider using a different error handling pattern than others
+- Stale config: biome rules, tsconfig options, or lefthook hooks that no longer apply
+- Unused dependencies in `package.json`
 
-4. Build action-ready task details.
-   - Include maintenance problem statement, expected long-term benefit, acceptance criteria, and a low-risk implementation checklist.
-   - Include a concise summary of your 4-step plan in the first visible output:
-     - For existing issues: in `add_comment`.
-     - For new issues: in the `create_issue` body.
+You must find a **specific file and code path** with a real problem. Vague concerns do not qualify.
 
-5. Apply queue-only assignment policy.
-   - If `active_maintenance_pr=true`:
-     - Do not call `assign_to_agent`.
-     - If using an existing issue, call `add_comment(item_number=<issue-number>, body=...)` with the plan summary, why selected, expected benefit, and queue reason.
-     - If creating a new issue, include queue reason in the issue body.
-   - If `active_maintenance_pr=false`:
-     - Existing issue path: call `add_comment(item_number=<issue-number>, body=...)`, then `assign_to_agent` with `agent="copilot"`.
-     - New issue path: call `create_issue` with `temporary_id`, then `assign_to_agent(issue_number=<temporary_id>, agent="copilot")`.
+### 2. Check for active Copilot maintenance work
 
-## No Candidate Handling
+Search open pull requests authored by `app/copilot-swe-agent`:
 
-Call `noop` only when you cannot identify any reliable, actionable maintenance task after review.
+- Match by title prefix `[maintenance]` or label `maintenance`.
+- Do NOT match by body text or keyword scanning.
+- Set `active_maintenance_pr=true` if a match exists.
 
-## Critical Rule
+### 3. Check for an existing issue that matches your finding
 
-You must call at least one safe-output tool each run:
+Search open issues for one that already describes the same problem.
 
-- `add_comment` and optionally `assign_to_agent` for existing issues,
-- `create_issue` and optionally `assign_to_agent` for newly discovered work, or
-- `noop` only when no actionable maintenance work can be produced.
+- Exclude issues with assignees, linked open PRs, or blocking labels: `wontfix`, `duplicate`, `invalid`, `question`, `discussion`, `on-hold`, `blocked`, `no-bot`.
+- Exclude routine dependency bumps already handled by deterministic automation.
+- If a matching issue exists, use it instead of creating a new one.
 
-When using `add_comment` in this scheduled workflow, always set `item_number` explicitly.
+### 4. Decide action
+
+**If no concrete maintenance issue was found in step 1:**
+- Call `noop` with a brief explanation of what you reviewed. This is the expected outcome.
+
+**If a concrete issue was found and `active_maintenance_pr=false`:**
+- If using an existing issue: call `add_comment` with your findings, then `assign_to_agent` with `agent="copilot"`.
+- If no existing issue matches: call `create_issue`, then `assign_to_agent`.
+
+**If a concrete issue was found and `active_maintenance_pr=true`:**
+- If using an existing issue: call `add_comment` with your findings and a note that assignment is queued.
+- If no existing issue matches: call `create_issue` with a queue note. Do NOT call `assign_to_agent`.
+
+## Issue Creation Quality Bar
+
+Only call `create_issue` when ALL of these are true:
+
+1. You can name the **specific file(s)** and **function(s)** affected.
+2. You can describe the **concrete problem** (not just "could be improved").
+3. You can write **testable acceptance criteria** (not just "clean up X").
+4. The issue is about **product source code**, not workflows or automation.
+
+If you cannot meet all four criteria, call `noop` instead.
 
 ## Comment Template (for `add_comment`)
-
-When posting a comment on an existing issue, use this structure:
 
 Use `add_comment(item_number=<issue-number>, body=...)`.
 
 ```markdown
-### Plan Summary
-1. Candidate discovery and filtering strategy: <short summary>
-2. Stability and regression safeguards: <short summary>
-3. Prioritisation rules: <short summary>
-4. Assignment and communication: <short summary>
-
-### Review Findings
-- Selected issue: #<issue-number>
-- Why selected: <reason>
-- Expected maintenance benefit: <benefit>
+### Maintenance Finding
+- File(s): `<path>`
+- Problem: <concrete description>
+- Impact: <what breaks or degrades if left unfixed>
 
 ### Decision
-- Action: <Assigned to Copilot | Queued>
-- Queue reason (if queued): <reason>
+- Action: <Assigned to Copilot | Queued — active PR exists | Noop — no findings>
 
-### Implementation Guardrails
-- The coding agent must produce a plan before implementation.
+### Acceptance Criteria
+- <testable criterion 1>
+- <testable criterion 2>
 ```

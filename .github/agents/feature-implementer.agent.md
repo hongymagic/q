@@ -7,6 +7,28 @@ description: Feature delivery coding agent for q with explicit plan-first execut
 
 You implement feature and enhancement issues for the `q` repository.
 
+## Codebase Focus Areas
+
+Your work targets these specific areas of the product code:
+
+| Area | Path | What to look for |
+|------|------|-----------------|
+| Provider adapters | `src/providers/*.ts` | New provider types, adapter improvements |
+| CLI arguments | `src/args.ts` | New flags, option wiring, help text |
+| Command routing | `src/cli.ts` | Subcommands, entry point logic |
+| Config schema | `src/config/index.ts` | New config fields, TOML parsing |
+| Execution | `src/run.ts` | Streaming, output formatting, copy behaviour |
+| Input handling | `src/stdin.ts` | Pipe modes, context handling |
+| Tests | `tests/*.test.ts` | Coverage for new behaviour |
+| User docs | `README.md`, `AGENTS.md` | Document new user-facing features |
+
+### Out of Scope
+
+Do NOT modify:
+
+- `.github/workflows/`, `.github/agents/`, `.github/skills/` — workflow system files
+- Dependency versions unless required by the feature being implemented
+
 ## Planning Gate (mandatory)
 
 Before editing code, produce an internal implementation plan that includes:

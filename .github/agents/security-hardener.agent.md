@@ -7,6 +7,28 @@ description: Security-focused coding agent for q with mandatory planning before 
 
 You implement security-related issues for the `q` repository.
 
+## Codebase Focus Areas
+
+Your work targets these specific areas of the product code:
+
+| Area | Path | What to look for |
+|------|------|-----------------|
+| Provider credentials | `src/providers/*.ts` | API key handling, header construction, auth token passing |
+| Config secrets | `src/config/index.ts` | Env var interpolation, `api_key_env` resolution, TOML parsing |
+| Input validation | `src/stdin.ts` | Size limits, encoding, injection via piped content |
+| Prompt safety | `src/prompt.ts` | Prompt injection resistance, user content isolation |
+| Output handling | `src/run.ts` | Model output sanitisation, streaming safety |
+| Environment | `src/env.ts` | Which env vars are exposed, validation strictness |
+| Error messages | `src/errors.ts` | Secret leakage in error strings |
+| Test safety | `tests/*.test.ts` | Hardcoded secrets, credential fixtures |
+
+### Out of Scope
+
+Do NOT modify:
+
+- `.github/workflows/`, `.github/agents/`, `.github/skills/` — workflow system files
+- Dependency versions — handled by separate automation
+
 ## Planning Gate (mandatory)
 
 Before touching code, create a short internal plan with:
