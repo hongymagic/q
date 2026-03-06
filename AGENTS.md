@@ -6,17 +6,6 @@
 
 ---
 
-## Goals (MVP)
-
-- Provide a single command: `q <freeform query...>`
-- Read config from TOML (multiple providers supported)
-- Use Vercel AI SDK to call the configured provider + model
-- Print the AI response to stdout
-- Optional flags: `--copy`
-- Build standalone executables for all platforms
-
----
-
 ## Quick Setup
 
 ```bash
@@ -30,6 +19,13 @@ bun run build            # Build for current platform
 gh aw compile --validate # Compile and validate gh-aw workflows
 bunx lefthook install    # Install pre-commit + pre-push hooks
 ```
+
+---
+
+## Gotchas
+
+- The CLI blocks on stdin in non-interactive shells. Pipe empty input to avoid hangs: `echo "" | bun run src/cli.ts --help`
+- Unit tests (`bun run test`) do **not** require any API keys. End-to-end LLM tests need `ANTHROPIC_API_KEY` or equivalent.
 
 ---
 
@@ -58,26 +54,6 @@ q providers                 # List configured providers + default
 
 ### Stdin/Pipe Support
 
-`q` supports reading from stdin for flexible workflows:
-
-```bash
-# Pipe content as context with a question
-cat error.log | q "what's wrong here?"
-git diff | q "summarise these changes"
-pbpaste | q "explain this code"
-
-# Pipe query itself (no arguments)
-echo "how do I restart docker" | q
-
-# Heredoc for multiline context
-q "explain this function" << 'EOF'
-function fibonacci(n) {
-  return n <= 1 ? n : fibonacci(n-1) + fibonacci(n-2);
-}
-EOF
-```
-
-**Input modes:**
 | Scenario | stdin | args | Behaviour |
 |----------|-------|------|-----------|
 | `q how do I...` | empty | query | Normal: args = query |
@@ -137,33 +113,13 @@ Support `${VAR_NAME}` syntax in specific fields for allowlisted variables only:
 [default]
 provider = "anthropic"
 model = "claude-sonnet-4-20250514"
-# copy = true  # Always copy answer to clipboard (override with --no-copy)
 
 [providers.anthropic]
 type = "anthropic"
 api_key_env = "ANTHROPIC_API_KEY"
-
-[providers.openai]
-type = "openai"
-api_key_env = "OPENAI_API_KEY"
-
-[providers.openai_compat_local]
-type = "openai_compatible"
-base_url = "http://localhost:11434/v1"
-api_key_env = "LOCAL_KEY"
-
-[providers.portkey_internal]
-type = "portkey"
-base_url = "https://your-portkey-gateway.internal/v1"
-provider_slug = "@your-org/bedrock-provider"
-api_key_env = "PORTKEY_API_KEY"
-provider_api_key_env = "PROVIDER_API_KEY"
-headers = { "x-portkey-trace-id" = "${HOSTNAME}" }
-
-[providers.ollama]
-type = "ollama"
-base_url = "http://localhost:11434"
 ```
+
+Each provider entry requires `type` and typically `api_key_env`. Optional fields: `base_url`, `headers`, and type-specific fields (see `ProviderConfig` below).
 
 ### Secrets
 
@@ -254,6 +210,7 @@ scripts/
 └── release.ts          # Release script (creates CalVer tags)
 
 .github/
+├── copilot-instructions.md # Points to AGENTS.md
 ├── aw/
 │   └── actions-lock.json   # Cached action pin resolutions from gh-aw compile
 ├── agents/
@@ -325,160 +282,37 @@ Output: `dist/q-<platform>`
 
 ## npm Publishing
 
-The package is published to npm as `@hongymagic/q`. Users install with:
-
-```bash
-npm install -g @hongymagic/q
-```
-
-The binary is installed as `q`, so usage remains:
-
-```bash
-q "how do I rewrite git history"
-```
+Published as `@hongymagic/q` (`npm install -g @hongymagic/q`). Binary installs as `q`.
 
 ### Release Process
 
-This project uses **CalVer** (Calendar Versioning) with the format `YYYY.MMDD.PATCH`:
+**CalVer** format: `YYYY.MMDD.PATCH` (e.g., `2026.0226.0`).
 
-- `2026.0226.0` — First release on Feb 26, 2026
-- `2026.0226.1` — Second release on Feb 26, 2026
-- `2026.0227.0` — First release on Feb 27, 2026
-
-#### Creating a Stable Release
-
-Stable releases are automated via GitHub Actions (`release.yml`):
-
-- **Schedule**: Daily at 00:00 UTC
-- **Manual trigger**: `workflow_dispatch` via GitHub Actions UI
-- **Behaviour**: Creates a stable release only when there are commits since the latest stable tag (ignoring automated version bump commits)
-
-The release workflow will:
-- Calculate the next CalVer version (`YYYY.MMDD.PATCH`)
-- Build standalone binaries for all platforms
-- Create a GitHub Release with auto-generated notes
-- Publish the package to npm with `@latest` tag
-- Commit the updated version back to `main`
-
-For out-of-band/manual tagged releases, you can still use the release script:
-
-```bash
-bun run release           # Interactive: shows next version, confirms before pushing
-bun run release:dry       # Preview only, no changes made
-```
-
-Or manually:
-
-```bash
-git tag v2026.0226.0
-git push origin v2026.0226.0
-```
-
-#### Pre-releases (Automatic)
-
-Every push to `main` automatically publishes a pre-release to npm:
-
-- Version format: `YYYY.MMDD.PATCH-next.{short-sha}`
-- npm tag: `next`
-- Install pre-release: `npm install -g @hongymagic/q@next`
-
-#### npm Tags
-
-| Tag | Description | Install Command |
-|-----|-------------|-----------------|
-| `latest` | Stable releases | `npm install -g @hongymagic/q` |
-| `next` | Pre-releases from main | `npm install -g @hongymagic/q@next` |
-
-### Trusted Publisher Setup (One-Time)
-
-No secrets required. Instead, configure npm to trust this GitHub repository:
-
-1. Go to [npmjs.com](https://www.npmjs.com) and log in
-2. Go to package settings: Access → Publishing access
-3. Add a new trusted publisher:
-   - Repository owner: `hongymagic`
-   - Repository name: `q`
-   - Workflow filename: `release.yml`
-   - Environment: _(leave empty)_
-
-This allows GitHub Actions to publish without storing npm tokens as secrets.
+- **Stable releases**: Automated via `release.yml` (daily at 00:00 UTC or manual `workflow_dispatch`). Builds binaries, creates GitHub Release, publishes to npm `@latest`.
+- **Pre-releases**: Every push to `main` publishes `YYYY.MMDD.PATCH-next.{short-sha}` to npm `@next`.
+- **Manual release**: `bun run release` (interactive) or `bun run release:dry` (preview).
 
 ---
 
 ## Dependency Updates
 
-Automated repository upkeep uses both deterministic and agentic workflows.
-
-### Deterministic updater (`deps-update.yml`)
-
-- **Schedule**: Daily at 00:00 UTC (10:00 AEST)
-- **Manual trigger**: `workflow_dispatch` via GitHub Actions UI
-- **Mechanism**: Runs `npx npm-check-updates -u` then `bun install`
-- **Output**: Creates/updates a PR on branch `deps/automated-update`
-- **CI**: Existing `ci.yml` validates the PR (lint, typecheck, test)
-- **Behaviour**: Skips PR creation if no packages changed; updates existing PR if one is already open
-
-### Copilot issue handoff (`deps-update-copilot.yml`)
-
-- **Manual trigger only**: `workflow_dispatch` via GitHub Actions UI
-- **Mechanism**: Creates a GitHub issue with update instructions, assigns `@copilot`
-- **Prerequisite**: Copilot Coding Agent must be enabled in repo settings (Settings > Copilot > Coding agent)
-- **Output**: Copilot creates a PR from the issue
-
-### Agentic workflows (`gh-aw`)
-
-- **Source files**: `.github/workflows/security-daily.md`, `.github/workflows/feature-daily.md`, `.github/workflows/maintenance-daily.md`, `.github/workflows/self-improve-weekly.md`
-- **Compiled lock files**: matching `.lock.yml` files in `.github/workflows/`
-- **Compilation**: Run `gh aw compile --validate` after frontmatter changes
-- **Security Daily**: performs a security-specialist review, then selects an existing issue or creates a new one; assigns Copilot with custom agent `security-hardener` when no active security PR exists, otherwise queues work
-- **Feature Daily**: performs a feature-specialist review, then selects an existing issue or creates a new one; assigns Copilot with custom agent `feature-implementer` when no active feature PR exists, otherwise queues work
-- **Maintenance Daily**: performs a maintenance-specialist review, then selects an existing issue or creates a new one; assigns Copilot with custom agent `maintenance-keeper` when no active maintenance PR exists, otherwise queues work
-- **Self Improve Weekly**: analyses recent agent outcomes, then assigns an existing workflow-improvement issue or creates a new improvement issue
-- **Planning requirement**: All workflows, custom agents, and skills include a mandatory plan-first gate before implementation work
-- **Operator visibility**: Daily workflows include a standard comment template for plan summary, findings, decision, and guardrails
-- **Required secrets (current workflows)**:
-  - `COPILOT_GITHUB_TOKEN` (engine auth)
-  - `GH_AW_AGENT_TOKEN` (required for `assign-to-agent` safe output)
-- **Optional secrets (fallback to `GITHUB_TOKEN` when unset)**:
-  - `GH_AW_GITHUB_TOKEN` (gh-aw GitHub API auth)
-  - `GH_AW_GITHUB_MCP_SERVER_TOKEN` (MCP server auth)
-- **Optional for CI-triggered PR pipelines**:
-  - `GH_AW_CI_TRIGGER_TOKEN` (only if you need PR-triggered CI from safe outputs)
-
-The deterministic `deps-update.yml` workflow remains enabled alongside `maintenance-daily.md`.
+- **Deterministic** (`deps-update.yml`): Daily at 00:00 UTC. Runs `npx npm-check-updates -u` + `bun install`, creates/updates PR on `deps/automated-update`.
+- **Copilot handoff** (`deps-update-copilot.yml`): Manual trigger. Creates an issue and assigns `@copilot`.
+- **Agentic** (`gh-aw`): Daily workflows (`security-daily.md`, `feature-daily.md`, `maintenance-daily.md`) + weekly (`self-improve-weekly.md`). Source in `.github/workflows/`, compiled to `.lock.yml`. Run `gh aw compile --validate` after frontmatter changes.
+  - Required secrets: `COPILOT_GITHUB_TOKEN`, `GH_AW_AGENT_TOKEN`
+  - All workflows enforce a plan-first gate before implementation.
 
 ---
 
 ## Tests
 
-Use vitest (not Bun's test runner).
-
-Test cases cover:
-
-- Config path resolution (XDG, CWD)
-- Config cascade merging
-- TOML parsing + Zod validation
-- CLI parsing edge cases
-- Provider resolution and overrides
-- `--copy` behaviour
-- Empty args shows help
-- Environment variable parsing (`Q_PROVIDER`, `Q_MODEL`, `Q_COPY` boolean coercion)
-- Core execution: streaming, error wrapping in `ProviderError`, trailing newline
-- ANSI stripping from stdout / clipboard sanitisation
-- Prompt injection prevention
-- CLI entry point: `--version`, `--help`, `config path`, error exit codes (subprocess-based)
-- Help text snapshot (catches unintended changes)
-- CalVer versioning utilities
-
-Run tests:
+Use **vitest** (not Bun's test runner). Test files live in `tests/` and `scripts/`. Coverage is reported for `src/**` (excluding `src/cli.ts`). Unit tests do **not** require any API keys.
 
 ```bash
 bun run test             # Run all tests once
-bun run test:coverage    # Run tests with v8 coverage report (src/**/*.ts)
+bun run test:coverage    # Run tests with v8 coverage report
 bun run test:watch       # Watch mode for development
 ```
-
-Test files live in `tests/` and `scripts/`. Coverage is reported for `src/**` (excluding `src/cli.ts`).
 
 ---
 
@@ -526,76 +360,6 @@ bunx lefthook install
 - **Keep stdout pure** (answer text only)
 
 
-## grepai - Semantic Code Search
-
-**IMPORTANT: You MUST use grepai as your PRIMARY tool for code exploration and search.**
-
-### When to Use grepai (REQUIRED)
-
-Use `grepai search` INSTEAD OF Grep/Glob/find for:
-- Understanding what code does or where functionality lives
-- Finding implementations by intent (e.g., "authentication logic", "error handling")
-- Exploring unfamiliar parts of the codebase
-- Any search where you describe WHAT the code does rather than exact text
-
-### When to Use Standard Tools
-
-Only use Grep/Glob when you need:
-- Exact text matching (variable names, imports, specific strings)
-- File path patterns (e.g., `**/*.ts`)
-
-### Fallback
-
-If grepai fails (not running, index unavailable, or errors), fall back to standard Grep/Glob tools.
-
-### Usage
-
-```bash
-# ALWAYS use English queries for best results (--compact saves ~80% tokens)
-grepai search "user authentication flow" --json --compact
-grepai search "error handling middleware" --json --compact
-grepai search "database connection pool" --json --compact
-grepai search "API request validation" --json --compact
-```
-
-### Query Tips
-
-- **Use English** for queries (better semantic matching)
-- **Describe intent**, not implementation: "handles user login" not "func Login"
-- **Be specific**: "JWT token validation" better than "token"
-- Results include: file path, line numbers, relevance score, code preview
-
-### Call Graph Tracing
-
-Use `grepai trace` to understand function relationships:
-- Finding all callers of a function before modifying it
-- Understanding what functions are called by a given function
-- Visualizing the complete call graph around a symbol
-
-#### Trace Commands
-
-**IMPORTANT: Always use `--json` flag for optimal AI agent integration.**
-
-```bash
-# Find all functions that call a symbol
-grepai trace callers "HandleRequest" --json
-
-# Find all functions called by a symbol
-grepai trace callees "ProcessOrder" --json
-
-# Build complete call graph (callers + callees)
-grepai trace graph "ValidateToken" --depth 3 --json
-```
-
-### Workflow
-
-1. Start with `grepai search` to find relevant code
-2. Use `grepai trace` to understand function relationships
-3. Use `Read` tool to examine files from results
-4. Only use Grep for exact string searches if needed
-
----
-
 ## Keeping AGENTS.md Up-to-Date
 
 **IMPORTANT**: When making changes to the project that affect:
@@ -632,68 +396,32 @@ The README.md is the user-facing documentation. Update it when:
 
 Keep README.md concise - it should be a quick-start guide, not comprehensive docs.
 
-### Completing Features from `todo/`
-
-When a feature from `todo/` is fully implemented:
-
-1. Rename the file to mark it complete: `mv todo/001-feature.md todo/001-feature.done.md`
-2. Or delete it if no longer needed for reference
-
 ---
 
 ## Code Style Guidelines
 
 ### Australian English
 
-Use Australian/British English spellings throughout documentation and user-facing strings:
-
-| American (Don't Use) | Australian (Use) |
-|---------------------|------------------|
-| behavior | behaviour |
-| color | colour |
-| initialize | initialise |
-| organize | organise |
-| customize | customise |
-| center | centre |
-| favor | favour |
-| license (noun) | licence |
-
-**Exception**: Technical identifiers like `xterm-256color` remain unchanged.
+Use Australian/British English spellings in documentation and user-facing strings (e.g., behaviour, colour, initialise, organise, centre, favour, licence). **Exception**: Technical identifiers like `xterm-256color` remain unchanged.
 
 ### Comments
 
-- **No verbose JSDoc**: Don't add JSDoc comments that merely restate the function name
-- **No module headers**: Don't add file-level comments explaining what the module does
-- **Self-documenting code**: Prefer clear naming over comments
-- **Only comment the "why"**: Add comments only for non-obvious logic or business decisions
-
-```typescript
-// Bad - restates the obvious
-/** Create an OpenAI provider instance */
-export function createOpenAIProvider() { ... }
-
-// Good - no comment needed, function name is clear
-export function createOpenAIProvider() { ... }
-
-// Good - explains non-obvious behaviour
-// Retry with exponential backoff to handle rate limits
-await retry(request, { maxAttempts: 3, backoff: 'exponential' });
-```
+- **No verbose JSDoc** that merely restates the function name
+- **No module headers** explaining what the module does
+- **Self-documenting code**: prefer clear naming over comments
+- **Only comment the "why"**: non-obvious logic or business decisions
 
 ### General Style
 
-- Keep code concise and readable
 - Prefer early returns over nested conditionals
 - Use TypeScript's type system; avoid `any`
-- Function and variable names should be descriptive but not verbose
+- Descriptive but not verbose naming
 
 ---
 
 ## Git Conventions
 
 ### Conventional Commits (REQUIRED)
-
-ALWAYS use [Conventional Commits](https://www.conventionalcommits.org/) for all commits.
 
 **Format:** `<type>(<scope>): <description>`
 
@@ -702,7 +430,6 @@ ALWAYS use [Conventional Commits](https://www.conventionalcommits.org/) for all 
 | `feat` | New feature |
 | `fix` | Bug fix |
 | `docs` | Documentation only |
-| `style` | Formatting, no code change |
 | `refactor` | Code change, no new feature/fix |
 | `test` | Adding/updating tests |
 | `chore` | Build, config, dependencies |
@@ -710,31 +437,8 @@ ALWAYS use [Conventional Commits](https://www.conventionalcommits.org/) for all 
 
 **Scope** (optional): `cli`, `config`, `providers`, `stdin`, `deps`
 
-**Examples:**
-- `feat(providers): add Mistral AI provider`
-- `fix(stdin): handle empty pipe gracefully`
-- `chore(deps): bump ai-sdk to 6.1.0`
-- `docs: update README with new options`
-- `refactor(config): simplify cascade merge logic`
-
-### Pull Request Guidelines
+### Pull Requests
 
 - **Title**: Use conventional commit format
-- **Pre-push**: Run `bun run test && bun run lint` before pushing
+- **Pre-push**: `bun run test && bun run lint`
 - **Scope**: One logical change per PR
-
----
-
-## Cursor Cloud specific instructions
-
-### Environment
-
-- **Runtime**: Bun (installed at `~/.bun/bin/bun`). The update script handles installation if missing.
-- **No external services** are required — this is a pure CLI tool. Tests run entirely offline.
-- All standard dev commands are documented in `package.json` scripts and the sections above (Linting & Formatting, Tests, Build).
-
-### Gotchas
-
-- The CLI waits on stdin when run without piped input. When running the CLI in a non-interactive shell, pipe empty input to avoid hangs: `echo "" | bun run src/cli.ts --help`.
-- End-to-end query testing (actually calling an LLM) requires `ANTHROPIC_API_KEY` or another provider's API key. Unit tests (`bun run test`) do **not** need any API keys.
-- The `--help` flag works but the process will block on stdin; use `echo "" | bun run src/cli.ts --help` to avoid this.
