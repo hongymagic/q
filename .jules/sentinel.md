@@ -24,3 +24,8 @@
 **Vulnerability:** The `filterSensitiveFields` function properly filtered top-level sensitive keys but failed to recursively redact fields, meaning nested objects (like `headers` which may contain `Authorization` or `x-api-key`) were logged in plaintext in debug mode.
 **Learning:** Log sanitization functions must recursively inspect properties, especially in complex objects like request headers where standard sensitive tokens are frequently sent.
 **Prevention:** Implement a recursive key checker in log redaction/filtering functions that handles nested structures properly.
+
+## 2026-03-06 - Secret Leakage in Portkey Provider Debug Logs
+**Vulnerability:** In `src/providers/portkey.ts`, the logging code meant to mask sensitive headers (like `Authorization` or `x-portkey-api-key`) was flawed. If a sensitive value was 12 characters or less, it was completely exposed in plain text in the debug logs instead of being masked.
+**Learning:** Conditional masking logic often fails to account for shorter strings or edge cases in lengths. When using a ternary that checks for length, ensure the alternate case for a shorter length securely masks the string rather than falling through to the unmasked original value.
+**Prevention:** Fully mask short strings (e.g., using `"********"`) and verify boundary conditions for all sensitive data redaction functions.
