@@ -1,8 +1,13 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseCliArgs } from "../src/args.ts";
 import { interpolateValue } from "../src/config/index.ts";
 import { ConfigValidationError } from "../src/errors.ts";
 import { filterSensitiveFields } from "../src/providers/index.ts";
+import { createPortkeyProvider } from "../src/providers/portkey.ts";
+
+vi.mock("@ai-sdk/openai", () => ({
+  createOpenAI: vi.fn(() => ({ chat: vi.fn() })),
+}));
 
 describe("security", () => {
   describe("query length validation", () => {
@@ -212,6 +217,79 @@ describe("security", () => {
       // - HTTP URLs to other hosts trigger a console.error warning
       // - HTTPS URLs are always allowed silently
       expect(true).toBe(true);
+    });
+  });
+
+  describe("Portkey header masking in debug logs", () => {
+    let errorSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+      delete process.env.PORTKEY_API_KEY;
+    });
+
+    it("should mask a short sensitive header value (<=12 chars) as ********", () => {
+      process.env.PORTKEY_API_KEY = "shortkey123"; // 11 chars, <= 12
+      createPortkeyProvider(
+        {
+          type: "portkey",
+          base_url: "https://api.portkey.ai/v1",
+          provider_slug: "@my-org/bedrock",
+          api_key_env: "PORTKEY_API_KEY",
+        },
+        "test-provider",
+        true,
+      );
+
+      const logs = errorSpy.mock.calls.flat() as string[];
+      const keyLog = logs.find((msg) => msg.includes("x-portkey-api-key"));
+      expect(keyLog).toBeDefined();
+      expect(keyLog).toContain("********");
+      expect(keyLog).not.toContain("shortkey123");
+    });
+
+    it("should truncate a long sensitive header value (>12 chars)", () => {
+      process.env.PORTKEY_API_KEY = "abcdefghijklmnopqrstuv"; // 22 chars, > 12
+      createPortkeyProvider(
+        {
+          type: "portkey",
+          base_url: "https://api.portkey.ai/v1",
+          provider_slug: "@my-org/bedrock",
+          api_key_env: "PORTKEY_API_KEY",
+        },
+        "test-provider",
+        true,
+      );
+
+      const logs = errorSpy.mock.calls.flat() as string[];
+      const keyLog = logs.find((msg) => msg.includes("x-portkey-api-key"));
+      expect(keyLog).toBeDefined();
+      expect(keyLog).toContain("abcdefgh...stuv");
+      expect(keyLog).not.toContain("abcdefghijklmnopqrstuv");
+    });
+
+    it("should log non-sensitive header values as-is", () => {
+      process.env.PORTKEY_API_KEY = "dummy-api-key-1234"; // needed to satisfy provider init
+      createPortkeyProvider(
+        {
+          type: "portkey",
+          base_url: "https://api.portkey.ai/v1",
+          provider_slug: "@my-org/bedrock",
+          api_key_env: "PORTKEY_API_KEY",
+          headers: { "x-custom-trace": "trace-value-123" },
+        },
+        "test-provider",
+        true,
+      );
+
+      const logs = errorSpy.mock.calls.flat() as string[];
+      const headerLog = logs.find((msg) => msg.includes("x-custom-trace"));
+      expect(headerLog).toBeDefined();
+      expect(headerLog).toContain("trace-value-123");
     });
   });
 });
