@@ -94,8 +94,11 @@ export function buildUserPrompt(
   }
 
   // Sanitize context to prevent XML tag injection
-  // We replace </context> with <\/context> to break the closing tag
-  const safeContext = context.replace(/<\/context>/gi, "<\\/context>");
+  // Replace closing-tag variants (whitespace/attrs/case variants) with escaped form
+  const safeContext = context.replace(
+    /<\/\s*context\b[^>]*>/gi,
+    "<\\/context>",
+  );
 
   return `<context>
 ${safeContext}
