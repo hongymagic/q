@@ -22,6 +22,10 @@ tools:
   github:
     lockdown: true
     toolsets: [default, pull_requests]
+  bash:
+    - "bun run lint"
+    - "bun run typecheck"
+    - "bun run test"
 
 network:
   allowed:
@@ -35,7 +39,7 @@ safe-outputs:
     reviewers: [copilot]
     draft: true
     max: 1
-    expires: 14
+    expires: 14d
     if-no-changes: "warn"
     fallback-as-issue: false
   messages:
@@ -152,4 +156,12 @@ If you cannot meet all five criteria, call `noop` instead.
 - [ ] `bun run test` passes
 - [ ] New tests cover the feature behaviour
 - [ ] Documentation updated (if user-visible)
+```
+
+---
+
+**Important**: If no action is needed after completing your analysis, you **MUST** call the `noop` safe-output tool with a brief explanation. Failing to call any safe-output tool is the most common cause of safe-output workflow failures.
+
+```json
+{"noop": {"message": "No action needed: [brief explanation of what was analyzed and why]"}}
 ```
