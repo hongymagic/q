@@ -205,12 +205,46 @@ describe("provider resolution", () => {
   describe("listProviders", () => {
     it("should list all providers with default marked", () => {
       const output = listProviders(mockConfig);
-      expect(output).toContain("anthropic");
-      expect(output).toContain("(default)");
+      expect(output).toContain("anthropic (default) [anthropic]");
       expect(output).toContain("openai");
       expect(output).toContain("local");
       expect(output).toContain("ollama");
-      expect(output).toContain("claude-sonnet-4-20250514");
+      expect(output).toContain("Default model: claude-sonnet-4-20250514");
+    });
+
+    it("should show per-provider model when set", () => {
+      const configWithModels: ConfigData = {
+        default: { provider: "anthropic", model: "global-default" },
+        providers: {
+          anthropic: {
+            type: "anthropic",
+            api_key_env: "ANTHROPIC_API_KEY",
+            model: "claude-sonnet-4-20250514",
+          },
+          openai: {
+            type: "openai",
+            api_key_env: "OPENAI_API_KEY",
+          },
+        },
+      };
+      const output = listProviders(configWithModels);
+      expect(output).toContain("Model: claude-sonnet-4-20250514");
+      expect(output).toContain("Model: (default)");
+    });
+
+    it("should show credential status", () => {
+      const output = listProviders(mockConfig);
+      // ANTHROPIC_API_KEY is set in beforeEach
+      expect(output).toContain("Key: ANTHROPIC_API_KEY (set)");
+      expect(output).toContain("Key: OPENAI_API_KEY (set)");
+      // ollama has no api_key_env
+      expect(output).toContain("Key: (none required)");
+    });
+
+    it("should report missing credentials", () => {
+      delete process.env.OPENAI_API_KEY;
+      const output = listProviders(mockConfig);
+      expect(output).toContain("Key: OPENAI_API_KEY (missing)");
     });
   });
 

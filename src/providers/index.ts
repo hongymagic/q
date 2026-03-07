@@ -163,24 +163,90 @@ function createModel(
   }
 }
 
+type CredentialStatus = {
+  envVar: string;
+  present: boolean;
+};
+
+function getCredentialStatuses(
+  providerConfig: ProviderConfig,
+): CredentialStatus[] {
+  const statuses: CredentialStatus[] = [];
+
+  if (providerConfig.api_key_env) {
+    statuses.push({
+      envVar: providerConfig.api_key_env,
+      present: Boolean(process.env[providerConfig.api_key_env]),
+    });
+  }
+
+  // Portkey has an additional provider API key
+  if (providerConfig.provider_api_key_env) {
+    statuses.push({
+      envVar: providerConfig.provider_api_key_env,
+      present: Boolean(process.env[providerConfig.provider_api_key_env]),
+    });
+  }
+
+  // Bedrock has optional AWS credential env vars
+  if (providerConfig.access_key_env) {
+    statuses.push({
+      envVar: providerConfig.access_key_env,
+      present: Boolean(process.env[providerConfig.access_key_env]),
+    });
+  }
+
+  if (providerConfig.secret_key_env) {
+    statuses.push({
+      envVar: providerConfig.secret_key_env,
+      present: Boolean(process.env[providerConfig.secret_key_env]),
+    });
+  }
+
+  return statuses;
+}
+
+function formatCredentialLine(statuses: CredentialStatus[]): string {
+  if (statuses.length === 0) {
+    return "    Key: (none required)";
+  }
+
+  return statuses
+    .map(({ envVar, present }) => {
+      const status = present ? "set" : "missing";
+      return `    Key: ${envVar} (${status})`;
+    })
+    .join("\n");
+}
+
 /**
- * List all configured providers
+ * List all configured providers with model and credential status
  */
 export function listProviders(config: ConfigData): string {
   const providers = Object.keys(config.providers);
   const defaultProvider = config.default.provider;
   const defaultModel = config.default.model;
 
+  const providerBlocks = providers.map((name) => {
+    const isDefault = name === defaultProvider;
+    const providerConfig = config.providers[name];
+    if (!providerConfig) return `  ${name} [unknown]`;
+
+    const marker = isDefault ? " (default)" : "";
+    const header = `  ${name}${marker} [${providerConfig.type}]`;
+    const modelDisplay = providerConfig.model ?? "(default)";
+    const modelLine = `    Model: ${modelDisplay}`;
+    const credentialLine = formatCredentialLine(
+      getCredentialStatuses(providerConfig),
+    );
+
+    return [header, modelLine, credentialLine].join("\n");
+  });
+
   const lines = [
     "Configured providers:",
     "",
-    ...providers.map((name) => {
-      const isDefault = name === defaultProvider;
-      const providerConfig = config.providers[name];
-      const type = providerConfig?.type ?? "unknown";
-      const marker = isDefault ? " (default)" : "";
-      return `  ${name}${marker} [${type}]`;
-    }),
+    ...providerBlocks,
     "",
     `Default model: ${defaultModel}`,
   ];
