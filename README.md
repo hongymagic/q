@@ -65,18 +65,29 @@ echo "how do I restart docker" | q
 |--------|-------------|
 | `-p, --provider <name>` | Override the default provider |
 | `-m, --model <id>` | Override the default model |
+| `--mode <mode>` | Output mode: `command` (default) or `explain` |
 | `--copy` | Copy answer to clipboard |
 | `--no-copy` | Disable copy (overrides config) |
 | `--debug` | Enable debug logging to stderr |
 | `-h, --help` | Show help message |
 | `-v, --version` | Show version |
 
+### Output Modes
+
+By default, `q` returns terse, copy/paste-ready commands. Use `--mode explain` for detailed explanations:
+
+```bash
+q how do I restart docker               # Returns the command(s)
+q --mode explain how do I restart docker # Returns a detailed explanation
+```
+
 ### Commands
 
 ```bash
 q config path    # Print config file path
 q config init    # Create example config
-q providers      # List configured providers
+q config doctor  # Diagnose config and provider issues
+q providers      # List configured providers + model and credential status
 ```
 
 ## Configuration
@@ -86,6 +97,19 @@ Config is loaded from (later overrides earlier):
 1. `$XDG_CONFIG_HOME/q/config.toml` (or `~/.config/q/config.toml`)
 2. `./config.toml` (project-specific)
 3. Environment: `Q_PROVIDER`, `Q_MODEL`, `Q_COPY`
+
+Each provider can specify its own default `model`, which takes precedence over `default.model` but is overridden by `Q_MODEL` or `--model`:
+
+```toml
+[default]
+provider = "anthropic"
+model = "claude-sonnet-4-20250514"   # Global default
+
+[providers.anthropic]
+type = "anthropic"
+api_key_env = "ANTHROPIC_API_KEY"
+model = "claude-sonnet-4-20250514"   # Per-provider default
+```
 
 See [config.example.toml](config.example.toml) for all options.
 
@@ -169,6 +193,10 @@ export ANTHROPIC_API_KEY="your-key-here"
 **"Config file not found" error:**
 
 Run `q config init` to create a default configuration file.
+
+**Diagnose config issues:**
+
+Run `q config doctor` to check config files, environment overrides, and provider health at a glance.
 
 **Failure logs:**
 

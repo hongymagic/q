@@ -68,6 +68,7 @@ q providers                 # List configured providers + default
 
 - `-p`, `--provider <name>`: override the configured provider
 - `-m`, `--model <id>`: override the configured model
+- `--mode <mode>`: output mode — `command` (default) or `explain`
 - `--copy`: copy final answer to clipboard
 - `--no-copy`: disable copy (overrides config)
 - `--debug`: write debug logs to stderr
