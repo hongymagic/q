@@ -77,6 +77,9 @@ export function createAnsiStripper() {
       const remainder = buffer.slice(lastEscIndex);
 
       // Check if 'remainder' is a COMPLETE ANSI code
+      // Reset lastIndex — global regexes are stateful and .test() advances it,
+      // which causes false negatives on alternating calls.
+      ANSI_REGEX.lastIndex = 0;
       if (ANSI_REGEX.test(remainder)) {
         // It matched completely, so we can strip it all
         const full = buffer;
