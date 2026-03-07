@@ -83,10 +83,13 @@ describe("CLI argument parsing", () => {
       expect(args.query).toEqual(["what", "is", "recursion"]);
     });
 
-    it("should show help for empty query", () => {
+    it("should return empty query without implicit help for no args", () => {
+      // No args returns empty query; cli.ts handles the "no input" case
+      // after checking stdin. Explicit --help is a separate code path.
       const args = parseCliArgs([]);
-      expect(args.options.help).toBe(true);
+      expect(args.options.help).toBe(false);
       expect(args.query).toEqual([]);
+      expect(args.command).toBe("query");
     });
   });
 

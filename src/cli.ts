@@ -62,6 +62,12 @@ async function main(): Promise<void> {
       }
     }
 
+    // Handle --help (before stdin to avoid blocking in piped shells)
+    if (args.options.help) {
+      console.log(getHelpText());
+      process.exit(0);
+    }
+
     // Handle providers command (before stdin to avoid blocking)
     if (args.command === "providers") {
       const config = await loadConfig();
@@ -69,14 +75,13 @@ async function main(): Promise<void> {
       process.exit(0);
     }
 
-    // Read stdin if piped (do this before help check)
+    // Read stdin only after explicit early-exit commands.
     const stdinMaxLength =
       args.query.length > 0 ? MAX_CONTEXT_LENGTH : MAX_QUERY_LENGTH;
     const stdinInput = await readStdin(stdinMaxLength);
 
-    // Handle --help (after stdin check for proper stdin-only mode)
-    // Show help if explicitly requested OR if no query and no stdin
-    if (args.options.help && !stdinInput.hasInput && args.query.length === 0) {
+    // Show help when there is no input at all (no args, no piped stdin)
+    if (!stdinInput.hasInput && args.query.length === 0) {
       console.log(getHelpText());
       process.exit(0);
     }

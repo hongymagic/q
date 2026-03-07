@@ -119,7 +119,7 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
     return {
       command: "query",
       query: [],
-      options: { ...options, help: true },
+      options,
     };
   }
 
