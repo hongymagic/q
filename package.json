@@ -60,7 +60,9 @@
     "@t3-oss/env-core": "0.13.10",
     "ai": "6.0.116",
     "clipboardy": "5.3.1",
+    "env-paths": "4.0.0",
     "ollama-ai-provider-v2": "3.3.1",
+    "picocolors": "1.1.1",
     "zod": "4.3.6"
   },
   "devDependencies": {

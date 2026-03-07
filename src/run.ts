@@ -9,6 +9,7 @@ export interface RunOptions {
   query: string;
   systemPrompt: string;
   context?: string | null;
+  onFirstChunk?: () => void;
 }
 
 export interface RunResult {
@@ -16,26 +17,45 @@ export interface RunResult {
 }
 
 export async function runQuery(options: RunOptions): Promise<RunResult> {
-  const { model, query, systemPrompt, context } = options;
+  const { model, query, systemPrompt, context, onFirstChunk } = options;
   const userPrompt = buildUserPrompt(query, context);
 
   try {
+    let streamError: unknown;
+
     const result = streamText({
       model,
       system: systemPrompt,
       prompt: userPrompt,
+      onError: ({ error }) => {
+        streamError ??= error;
+      },
     });
 
     let fullText = "";
+    let sawTextChunk = false;
     const stripper = createAnsiStripper();
 
     for await (const textPart of result.textStream) {
+      if (!sawTextChunk) {
+        sawTextChunk = true;
+        onFirstChunk?.();
+      }
+
       // Security: Strip ANSI codes to prevent terminal manipulation
       // We keep original text in fullText for the return value (e.g. for clipboard)
       // but sanitize stdout to protect the user's terminal
       const safeText = stripper(textPart);
       process.stdout.write(safeText);
       fullText += textPart;
+    }
+
+    if (streamError !== undefined) {
+      if (fullText !== "" && !fullText.endsWith("\n")) {
+        process.stdout.write("\n");
+      }
+
+      throw streamError;
     }
 
     // Check against safeText buffer equivalent would be ideal but complex.
@@ -47,6 +67,6 @@ export async function runQuery(options: RunOptions): Promise<RunResult> {
     return { text: fullText };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    throw new ProviderError(`AI request failed: ${message}`);
+    throw new ProviderError(`AI request failed: ${message}`, err);
   }
 }

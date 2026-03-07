@@ -1,6 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import type { ProviderConfig } from "../config/index.ts";
-import { ConfigValidationError, logDebug } from "../errors.ts";
+import { ConfigValidationError } from "../errors.ts";
+import { logDebug } from "../logging.ts";
 import { resolveApiKey } from "./index.ts";
 
 /**

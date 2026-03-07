@@ -6,6 +6,8 @@
 
 A fast, minimal CLI for getting AI answers directly in your terminal.
 
+When running in an interactive terminal, `q` shows a small ASCII loading indicator on stderr while it waits for the first response text.
+
 ## Installation
 
 ```bash
@@ -151,9 +153,15 @@ export ANTHROPIC_API_KEY="your-key-here"
 
 Run `q config init` to create a default configuration file.
 
+**Failure logs:**
+
+Most non-usage failures print a short error plus `Full log: <path>` on stderr. Logs are written to your platform log directory, for example `~/.local/state/q/errors` on Linux.
+
+In an interactive terminal, query failures also offer quick recovery options: press `r` to retry, `Enter` to print the full log, or `q`/`Esc` to exit.
+
 **Debug mode:**
 
-Use `--debug` to see detailed logs on stderr:
+Use `--debug` to keep detailed diagnostics on stderr while still writing the full failure log:
 
 ```bash
 q --debug "how do I list docker containers"
