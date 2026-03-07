@@ -185,6 +185,25 @@ function formatSessionEntries(): string {
     .join("\n");
 }
 
+// Error properties that may contain full request/response payloads (prompts, bodies).
+// These are omitted entirely from failure logs.
+const OMITTED_ERROR_PROPERTIES = new Set(["requestBodyValues", "responseBody"]);
+
+const SENSITIVE_KEY_PATTERNS = [
+  "key",
+  "secret",
+  "token",
+  "password",
+  "auth",
+  "credential",
+  "authorization",
+];
+
+function isSensitiveKey(key: string): boolean {
+  const lower = key.toLowerCase();
+  return SENSITIVE_KEY_PATTERNS.some((pattern) => lower.includes(pattern));
+}
+
 function formatUnknownValue(value: unknown, depth = 0): string {
   const prefix = "  ".repeat(depth);
 
@@ -199,15 +218,17 @@ function formatUnknownValue(value: unknown, depth = 0): string {
         key !== "name" &&
         key !== "message" &&
         key !== "stack" &&
-        key !== "cause",
+        key !== "cause" &&
+        !OMITTED_ERROR_PROPERTIES.has(key),
     );
 
     if (properties.length > 0) {
       lines.push(`${prefix}properties:`);
       for (const [key, propertyValue] of properties) {
-        lines.push(
-          `${prefix}  ${key}: ${formatPropertyValue(key, propertyValue)}`,
-        );
+        const displayValue = isSensitiveKey(key)
+          ? "[REDACTED]"
+          : formatValue(propertyValue);
+        lines.push(`${prefix}  ${key}: ${displayValue}`);
       }
     }
 
@@ -227,6 +248,13 @@ function formatUnknownValue(value: unknown, depth = 0): string {
   return `${prefix}${formatValue(value)}`;
 }
 
+function sensitiveKeyReplacer(key: string, value: unknown): unknown {
+  if (key && isSensitiveKey(key)) {
+    return "[REDACTED]";
+  }
+  return value;
+}
+
 function formatValue(value: unknown): string {
   if (typeof value === "string") {
     return value;
@@ -242,44 +270,10 @@ function formatValue(value: unknown): string {
   }
 
   try {
-    return JSON.stringify(
-      value,
-      (k, v) => {
-        if (!k) {
-          return v;
-        }
-
-        return isSensitiveKey(k) ? redactValue(v) : v;
-      },
-      2,
-    );
+    return JSON.stringify(value, sensitiveKeyReplacer, 2);
   } catch {
     return String(value);
   }
-}
-
-function formatPropertyValue(key: string, value: unknown): string {
-  return isSensitiveKey(key) ? String(redactValue(value)) : formatValue(value);
-}
-
-function isSensitiveKey(key: string): boolean {
-  const lowerKey = key.toLowerCase();
-  return (
-    lowerKey === "authorization" ||
-    lowerKey === "password" ||
-    lowerKey === "token" ||
-    lowerKey.endsWith("_key")
-  );
-}
-
-function redactValue(value: unknown): string {
-  if (typeof value === "string") {
-    return value.length > 12
-      ? `${value.substring(0, 8)}...${value.substring(value.length - 4)}`
-      : "********";
-  }
-
-  return "********";
 }
 
 function indentBlock(value: string, depth: number): string {

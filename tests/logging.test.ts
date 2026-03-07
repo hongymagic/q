@@ -1,6 +1,85 @@
 import { describe, expect, it } from "vitest";
 import { formatErrorDiagnostics, formatStderrMessage } from "../src/logging.ts";
 
+describe("formatErrorDiagnostics secret redaction", () => {
+  it("omits requestBodyValues from error diagnostics", () => {
+    const error = new Error("API error");
+    Object.assign(error, {
+      requestBodyValues: { prompt: "secret system prompt" },
+      statusCode: 401,
+    });
+
+    const output = formatErrorDiagnostics(error);
+    expect(output).not.toContain("secret system prompt");
+    expect(output).not.toContain("requestBodyValues");
+    expect(output).toContain("statusCode");
+    expect(output).toContain("401");
+  });
+
+  it("omits responseBody from error diagnostics", () => {
+    const error = new Error("Server error");
+    Object.assign(error, {
+      responseBody: '{"error":"internal","trace":"secret-trace"}',
+      statusCode: 500,
+    });
+
+    const output = formatErrorDiagnostics(error);
+    expect(output).not.toContain("secret-trace");
+    expect(output).not.toContain("responseBody");
+    expect(output).toContain("statusCode");
+  });
+
+  it("redacts properties with sensitive key names", () => {
+    const error = new Error("Auth failed");
+    Object.assign(error, {
+      api_key: "sk-secret-12345",
+      auth_token: "Bearer super-secret",
+      statusCode: 403,
+    });
+
+    const output = formatErrorDiagnostics(error);
+    expect(output).not.toContain("sk-secret-12345");
+    expect(output).not.toContain("super-secret");
+    expect(output).toContain("[REDACTED]");
+    expect(output).toContain("statusCode");
+    expect(output).toContain("403");
+  });
+
+  it("redacts sensitive keys inside nested objects", () => {
+    const error = new Error("Request failed");
+    Object.assign(error, {
+      headers: {
+        Authorization: "Bearer sk-secret-key",
+        "Content-Type": "application/json",
+        "x-api-key": "secret-key-value",
+      },
+    });
+
+    const output = formatErrorDiagnostics(error);
+    expect(output).not.toContain("sk-secret-key");
+    expect(output).not.toContain("secret-key-value");
+    expect(output).toContain("[REDACTED]");
+    expect(output).toContain("application/json");
+  });
+
+  it("preserves non-sensitive properties", () => {
+    const error = new Error("Something broke");
+    Object.assign(error, {
+      statusCode: 500,
+      url: "https://api.example.com/v1/chat",
+      retryCount: 3,
+    });
+
+    const output = formatErrorDiagnostics(error);
+    expect(output).toContain("statusCode");
+    expect(output).toContain("500");
+    expect(output).toContain("url");
+    expect(output).toContain("https://api.example.com/v1/chat");
+    expect(output).toContain("retryCount");
+    expect(output).toContain("3");
+  });
+});
+
 describe("formatStderrMessage", () => {
   it("keeps plain text when colour is disabled", () => {
     expect(formatStderrMessage("Error: Boom", false)).toBe("Error: Boom");
@@ -28,58 +107,5 @@ describe("formatStderrMessage", () => {
     expect(logLine).toContain("\u001B[");
     expect(logLine).toContain("Full log:");
     expect(logLine).toContain("/tmp/q.log");
-  });
-});
-
-describe("formatErrorDiagnostics", () => {
-  it("redacts sensitive fields in nested objects", () => {
-    const diagnostics = formatErrorDiagnostics({
-      password: "hunter2",
-      request: {
-        headers: {
-          Authorization: "secret-token",
-        },
-        api_key: "abcd1234",
-        safe: "value",
-      },
-    });
-
-    expect(diagnostics).toContain('"password": "********"');
-    expect(diagnostics).toContain('"Authorization": "********"');
-    expect(diagnostics).toContain('"api_key": "********"');
-    expect(diagnostics).toContain('"safe": "value"');
-    expect(diagnostics).not.toContain("hunter2");
-    expect(diagnostics).not.toContain("secret-token");
-    expect(diagnostics).not.toContain("abcd1234");
-  });
-
-  it("redacts sensitive fields on error properties and causes", () => {
-    const error = Object.assign(
-      new Error("boom", {
-        cause: {
-          nested_key: "cause-secret",
-          detail: "provider error",
-        },
-      }),
-      {
-        token: "topsecret",
-        metadata: {
-          password: "letmein",
-          safe: true,
-        },
-      },
-    );
-
-    const diagnostics = formatErrorDiagnostics(error);
-
-    expect(diagnostics).toContain("name: Error");
-    expect(diagnostics).toContain("message: boom");
-    expect(diagnostics).toContain("token: ********");
-    expect(diagnostics).toContain('"password": "********"');
-    expect(diagnostics).toContain('"nested_key": "********"');
-    expect(diagnostics).toContain('"detail": "provider error"');
-    expect(diagnostics).not.toContain("topsecret");
-    expect(diagnostics).not.toContain("letmein");
-    expect(diagnostics).not.toContain("cause-secret");
   });
 });
