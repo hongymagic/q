@@ -8,6 +8,20 @@ import {
 } from "../src/providers/index.ts";
 import { normaliseBaseURL } from "../src/providers/ollama.ts";
 
+// Mutable mock for env module (createEnv validates at import time).
+// vi.hoisted ensures this is available before hoisted vi.mock factories run.
+const { mockEnv } = vi.hoisted(() => ({
+  mockEnv: {
+    Q_PROVIDER: undefined as string | undefined,
+    Q_MODEL: undefined as string | undefined,
+    Q_COPY: undefined as boolean | undefined,
+  },
+}));
+
+vi.mock("../src/env.ts", () => ({
+  env: mockEnv,
+}));
+
 // Mock the provider creation functions
 vi.mock("@ai-sdk/openai", () => ({
   createOpenAI: vi.fn(() => (modelId: string) => ({ modelId, type: "openai" })),
@@ -69,6 +83,9 @@ describe("provider resolution", () => {
 
   afterEach(() => {
     process.env = originalEnv;
+    mockEnv.Q_PROVIDER = undefined;
+    mockEnv.Q_MODEL = undefined;
+    mockEnv.Q_COPY = undefined;
     vi.clearAllMocks();
   });
 
@@ -116,6 +133,72 @@ describe("provider resolution", () => {
     it("should resolve openai_compatible without API key when not required", () => {
       const result = resolveProvider(mockConfig, "local");
       expect(result.providerName).toBe("local");
+    });
+
+    describe("per-provider model resolution", () => {
+      const configWithProviderModels: ConfigData = {
+        default: {
+          provider: "anthropic",
+          model: "global-default-model",
+        },
+        providers: {
+          anthropic: {
+            type: "anthropic",
+            api_key_env: "ANTHROPIC_API_KEY",
+            model: "claude-sonnet-4-20250514",
+          },
+          openai: {
+            type: "openai",
+            api_key_env: "OPENAI_API_KEY",
+            model: "gpt-4o",
+          },
+          local: {
+            type: "openai_compatible",
+            base_url: "http://localhost:1234/v1",
+            // No per-provider model — falls back to global default
+          },
+        },
+      };
+
+      it("should use per-provider model when no overrides", () => {
+        const result = resolveProvider(configWithProviderModels);
+        expect(result.modelId).toBe("claude-sonnet-4-20250514");
+      });
+
+      it("should use per-provider model for switched provider", () => {
+        const result = resolveProvider(configWithProviderModels, "openai");
+        expect(result.modelId).toBe("gpt-4o");
+      });
+
+      it("should fall back to global default when provider has no model", () => {
+        const result = resolveProvider(configWithProviderModels, "local");
+        expect(result.modelId).toBe("global-default-model");
+      });
+
+      it("should use CLI --model override over provider model", () => {
+        const result = resolveProvider(
+          configWithProviderModels,
+          undefined,
+          "cli-model-override",
+        );
+        expect(result.modelId).toBe("cli-model-override");
+      });
+
+      it("should use Q_MODEL over provider model but below CLI --model", () => {
+        mockEnv.Q_MODEL = "env-model-override";
+        const result = resolveProvider(configWithProviderModels);
+        expect(result.modelId).toBe("env-model-override");
+      });
+
+      it("should prefer CLI --model over Q_MODEL", () => {
+        mockEnv.Q_MODEL = "env-model-override";
+        const result = resolveProvider(
+          configWithProviderModels,
+          undefined,
+          "cli-model-override",
+        );
+        expect(result.modelId).toBe("cli-model-override");
+      });
     });
   });
 

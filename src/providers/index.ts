@@ -1,5 +1,6 @@
 import type { LanguageModel } from "ai";
 import type { ConfigData, ProviderConfig } from "../config/index.ts";
+import { env } from "../env.ts";
 import { MissingApiKeyError, ProviderNotFoundError } from "../errors.ts";
 import { logDebug } from "../logging.ts";
 import { createAnthropicProvider } from "./anthropic.ts";
@@ -92,7 +93,12 @@ export function resolveProvider(
     throw new ProviderNotFoundError(providerName);
   }
 
-  const modelId = modelOverride ?? config.default.model;
+  // Resolution: CLI --model > Q_MODEL env > provider.model > config.default.model
+  const modelId =
+    modelOverride ??
+    env.Q_MODEL ??
+    providerConfig.model ??
+    config.default.model;
 
   logDebug(
     `Provider config: ${JSON.stringify(filterSensitiveFields(providerConfig), null, 2)}`,

@@ -24,6 +24,7 @@ export type ProviderType = z.infer<typeof ProviderType>;
 
 export const ProviderConfigSchema = z.object({
   type: ProviderType,
+  model: z.string().optional(),
   api_key_env: z.string().optional(),
   base_url: z.string().optional(),
   headers: z.record(z.string(), z.string()).optional(),
@@ -313,10 +314,12 @@ model = "claude-sonnet-4-20250514"
 [providers.anthropic]
 type = "anthropic"
 api_key_env = "ANTHROPIC_API_KEY"
+# model = "claude-sonnet-4-20250514"  # Optional per-provider default model
 
 [providers.openai]
 type = "openai"
 api_key_env = "OPENAI_API_KEY"
+# model = "gpt-4o"  # Optional per-provider default model
 
 # Example: OpenAI-compatible provider (e.g., local LLM via LM Studio)
 # [providers.local]
