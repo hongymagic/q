@@ -249,9 +249,11 @@ function canRetryInteractively(
   err: unknown,
   stdinInput: StdinInput | null,
 ): boolean {
+  // stdinInput is cached before the retry loop, so retry works even with piped
+  // stdin. canPromptForFailureRecovery() handles the /dev/tty fallback when
+  // process.stdin is piped.
   return (
     stdinInput !== null &&
-    stdinInput.hasInput === false &&
     shouldWriteFailureLog(err) &&
     canPromptForFailureRecovery()
   );

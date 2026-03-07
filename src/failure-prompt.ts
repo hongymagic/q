@@ -1,15 +1,35 @@
+import { accessSync, constants, openSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { ReadStream } from "node:tty";
 import { printStderr, writeStderrRaw } from "./logging.ts";
 
 export type FailurePromptAction = "exit" | "retry" | "view_log";
 
+function hasTtyDevice(): boolean {
+  try {
+    accessSync("/dev/tty", constants.R_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function canPromptForFailureRecovery(): boolean {
-  return (
+  // Always need stdout + stderr as TTYs to display the prompt
+  if (process.stdout.isTTY !== true || process.stderr.isTTY !== true) {
+    return false;
+  }
+
+  // Prefer stdin if it's a TTY (normal interactive use)
+  if (
     process.stdin.isTTY === true &&
-    process.stdout.isTTY === true &&
-    process.stderr.isTTY === true &&
     typeof process.stdin.setRawMode === "function"
-  );
+  ) {
+    return true;
+  }
+
+  // Stdin is piped — fall back to /dev/tty if available (Linux/macOS)
+  return hasTtyDevice();
 }
 
 export function getFailurePromptMessage(hasLogFile: boolean): string {
@@ -62,16 +82,35 @@ export async function promptForFailureRecovery(
   }
 }
 
+function openTtyStream(): ReadStream | null {
+  try {
+    const fd = openSync("/dev/tty", "r");
+    return new ReadStream(fd);
+  } catch {
+    return null;
+  }
+}
+
 async function readFailurePromptAction(
   hasLogFile: boolean,
 ): Promise<FailurePromptAction> {
-  const stdin = process.stdin;
+  // Use process.stdin if it's a TTY, otherwise fall back to /dev/tty
+  const useProcessStdin =
+    process.stdin.isTTY === true &&
+    typeof process.stdin.setRawMode === "function";
+  const ttyStream = useProcessStdin ? null : openTtyStream();
+  const stream = useProcessStdin ? process.stdin : ttyStream;
+
+  if (!stream) {
+    return "exit";
+  }
+
   const wasRaw = Boolean(
-    (stdin as NodeJS.ReadStream & { isRaw?: boolean }).isRaw,
+    (stream as NodeJS.ReadStream & { isRaw?: boolean }).isRaw,
   );
 
-  stdin.setRawMode?.(true);
-  stdin.resume();
+  stream.setRawMode?.(true);
+  stream.resume();
 
   try {
     return await new Promise<FailurePromptAction>((resolve) => {
@@ -83,15 +122,19 @@ async function readFailurePromptAction(
           return;
         }
 
-        stdin.off("data", onData);
+        stream.off("data", onData);
         resolve(action);
       };
 
-      stdin.on("data", onData);
+      stream.on("data", onData);
     });
   } finally {
-    stdin.setRawMode?.(wasRaw);
-    stdin.pause();
+    stream.setRawMode?.(wasRaw);
+    if (ttyStream) {
+      ttyStream.destroy();
+    } else {
+      stream.pause();
+    }
   }
 }
 
