@@ -3,7 +3,7 @@ import pkg from "../package.json";
 import { UsageError } from "./errors.ts";
 
 export type Command = "query" | "config" | "providers";
-export type ConfigSubcommand = "path" | "init";
+export type ConfigSubcommand = "path" | "init" | "doctor";
 
 export interface ParsedArgs {
   command: Command;
@@ -26,6 +26,7 @@ USAGE:
   q [options] <query...>       Ask a question
   q config path                Print config file path
   q config init                Create example config file
+  q config doctor              Diagnose config and provider issues
   q providers                  List configured providers
 
 OPTIONS:
@@ -94,7 +95,7 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
 
   if (firstArg === "config") {
     const subArg = positionals[1]?.toLowerCase();
-    if (subArg === "path" || subArg === "init") {
+    if (subArg === "path" || subArg === "init" || subArg === "doctor") {
       return {
         command: "config",
         subcommand: subArg,
@@ -103,7 +104,7 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
       };
     }
     throw new UsageError(
-      `Unknown config subcommand: '${subArg ?? "(none)"}'\nValid subcommands: path, init`,
+      `Unknown config subcommand: '${subArg ?? "(none)"}'\nValid subcommands: path, init, doctor`,
     );
   }
 

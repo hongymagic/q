@@ -1,7 +1,13 @@
 #!/usr/bin/env bun
 import type { ParsedArgs } from "./args.ts";
 import { getHelpText, getVersion, parseCliArgs } from "./args.ts";
-import { getConfigPath, initConfig, loadConfig } from "./config/index.ts";
+import {
+  formatDoctorReport,
+  getConfigPath,
+  initConfig,
+  loadConfig,
+  runConfigDoctor,
+} from "./config/index.ts";
 import { formatEnvForDebug, getEnvironmentInfo } from "./env-info.ts";
 import {
   getUserErrorMessage,
@@ -59,6 +65,11 @@ async function main(): Promise<void> {
         const result = await initConfig();
         console.log(result);
         process.exit(0);
+      }
+      if (args.subcommand === "doctor") {
+        const report = await runConfigDoctor();
+        console.log(formatDoctorReport(report));
+        process.exit(report.summary === "errors" ? 2 : 0);
       }
     }
 

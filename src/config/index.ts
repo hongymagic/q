@@ -289,6 +289,173 @@ export async function loadConfig(): Promise<Config> {
   return Config.load();
 }
 
+export interface ConfigLayer {
+  source: string;
+  path: string | null;
+  found: boolean;
+  data: Record<string, unknown> | null;
+}
+
+export interface DoctorReport {
+  layers: ConfigLayer[];
+  envOverrides: {
+    variable: string;
+    value: string | undefined;
+    active: boolean;
+  }[];
+  providerIssues: { provider: string; issue: string }[];
+  summary: "ok" | "warnings" | "errors";
+}
+
+export async function runConfigDoctor(): Promise<DoctorReport> {
+  const xdgPath = getXdgConfigPath();
+  const cwdPath = getCwdConfigPath();
+
+  const [xdgFile, cwdFile] = await Promise.all([
+    Bun.file(xdgPath),
+    Bun.file(cwdPath),
+  ]);
+
+  const [xdgExists, cwdExists] = await Promise.all([
+    xdgFile.exists(),
+    cwdFile.exists(),
+  ]);
+
+  const layers: ConfigLayer[] = [
+    {
+      source: "XDG config",
+      path: xdgPath,
+      found: xdgExists,
+      data: xdgExists ? await safeParseToml(xdgFile) : null,
+    },
+    {
+      source: "CWD config",
+      path: cwdPath,
+      found: cwdExists,
+      data: cwdExists ? await safeParseToml(cwdFile) : null,
+    },
+  ];
+
+  const envOverrides = [
+    {
+      variable: "Q_PROVIDER",
+      value: process.env.Q_PROVIDER,
+      active: Boolean(process.env.Q_PROVIDER),
+    },
+    {
+      variable: "Q_MODEL",
+      value: process.env.Q_MODEL,
+      active: Boolean(process.env.Q_MODEL),
+    },
+    {
+      variable: "Q_COPY",
+      value: process.env.Q_COPY,
+      active: process.env.Q_COPY !== undefined && process.env.Q_COPY !== "",
+    },
+  ];
+
+  const providerIssues: DoctorReport["providerIssues"] = [];
+
+  // Try loading the full config to check providers
+  try {
+    const config = await Config.load();
+
+    for (const [name, providerConfig] of Object.entries(config.providers)) {
+      if (providerConfig.api_key_env) {
+        if (!process.env[providerConfig.api_key_env]) {
+          providerIssues.push({
+            provider: name,
+            issue: `${providerConfig.api_key_env} is not set`,
+          });
+        }
+      }
+
+      if (providerConfig.provider_api_key_env) {
+        if (!process.env[providerConfig.provider_api_key_env]) {
+          providerIssues.push({
+            provider: name,
+            issue: `${providerConfig.provider_api_key_env} is not set`,
+          });
+        }
+      }
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    providerIssues.push({ provider: "(config)", issue: message });
+  }
+
+  const hasErrors =
+    !xdgExists || providerIssues.some((i) => i.provider === "(config)");
+  const hasWarnings = providerIssues.length > 0;
+
+  return {
+    layers,
+    envOverrides,
+    providerIssues,
+    summary: hasErrors ? "errors" : hasWarnings ? "warnings" : "ok",
+  };
+}
+
+async function safeParseToml(
+  file: ReturnType<typeof Bun.file>,
+): Promise<Record<string, unknown> | null> {
+  try {
+    const content = await file.text();
+    return Bun.TOML.parse(content) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+export function formatDoctorReport(report: DoctorReport): string {
+  const lines: string[] = ["Config Doctor", ""];
+
+  // Config layers
+  lines.push("Config layers:");
+  for (const layer of report.layers) {
+    const status = layer.found ? "found" : "not found";
+    lines.push(`  ${layer.source}: ${layer.path} (${status})`);
+    if (layer.found && layer.data) {
+      const keys = Object.keys(layer.data);
+      lines.push(`    Sections: ${keys.join(", ") || "(empty)"}`);
+    }
+  }
+  lines.push("");
+
+  // Env overrides
+  lines.push("Environment overrides:");
+  const activeOverrides = report.envOverrides.filter((e) => e.active);
+  if (activeOverrides.length === 0) {
+    lines.push("  (none)");
+  } else {
+    for (const override of activeOverrides) {
+      lines.push(`  ${override.variable} = ${override.value}`);
+    }
+  }
+  lines.push("");
+
+  // Provider issues
+  if (report.providerIssues.length > 0) {
+    lines.push("Issues:");
+    for (const issue of report.providerIssues) {
+      lines.push(`  [${issue.provider}] ${issue.issue}`);
+    }
+  } else {
+    lines.push("Issues: none");
+  }
+  lines.push("");
+
+  // Summary
+  const summaryMap = {
+    ok: "All checks passed.",
+    warnings: "Some warnings detected (see issues above).",
+    errors: "Configuration errors found (see issues above).",
+  };
+  lines.push(`Status: ${summaryMap[report.summary]}`);
+
+  return lines.join("\n");
+}
+
 export function formatZodErrors(error: z.ZodError): string {
   return error.issues
     .map((e) => {

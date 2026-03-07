@@ -7,6 +7,7 @@ USAGE:
   q [options] <query...>       Ask a question
   q config path                Print config file path
   q config init                Create example config file
+  q config doctor              Diagnose config and provider issues
   q providers                  List configured providers
 
 OPTIONS:

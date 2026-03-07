@@ -106,6 +106,12 @@ describe("CLI argument parsing", () => {
       expect(args.subcommand).toBe("init");
     });
 
+    it("should parse config doctor", () => {
+      const args = parseCliArgs(["config", "doctor"]);
+      expect(args.command).toBe("config");
+      expect(args.subcommand).toBe("doctor");
+    });
+
     it("should throw for unknown config subcommand", () => {
       expect(() => parseCliArgs(["config", "unknown"])).toThrow(UsageError);
     });
