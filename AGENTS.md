@@ -49,6 +49,7 @@ bunx lefthook install    # Install pre-commit + pre-push hooks
 q [options] <query...>      # Run a query and print answer
 q config path               # Print the resolved config file path
 q config init               # Generate an example config file
+q config doctor             # Diagnose config and provider issues
 q providers                 # List configured providers + default
 ```
 
@@ -107,7 +108,7 @@ Support `${VAR_NAME}` syntax in specific fields for allowlisted variables only:
 - `headers` values
 - `provider_slug` (Portkey-specific)
 
-**Allowlisted variables:** `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `PORTKEY_API_KEY`, `PORTKEY_BASE_URL`, `PORTKEY_PROVIDER`, `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`, `HOME`, `USER`, `HOSTNAME`
+**Allowlisted variables:** `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `PORTKEY_API_KEY`, `PORTKEY_BASE_URL`, `PORTKEY_PROVIDER`, `GOOGLE_GENERATIVE_AI_API_KEY`, `GROQ_API_KEY`, `AZURE_API_KEY`, `AZURE_RESOURCE_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AWS_REGION`, `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`, `HOME`, `USER`, `HOSTNAME`
 
 ### Schema (TOML)
 
@@ -137,6 +138,7 @@ Implement a provider resolver:
 ```typescript
 type ProviderConfig = {
   type: "openai" | "anthropic" | "openai_compatible" | "ollama" | "portkey" | "google" | "groq" | "azure" | "bedrock"
+  model?: string                 // Per-provider default model (overridden by Q_MODEL and --model)
   api_key_env?: string
   base_url?: string
   headers?: Record<string, string>
