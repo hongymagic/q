@@ -36,6 +36,34 @@ describe("runQuery", () => {
     writeSpy.mockRestore();
   });
 
+  it("calls onFirstChunk once before writing streamed output", async () => {
+    mockStreamText.mockReturnValue({
+      textStream: (async function* () {
+        yield "hello ";
+        yield "world\n";
+      })(),
+    });
+
+    const writeSpy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+    const onFirstChunk = vi.fn();
+
+    await runQuery({
+      // @ts-expect-error - mocking model
+      model: {},
+      query: "test",
+      systemPrompt: "test",
+      onFirstChunk,
+    });
+
+    expect(onFirstChunk).toHaveBeenCalledTimes(1);
+    expect(onFirstChunk.mock.invocationCallOrder[0]).toBeLessThan(
+      writeSpy.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    );
+    writeSpy.mockRestore();
+  });
+
   it("adds trailing newline if text does not end with one", async () => {
     mockStreamText.mockReturnValue({
       textStream: (async function* () {
@@ -171,6 +199,67 @@ describe("runQuery", () => {
     });
 
     expect(result.text).toBe("");
+    writeSpy.mockRestore();
+  });
+
+  it("throws when the SDK reports an error via onError", async () => {
+    mockStreamText.mockImplementation(
+      (opts: { onError?: (event: { error: unknown }) => void }) => {
+        opts.onError?.({ error: new Error("connection refused") });
+
+        return {
+          textStream: (async function* () {})(),
+        };
+      },
+    );
+
+    const writeSpy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+
+    await expect(
+      runQuery({
+        // @ts-expect-error - mocking model
+        model: {},
+        query: "test",
+        systemPrompt: "test",
+      }),
+    ).rejects.toThrow("AI request failed: connection refused");
+
+    expect(writeSpy).not.toHaveBeenCalled();
+    writeSpy.mockRestore();
+  });
+
+  it("adds a newline before throwing after partial streamed output", async () => {
+    mockStreamText.mockImplementation(
+      (opts: { onError?: (event: { error: unknown }) => void }) => {
+        opts.onError?.({ error: new Error("stream interrupted") });
+
+        return {
+          textStream: (async function* () {
+            yield "partial";
+          })(),
+        };
+      },
+    );
+
+    const writeSpy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+
+    await expect(
+      runQuery({
+        // @ts-expect-error - mocking model
+        model: {},
+        query: "test",
+        systemPrompt: "test",
+      }),
+    ).rejects.toThrow("AI request failed: stream interrupted");
+
+    expect(writeSpy.mock.calls.map((call) => call[0])).toEqual([
+      "partial",
+      "\n",
+    ]);
     writeSpy.mockRestore();
   });
 

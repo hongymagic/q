@@ -76,7 +76,9 @@ q providers                 # List configured providers + default
 ### I/O contract
 
 - **stdout**: answer text (streamed)
-- **stderr**: logs, warnings, errors
+- **stderr**: TTY loading indicator, logs, warnings, concise errors, and debug output
+- **failure logs**: non-usage failures write a detailed log file to the platform log directory and print `Full log: <path>` on stderr
+- **interactive recovery**: when stdin/stdout/stderr are TTYs, query failures offer `r` to retry, `Enter` to view the full log, and `q`/`Esc` to exit
 
 ---
 
@@ -186,6 +188,9 @@ src/
 ├── args.ts             # CLI argument parsing (util.parseArgs)
 ├── env.ts              # Type-safe env vars (@t3-oss/env-core)
 ├── env-info.ts         # Environment detection (OS, shell, terminal)
+├── failure-prompt.ts   # Interactive retry/view-log prompt for TTY failures
+├── loading-indicator.ts # TTY loading spinner while waiting for first output
+├── logging.ts          # stderr logging + failure log writer
 ├── stdin.ts            # Stdin/pipe input handling
 ├── config/
 │   └── index.ts        # Config class, schemas, paths (consolidated)
@@ -250,6 +255,8 @@ scripts/
 | `@ai-sdk/amazon-bedrock` | AWS Bedrock provider |
 | `zod` | Schema validation (v4) |
 | `clipboardy` | Clipboard support |
+| `env-paths` | Cross-platform log directory resolution |
+| `picocolors` | Lightweight stderr colour formatting |
 | `@t3-oss/env-core` | Type-safe env vars |
 | `vitest` | Test runner (dev) |
 | `@vitest/coverage-v8` | V8 code coverage reporter (dev) |

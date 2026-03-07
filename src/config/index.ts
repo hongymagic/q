@@ -7,6 +7,7 @@ import {
   ConfigParseError,
   ConfigValidationError,
 } from "../errors.ts";
+import { logWarning } from "../logging.ts";
 
 export const ProviderType = z.enum([
   "openai",
@@ -207,11 +208,8 @@ export class Config {
         parsed.hostname.endsWith(".local");
 
       if (parsed.protocol === "http:" && !isLocalhost) {
-        console.error(
-          `Warning: Provider '${providerName}' uses insecure HTTP URL: ${url}`,
-        );
-        console.error(
-          "         Consider using HTTPS for non-localhost connections.",
+        logWarning(
+          `Provider '${providerName}' uses insecure HTTP URL: ${url}\nConsider using HTTPS for non-localhost connections.`,
         );
       }
     } catch {
