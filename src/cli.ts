@@ -189,11 +189,17 @@ async function runQueryAttempt(
       !args.options.noCopy && (args.options.copy || config.default.copy);
 
     if (shouldCopy) {
-      const { default: clipboard } = await import("clipboardy");
-      const { sanitizeForClipboard } = await import("./ansi.ts");
-      const safeClipboardText = sanitizeForClipboard(result.text);
-      await clipboard.write(safeClipboardText);
-      logDebug("Copied to clipboard", debug);
+      try {
+        const { default: clipboard } = await import("clipboardy");
+        const { sanitizeForClipboard } = await import("./ansi.ts");
+        const safeClipboardText = sanitizeForClipboard(result.text);
+        await clipboard.write(safeClipboardText);
+        logDebug("Copied to clipboard", debug);
+      } catch {
+        // Clipboard failure is non-fatal — the answer was already streamed to stdout.
+        // Common causes: xclip/xsel not installed, headless server, Wayland without wl-copy.
+        printStderr("Warning: could not copy to clipboard.");
+      }
     }
   } finally {
     loadingIndicator.stop();
