@@ -3,6 +3,7 @@ import type { ConfigData, ProviderConfig } from "../config/index.ts";
 import { env } from "../env.ts";
 import { MissingApiKeyError, ProviderNotFoundError } from "../errors.ts";
 import { logDebug } from "../logging.ts";
+import { isSensitiveKey } from "../sensitive.ts";
 import { createAnthropicProvider } from "./anthropic.ts";
 import { createAzureProvider } from "./azure.ts";
 import { createBedrockProvider } from "./bedrock.ts";
@@ -17,20 +18,6 @@ export interface ResolvedProvider {
   model: LanguageModel;
   providerName: string;
   modelId: string;
-}
-
-const SENSITIVE_FIELD_PATTERNS = [
-  "key",
-  "secret",
-  "token",
-  "password",
-  "auth",
-  "credential",
-];
-
-function isSensitiveKey(key: string): boolean {
-  const lowerKey = key.toLowerCase();
-  return SENSITIVE_FIELD_PATTERNS.some((pattern) => lowerKey.includes(pattern));
 }
 
 /**
@@ -94,6 +81,9 @@ export function resolveProvider(
   }
 
   // Resolution: CLI --model > Q_MODEL env > provider.model > config.default.model
+  // NOTE: config.default.model already includes Q_MODEL (applied during config
+  // loading). The explicit env.Q_MODEL check here is still necessary so that
+  // Q_MODEL takes precedence over providerConfig.model.
   const modelId =
     modelOverride ??
     env.Q_MODEL ??
@@ -168,42 +158,23 @@ type CredentialStatus = {
   present: boolean;
 };
 
+const CREDENTIAL_FIELDS = [
+  "api_key_env",
+  "provider_api_key_env",
+  "access_key_env",
+  "secret_key_env",
+] as const;
+
 function getCredentialStatuses(
   providerConfig: ProviderConfig,
 ): CredentialStatus[] {
-  const statuses: CredentialStatus[] = [];
-
-  if (providerConfig.api_key_env) {
-    statuses.push({
-      envVar: providerConfig.api_key_env,
-      present: Boolean(process.env[providerConfig.api_key_env]),
-    });
-  }
-
-  // Portkey has an additional provider API key
-  if (providerConfig.provider_api_key_env) {
-    statuses.push({
-      envVar: providerConfig.provider_api_key_env,
-      present: Boolean(process.env[providerConfig.provider_api_key_env]),
-    });
-  }
-
-  // Bedrock has optional AWS credential env vars
-  if (providerConfig.access_key_env) {
-    statuses.push({
-      envVar: providerConfig.access_key_env,
-      present: Boolean(process.env[providerConfig.access_key_env]),
-    });
-  }
-
-  if (providerConfig.secret_key_env) {
-    statuses.push({
-      envVar: providerConfig.secret_key_env,
-      present: Boolean(process.env[providerConfig.secret_key_env]),
-    });
-  }
-
-  return statuses;
+  return CREDENTIAL_FIELDS.reduce<CredentialStatus[]>((acc, field) => {
+    const envVar = providerConfig[field];
+    if (envVar) {
+      acc.push({ envVar, present: Boolean(process.env[envVar]) });
+    }
+    return acc;
+  }, []);
 }
 
 function formatCredentialLine(statuses: CredentialStatus[]): string {

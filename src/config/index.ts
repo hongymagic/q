@@ -311,10 +311,8 @@ export async function runConfigDoctor(): Promise<DoctorReport> {
   const xdgPath = getXdgConfigPath();
   const cwdPath = getCwdConfigPath();
 
-  const [xdgFile, cwdFile] = await Promise.all([
-    Bun.file(xdgPath),
-    Bun.file(cwdPath),
-  ]);
+  const xdgFile = Bun.file(xdgPath);
+  const cwdFile = Bun.file(cwdPath);
 
   const [xdgExists, cwdExists] = await Promise.all([
     xdgFile.exists(),
@@ -384,8 +382,11 @@ export async function runConfigDoctor(): Promise<DoctorReport> {
     providerIssues.push({ provider: "(config)", issue: message });
   }
 
-  const hasErrors =
-    !xdgExists || providerIssues.some((i) => i.provider === "(config)");
+  const noConfigAtAll = !xdgExists && !cwdExists;
+  const configLoadFailed = providerIssues.some(
+    (i) => i.provider === "(config)",
+  );
+  const hasErrors = noConfigAtAll || configLoadFailed;
   const hasWarnings = providerIssues.length > 0;
 
   return {

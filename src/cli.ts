@@ -57,19 +57,23 @@ async function main(): Promise<void> {
 
     // Handle config subcommands (before stdin to avoid blocking)
     if (args.command === "config") {
-      if (args.subcommand === "path") {
-        console.log(getConfigPath());
-        process.exit(0);
-      }
-      if (args.subcommand === "init") {
-        const result = await initConfig();
-        console.log(result);
-        process.exit(0);
-      }
-      if (args.subcommand === "doctor") {
-        const report = await runConfigDoctor();
-        console.log(formatDoctorReport(report));
-        process.exit(report.summary === "errors" ? 2 : 0);
+      switch (args.subcommand) {
+        case "path":
+          console.log(getConfigPath());
+          process.exit(0);
+          break;
+        case "init": {
+          const result = await initConfig();
+          console.log(result);
+          process.exit(0);
+          break;
+        }
+        case "doctor": {
+          const report = await runConfigDoctor();
+          console.log(formatDoctorReport(report));
+          process.exit(report.summary === "errors" ? 2 : 0);
+          break;
+        }
       }
     }
 

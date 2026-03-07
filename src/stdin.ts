@@ -71,7 +71,7 @@ export interface ResolvedInput {
 }
 
 /**
- * Resolve the input mode and extract query/context from args and stdin.
+ * Resolve the input source and extract query/context from args and stdin.
  */
 export function resolveInput(
   stdinInput: StdinInput,

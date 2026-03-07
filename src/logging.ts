@@ -3,6 +3,7 @@ import { join } from "node:path";
 import envPaths from "env-paths";
 import pc from "picocolors";
 import pkg from "../package.json";
+import { isSensitiveKey } from "./sensitive.ts";
 
 type LogLevel = "debug" | "warn" | "error";
 type LogContextValue = boolean | number | string;
@@ -188,21 +189,6 @@ function formatSessionEntries(): string {
 // Error properties that may contain full request/response payloads (prompts, bodies).
 // These are omitted entirely from failure logs.
 const OMITTED_ERROR_PROPERTIES = new Set(["requestBodyValues", "responseBody"]);
-
-const SENSITIVE_KEY_PATTERNS = [
-  "key",
-  "secret",
-  "token",
-  "password",
-  "auth",
-  "credential",
-  "authorization",
-];
-
-function isSensitiveKey(key: string): boolean {
-  const lower = key.toLowerCase();
-  return SENSITIVE_KEY_PATTERNS.some((pattern) => lower.includes(pattern));
-}
 
 function formatUnknownValue(value: unknown, depth = 0): string {
   const prefix = "  ".repeat(depth);
