@@ -62,10 +62,10 @@ export async function readStdin(
   };
 }
 
-export type InputMode = "args" | "stdin" | "context";
+export type InputSource = "args" | "stdin" | "context";
 
 export interface ResolvedInput {
-  mode: InputMode;
+  source: InputSource;
   query: string;
   context: string | null;
 }
@@ -80,7 +80,7 @@ export function resolveInput(
   if (stdinInput.hasInput && argsQuery.length > 0) {
     // Context mode: stdin is context, args is question
     return {
-      mode: "context",
+      source: "context",
       query: argsQuery.join(" "),
       context: stdinInput.content,
     };
@@ -89,7 +89,7 @@ export function resolveInput(
   if (stdinInput.hasInput && stdinInput.content) {
     // Query mode: stdin is the question
     return {
-      mode: "stdin",
+      source: "stdin",
       query: stdinInput.content,
       context: null,
     };
@@ -97,7 +97,7 @@ export function resolveInput(
 
   // Normal mode: args is the question
   return {
-    mode: "args",
+    source: "args",
     query: argsQuery.join(" "),
     context: null,
   };

@@ -142,14 +142,14 @@ async function runQueryAttempt(
   stdinInput: StdinInput,
   debug: boolean,
 ): Promise<void> {
-  // Resolve input mode and extract query/context
-  const { mode, query, context } = resolveInput(stdinInput, args.query);
+  // Resolve input source and extract query/context
+  const { source, query, context } = resolveInput(stdinInput, args.query);
   updateLogContext({
-    mode,
+    source,
     queryLength: query.length,
     contextLength: context?.length ?? 0,
   });
-  logDebug(`Mode: ${mode}`, debug);
+  logDebug(`Source: ${source}`, debug);
 
   // Security: Limit query length to prevent abuse and excessive API costs
   if (query.length > MAX_QUERY_LENGTH) {
@@ -195,7 +195,7 @@ async function runQueryAttempt(
       model,
       query,
       context,
-      systemPrompt: buildSystemPrompt(envInfo),
+      systemPrompt: buildSystemPrompt(envInfo, undefined, args.options.mode),
       onFirstChunk: () => loadingIndicator.stop(),
     });
 

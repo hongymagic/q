@@ -50,6 +50,28 @@ describe("CLI argument parsing", () => {
       expect(args.options.debug).toBe(true);
     });
 
+    it("should parse --mode flag with valid values", () => {
+      const args1 = parseCliArgs(["--mode", "command", "test"]);
+      expect(args1.options.mode).toBe("command");
+
+      const args2 = parseCliArgs(["--mode", "explain", "test"]);
+      expect(args2.options.mode).toBe("explain");
+    });
+
+    it("should default mode to command", () => {
+      const args = parseCliArgs(["test"]);
+      expect(args.options.mode).toBe("command");
+    });
+
+    it("should reject invalid mode values", () => {
+      expect(() => parseCliArgs(["--mode", "invalid", "test"])).toThrow(
+        UsageError,
+      );
+      expect(() => parseCliArgs(["--mode", "invalid", "test"])).toThrow(
+        /Unknown mode/,
+      );
+    });
+
     it("should parse --help and -h flag", () => {
       const args1 = parseCliArgs(["--help"]);
       expect(args1.options.help).toBe(true);

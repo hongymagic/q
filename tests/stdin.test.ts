@@ -136,41 +136,41 @@ describe("stdin module", () => {
   });
 
   describe("resolveInput", () => {
-    it("should return args mode when no stdin and args provided", () => {
+    it("should return args source when no stdin and args provided", () => {
       const stdin: StdinInput = { content: null, hasInput: false };
       const result = resolveInput(stdin, ["how", "do", "I"]);
 
-      expect(result.mode).toBe("args");
+      expect(result.source).toBe("args");
       expect(result.query).toBe("how do I");
       expect(result.context).toBeNull();
     });
 
-    it("should return stdin mode when stdin provided and no args", () => {
+    it("should return stdin source when stdin provided and no args", () => {
       const stdin: StdinInput = { content: "what is docker", hasInput: true };
       const result = resolveInput(stdin, []);
 
-      expect(result.mode).toBe("stdin");
+      expect(result.source).toBe("stdin");
       expect(result.query).toBe("what is docker");
       expect(result.context).toBeNull();
     });
 
-    it("should return context mode when both stdin and args provided", () => {
+    it("should return context source when both stdin and args provided", () => {
       const stdin: StdinInput = {
         content: "error log content",
         hasInput: true,
       };
       const result = resolveInput(stdin, ["explain", "this"]);
 
-      expect(result.mode).toBe("context");
+      expect(result.source).toBe("context");
       expect(result.query).toBe("explain this");
       expect(result.context).toBe("error log content");
     });
 
-    it("should return args mode with empty query when no input", () => {
+    it("should return args source with empty query when no input", () => {
       const stdin: StdinInput = { content: null, hasInput: false };
       const result = resolveInput(stdin, []);
 
-      expect(result.mode).toBe("args");
+      expect(result.source).toBe("args");
       expect(result.query).toBe("");
       expect(result.context).toBeNull();
     });
@@ -179,7 +179,7 @@ describe("stdin module", () => {
       const stdin: StdinInput = { content: null, hasInput: false };
       const result = resolveInput(stdin, ["test"]);
 
-      expect(result.mode).toBe("args");
+      expect(result.source).toBe("args");
       expect(result.query).toBe("test");
     });
   });

@@ -99,6 +99,37 @@ describe("System Prompt", () => {
       expect(prompt).toContain("backticks");
       expect(prompt).toContain("code fences");
     });
+
+    it("should produce command mode by default", () => {
+      const prompt = buildSystemPrompt(mockEnv, "test-date");
+      expect(prompt).toContain("terminal command expert");
+      expect(prompt).toMatch(/one-liner/i);
+    });
+
+    it("should produce command mode explicitly", () => {
+      const prompt = buildSystemPrompt(mockEnv, "test-date", "command");
+      expect(prompt).toContain("terminal command expert");
+    });
+
+    it("should produce explain mode with reasoning instructions", () => {
+      const prompt = buildSystemPrompt(mockEnv, "test-date", "explain");
+      expect(prompt).toContain("technical assistant");
+      expect(prompt).toContain("Explain the reasoning");
+      expect(prompt).not.toContain("One-liner commands ONLY");
+    });
+
+    it("should include environment info in explain mode", () => {
+      const prompt = buildSystemPrompt(mockEnv, "test-date", "explain");
+      expect(prompt).toContain("macOS 14.5.0 (arm64)");
+      expect(prompt).toContain("Shell: zsh");
+      expect(prompt).toContain("Date/Time: test-date");
+    });
+
+    it("should forbid markdown in explain mode too", () => {
+      const prompt = buildSystemPrompt(mockEnv, "test-date", "explain");
+      expect(prompt).toMatch(/never use markdown/i);
+      expect(prompt).toContain("backticks");
+    });
   });
 
   describe("buildUserPrompt", () => {

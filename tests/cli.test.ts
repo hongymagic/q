@@ -159,7 +159,7 @@ describe("CLI integration", () => {
       const { stderr, exitCode } = runCli("--debug hello", env);
 
       expect(exitCode).toBe(2);
-      expect(stderr).toContain("[debug] Mode:");
+      expect(stderr).toContain("[debug] Source:");
       expect(stderr).toContain("[debug] Loading config...");
       expect(stderr).toContain(
         "Error: Config file not found. Run 'q config init'.",

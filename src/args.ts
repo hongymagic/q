@@ -4,6 +4,12 @@ import { UsageError } from "./errors.ts";
 
 export type Command = "query" | "config" | "providers";
 export type ConfigSubcommand = "path" | "init" | "doctor";
+export type OutputMode = "command" | "explain";
+
+const VALID_OUTPUT_MODES: ReadonlySet<string> = new Set<OutputMode>([
+  "command",
+  "explain",
+]);
 
 export interface ParsedArgs {
   command: Command;
@@ -12,6 +18,7 @@ export interface ParsedArgs {
   options: {
     provider?: string;
     model?: string;
+    mode: OutputMode;
     copy: boolean;
     noCopy: boolean;
     debug: boolean;
@@ -32,6 +39,7 @@ USAGE:
 OPTIONS:
   -p, --provider <name>        Override the default provider
   -m, --model <id>             Override the default model
+  --mode <mode>                Output mode: command (default) or explain
   --copy                       Copy answer to clipboard
   --no-copy                    Disable copy (overrides config)
   --debug                      Enable debug logging to stderr
@@ -63,6 +71,7 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
     options: {
       provider: { type: "string", short: "p" },
       model: { type: "string", short: "m" },
+      mode: { type: "string", default: "command" },
       copy: { type: "boolean", default: false },
       "no-copy": { type: "boolean", default: false },
       debug: { type: "boolean", default: false },
@@ -73,9 +82,17 @@ export function parseCliArgs(argv: string[] = Bun.argv.slice(2)): ParsedArgs {
     strict: true,
   });
 
+  const rawMode = values.mode ?? "command";
+  if (!VALID_OUTPUT_MODES.has(rawMode)) {
+    throw new UsageError(
+      `Unknown mode: '${rawMode}'\nValid modes: command, explain`,
+    );
+  }
+
   const options = {
     provider: values.provider,
     model: values.model,
+    mode: rawMode as OutputMode,
     copy: values.copy ?? false,
     noCopy: values["no-copy"] ?? false,
     debug: values.debug ?? false,

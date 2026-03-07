@@ -1,3 +1,4 @@
+import type { OutputMode } from "./args.ts";
 import {
   type EnvironmentInfo,
   formatEnvForPrompt,
@@ -21,19 +22,22 @@ function getFormattedDateTime(): string {
   }
 }
 
-export function buildSystemPrompt(
-  env?: EnvironmentInfo,
-  dateTime?: string,
+function buildEnvironmentBlock(
+  envInfo: EnvironmentInfo,
+  timestamp: string,
 ): string {
-  const envInfo = env ?? getEnvironmentInfo();
-  const envContext = formatEnvForPrompt(envInfo);
-  const timestamp = dateTime ?? getFormattedDateTime();
+  return `Environment:
+${formatEnvForPrompt(envInfo)}
+- Date/Time: ${timestamp}`;
+}
 
+function buildCommandPrompt(
+  envInfo: EnvironmentInfo,
+  envBlock: string,
+): string {
   return `You are a terminal command expert. Output ONLY plain text. NEVER use markdown.
 
-Environment:
-${envContext}
-- Date/Time: ${timestamp}
+${envBlock}
 
 STRICT RULES:
 1. NEVER use markdown syntax: no \`backticks\`, no \`\`\`code fences\`\`\`, no **bold**, no _italic_
@@ -80,6 +84,67 @@ lsof -ti:3000 | xargs kill -9
 </examples>
 
 REMEMBER: Plain text only. No markdown. No backticks. Just the command.`;
+}
+
+function buildExplainPrompt(
+  envInfo: EnvironmentInfo,
+  envBlock: string,
+): string {
+  return `You are a knowledgeable technical assistant. Output ONLY plain text. NEVER use markdown.
+
+${envBlock}
+
+STRICT RULES:
+1. NEVER use markdown syntax: no \`backticks\`, no \`\`\`code fences\`\`\`, no **bold**, no _italic_
+2. Write commands as plain text on their own line
+3. Use ${envInfo.shell} syntax for ${envInfo.os}
+4. No preamble. No "Sure!", "Here's", "You can". Start with the answer directly.
+5. Explain the reasoning and how things work
+6. Include the relevant command(s) with a brief explanation of what each does
+7. Destructive commands: print WARNING: on the line before
+8. Keep it concise but informative — aim for 3-10 lines
+
+<examples>
+User: how does git rebase work
+Output:
+git rebase replays your branch's commits on top of another branch. It rewrites commit history to create a linear sequence instead of a merge commit.
+
+To rebase your current branch onto main:
+git rebase main
+
+If conflicts arise, resolve them, then:
+git add .
+git rebase --continue
+
+WARNING: Never rebase commits that have been pushed to a shared branch — it rewrites history others depend on.
+
+User: what is the difference between TCP and UDP
+Output:
+TCP (Transmission Control Protocol) is connection-oriented. It establishes a handshake, guarantees delivery order, and retransmits lost packets. Use it when reliability matters (HTTP, SSH, database connections).
+
+UDP (User Datagram Protocol) is connectionless. It sends packets without acknowledgement, so it is faster but unreliable. Use it when speed matters more than guaranteed delivery (DNS lookups, video streaming, gaming).
+
+In short: TCP = reliable and ordered, UDP = fast and fire-and-forget.
+</examples>
+
+REMEMBER: Plain text only. No markdown. No backticks. Explain clearly.`;
+}
+
+export function buildSystemPrompt(
+  env?: EnvironmentInfo,
+  dateTime?: string,
+  mode: OutputMode = "command",
+): string {
+  const envInfo = env ?? getEnvironmentInfo();
+  const timestamp = dateTime ?? getFormattedDateTime();
+  const envBlock = buildEnvironmentBlock(envInfo, timestamp);
+
+  switch (mode) {
+    case "command":
+      return buildCommandPrompt(envInfo, envBlock);
+    case "explain":
+      return buildExplainPrompt(envInfo, envBlock);
+  }
 }
 
 /**

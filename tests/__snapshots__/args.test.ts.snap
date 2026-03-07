@@ -13,6 +13,7 @@ USAGE:
 OPTIONS:
   -p, --provider <name>        Override the default provider
   -m, --model <id>             Override the default model
+  --mode <mode>                Output mode: command (default) or explain
   --copy                       Copy answer to clipboard
   --no-copy                    Disable copy (overrides config)
   --debug                      Enable debug logging to stderr
