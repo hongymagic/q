@@ -29,3 +29,8 @@
 **Vulnerability:** In `src/providers/portkey.ts`, the logging code meant to mask sensitive headers (like `Authorization` or `x-portkey-api-key`) was flawed. If a sensitive value was 12 characters or less, it was completely exposed in plain text in the debug logs instead of being masked.
 **Learning:** Conditional masking logic often fails to account for shorter strings or edge cases in lengths. When using a ternary that checks for length, ensure the alternate case for a shorter length securely masks the string rather than falling through to the unmasked original value.
 **Prevention:** Fully mask short strings (e.g., using `"********"`) and verify boundary conditions for all sensitive data redaction functions.
+
+## 2026-03-08 - Secret Leakage in Debug Logs via JSON Stringification
+**Vulnerability:** When stringifying deeply nested objects for logging or error reporting (e.g. `JSON.stringify(error)`), sensitive fields such as HTTP headers (`Authorization`, `x-api-key`) nested inside error properties or configurations could be written to disk in plain text.
+**Learning:** Relying solely on key deletion filtering functions can cause issues with arrays or custom `toJSON` serialization methods. Global `.includes()` checks can incorrectly redact safe keys containing substrings like 'token' (e.g., `promptTokens`). Also, low-level modules like `logging.ts` shouldn't import higher-level application modules to avoid circular dependencies.
+**Prevention:** Use the native `replacer` function argument in `JSON.stringify` configured with exact, strict matches and suffix checks (e.g., `=== 'authorization'` or `.endsWith('_key')`) to target strictly sensitive tokens safely.

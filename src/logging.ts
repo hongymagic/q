@@ -225,6 +225,32 @@ function formatUnknownValue(value: unknown, depth = 0): string {
   return `${prefix}${formatValue(value)}`;
 }
 
+const SENSITIVE_KEYS = new Set([
+  "authorization",
+  "password",
+  "secret",
+  "token",
+  "api_key",
+  "apikey",
+  "access_token",
+  "refresh_token",
+]);
+
+function secureReplacer(key: string, value: unknown): unknown {
+  if (key && typeof key === "string") {
+    const lowerKey = key.toLowerCase();
+    if (
+      SENSITIVE_KEYS.has(lowerKey) ||
+      lowerKey.endsWith("_key") ||
+      lowerKey.endsWith("apikey") ||
+      lowerKey === "x-api-key"
+    ) {
+      return "[REDACTED]";
+    }
+  }
+  return value;
+}
+
 function formatValue(value: unknown): string {
   if (typeof value === "string") {
     return value;
@@ -240,7 +266,7 @@ function formatValue(value: unknown): string {
   }
 
   try {
-    return JSON.stringify(value, null, 2);
+    return JSON.stringify(value, secureReplacer, 2);
   } catch {
     return String(value);
   }
