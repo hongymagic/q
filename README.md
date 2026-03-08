@@ -83,7 +83,7 @@ q providers      # List configured providers
 
 Config is loaded from (later overrides earlier):
 
-1. `~/.config/q/config.toml`
+1. `$XDG_CONFIG_HOME/q/config.toml` (or `~/.config/q/config.toml`)
 2. `./config.toml` (project-specific)
 3. Environment: `Q_PROVIDER`, `Q_MODEL`, `Q_COPY`
 
