@@ -240,7 +240,29 @@ function formatValue(value: unknown): string {
   }
 
   try {
-    return JSON.stringify(value, null, 2);
+    return JSON.stringify(
+      value,
+      (k, v) => {
+        if (!k) return v;
+        const lowerKey = k.toLowerCase();
+        const isSensitive =
+          lowerKey === "authorization" ||
+          lowerKey === "password" ||
+          lowerKey === "token" ||
+          lowerKey.endsWith("_key");
+
+        if (isSensitive) {
+          if (typeof v === "string") {
+            return v.length > 12
+              ? `${v.substring(0, 8)}...${v.substring(v.length - 4)}`
+              : "********";
+          }
+          return "********";
+        }
+        return v;
+      },
+      2,
+    );
   } catch {
     return String(value);
   }
