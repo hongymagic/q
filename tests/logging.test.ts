@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatStderrMessage } from "../src/logging.ts";
+import { formatErrorDiagnostics, formatStderrMessage } from "../src/logging.ts";
 
 describe("formatStderrMessage", () => {
   it("keeps plain text when colour is disabled", () => {
@@ -28,5 +28,58 @@ describe("formatStderrMessage", () => {
     expect(logLine).toContain("\u001B[");
     expect(logLine).toContain("Full log:");
     expect(logLine).toContain("/tmp/q.log");
+  });
+});
+
+describe("formatErrorDiagnostics", () => {
+  it("redacts sensitive fields in nested objects", () => {
+    const diagnostics = formatErrorDiagnostics({
+      password: "hunter2",
+      request: {
+        headers: {
+          Authorization: "secret-token",
+        },
+        api_key: "abcd1234",
+        safe: "value",
+      },
+    });
+
+    expect(diagnostics).toContain('"password": "********"');
+    expect(diagnostics).toContain('"Authorization": "********"');
+    expect(diagnostics).toContain('"api_key": "********"');
+    expect(diagnostics).toContain('"safe": "value"');
+    expect(diagnostics).not.toContain("hunter2");
+    expect(diagnostics).not.toContain("secret-token");
+    expect(diagnostics).not.toContain("abcd1234");
+  });
+
+  it("redacts sensitive fields on error properties and causes", () => {
+    const error = Object.assign(
+      new Error("boom", {
+        cause: {
+          nested_key: "cause-secret",
+          detail: "provider error",
+        },
+      }),
+      {
+        token: "topsecret",
+        metadata: {
+          password: "letmein",
+          safe: true,
+        },
+      },
+    );
+
+    const diagnostics = formatErrorDiagnostics(error);
+
+    expect(diagnostics).toContain("name: Error");
+    expect(diagnostics).toContain("message: boom");
+    expect(diagnostics).toContain("token: ********");
+    expect(diagnostics).toContain('"password": "********"');
+    expect(diagnostics).toContain('"nested_key": "********"');
+    expect(diagnostics).toContain('"detail": "provider error"');
+    expect(diagnostics).not.toContain("topsecret");
+    expect(diagnostics).not.toContain("letmein");
+    expect(diagnostics).not.toContain("cause-secret");
   });
 });

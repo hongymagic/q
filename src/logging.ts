@@ -205,7 +205,9 @@ function formatUnknownValue(value: unknown, depth = 0): string {
     if (properties.length > 0) {
       lines.push(`${prefix}properties:`);
       for (const [key, propertyValue] of properties) {
-        lines.push(`${prefix}  ${key}: ${formatValue(propertyValue)}`);
+        lines.push(
+          `${prefix}  ${key}: ${formatPropertyValue(key, propertyValue)}`,
+        );
       }
     }
 
@@ -243,29 +245,41 @@ function formatValue(value: unknown): string {
     return JSON.stringify(
       value,
       (k, v) => {
-        if (!k) return v;
-        const lowerKey = k.toLowerCase();
-        const isSensitive =
-          lowerKey === "authorization" ||
-          lowerKey === "password" ||
-          lowerKey === "token" ||
-          lowerKey.endsWith("_key");
-
-        if (isSensitive) {
-          if (typeof v === "string") {
-            return v.length > 12
-              ? `${v.substring(0, 8)}...${v.substring(v.length - 4)}`
-              : "********";
-          }
-          return "********";
+        if (!k) {
+          return v;
         }
-        return v;
+
+        return isSensitiveKey(k) ? redactValue(v) : v;
       },
       2,
     );
   } catch {
     return String(value);
   }
+}
+
+function formatPropertyValue(key: string, value: unknown): string {
+  return isSensitiveKey(key) ? String(redactValue(value)) : formatValue(value);
+}
+
+function isSensitiveKey(key: string): boolean {
+  const lowerKey = key.toLowerCase();
+  return (
+    lowerKey === "authorization" ||
+    lowerKey === "password" ||
+    lowerKey === "token" ||
+    lowerKey.endsWith("_key")
+  );
+}
+
+function redactValue(value: unknown): string {
+  if (typeof value === "string") {
+    return value.length > 12
+      ? `${value.substring(0, 8)}...${value.substring(value.length - 4)}`
+      : "********";
+  }
+
+  return "********";
 }
 
 function indentBlock(value: string, depth: number): string {
