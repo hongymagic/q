@@ -34,3 +34,8 @@
 **Vulnerability:** The \`formatValue\` function in \`src/logging.ts\` serialized objects using \`JSON.stringify(value, null, 2)\` without any redaction logic. Any nested objects containing sensitive fields (like \`Authorization\`, \`password\`, \`token\`, or keys ending in \`_key\`) would be exposed in plaintext in debug and failure logs.
 **Learning:** Default object serialization functions (like \`JSON.stringify\`) do not inherently know about sensitive data. When logging arbitrary or user-provided objects, a custom replacer must be used to scrub sensitive fields before they hit the disk or console.
 **Prevention:** Always use a custom replacer function with \`JSON.stringify\` when logging objects that might contain sensitive data, ensuring that known sensitive keys are masked.
+
+## 2026-03-11 - Secret Leakage in Debug Logs via Unfiltered Arrays
+**Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
+**Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
+**Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
