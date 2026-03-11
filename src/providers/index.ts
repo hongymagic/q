@@ -34,28 +34,25 @@ function isSensitiveKey(key: string): boolean {
 
 /**
  * Filter sensitive fields from a provider config for safe logging.
- * Removes any field containing: key, secret, token, password, auth, credential.
- * Also recursively filters nested objects like headers.
+ * Removes sensitive fields recursively using a JSON replacer to safely
+ * handle arrays and nested objects without mutating the original.
  * @internal Exported for testing only
  */
 export function filterSensitiveFields(
   config: Record<string, unknown>,
 ): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-
-  for (const [key, value] of Object.entries(config)) {
-    if (isSensitiveKey(key)) {
-      continue;
-    }
-
-    if (value && typeof value === "object" && !Array.isArray(value)) {
-      result[key] = filterSensitiveFields(value as Record<string, unknown>);
-    } else {
-      result[key] = value;
-    }
+  try {
+    return JSON.parse(
+      JSON.stringify(config, (key, value) => {
+        if (!key) {
+          return value;
+        }
+        return isSensitiveKey(key) ? undefined : value;
+      }),
+    );
+  } catch {
+    return {};
   }
-
-  return result;
 }
 
 /**

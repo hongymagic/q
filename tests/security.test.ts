@@ -180,6 +180,25 @@ describe("security", () => {
       expect(filteredHeaders).not.toHaveProperty("Authorization");
       expect(filteredHeaders).not.toHaveProperty("x-api-key");
     });
+
+    it("should safely filter arrays of objects without leaking", () => {
+      const testConfig = {
+        type: "openai" as const,
+        base_url: "https://api.openai.com",
+        items: [{ api_key: "secret-1" }, { token: "secret-2", safe: "value" }],
+      };
+
+      const filtered = filterSensitiveFields(
+        testConfig as unknown as Parameters<typeof filterSensitiveFields>[0],
+      );
+
+      expect(filtered).toHaveProperty("items");
+      // biome-ignore lint/suspicious/noExplicitAny: using any for testing dynamic shapes
+      const items = filtered.items as any[];
+      expect(items[0]).not.toHaveProperty("api_key");
+      expect(items[1]).not.toHaveProperty("token");
+      expect(items[1]).toHaveProperty("safe", "value");
+    });
   });
 
   describe("CLI argument safety", () => {
