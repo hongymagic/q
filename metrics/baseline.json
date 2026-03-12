@@ -1,0 +1,24 @@
+{
+  "recorded_at": "2026-03-12T00:00:00.000Z",
+  "metrics": {
+    "timestamp": "2026-03-12T00:00:00.000Z",
+    "coverage_percent": 0,
+    "test_total": 0,
+    "test_passed": 0,
+    "test_failed": 0,
+    "binary_size_bytes": 0,
+    "bundle_size_bytes": 0,
+    "source_loc": 0,
+    "test_loc": 0,
+    "test_to_source_ratio": 0,
+    "lint_errors": 0,
+    "lint_warnings": 0,
+    "dependency_count": 14,
+    "dev_dependency_count": 6
+  },
+  "thresholds": {
+    "coverage_drop_max_percent": 2,
+    "binary_size_grow_max_percent": 10,
+    "lint_errors_max": 0
+  }
+}

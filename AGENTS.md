@@ -16,6 +16,10 @@ bun run typecheck        # Type check
 bun run lint             # Check lint/format
 bun run fix              # Auto-fix issues
 bun run build            # Build for current platform
+bun run metrics          # Collect quality metrics
+bun run metrics:check    # Check metrics against baseline
+bun run metrics:baseline # Update metrics baseline
+bun run bench            # Run performance benchmarks
 gh aw compile --validate # Compile and validate gh-aw workflows
 bunx lefthook install    # Install pre-commit + pre-push hooks
 ```
@@ -212,7 +216,12 @@ src/
 scripts/
 ├── calver.ts           # CalVer utility functions
 ├── calver.test.ts      # Tests for CalVer utilities
+├── metrics.ts          # Quality metrics collection + regression detection
+├── benchmark.ts        # Performance benchmark suite
 └── release.ts          # Release script (creates CalVer tags)
+
+metrics/
+└── baseline.json       # Persisted quality metrics baseline
 
 .github/
 ├── copilot-instructions.md # Points to AGENTS.md
@@ -221,11 +230,19 @@ scripts/
 ├── agents/
 │   ├── security-hardener.agent.md
 │   ├── feature-implementer.agent.md
-│   └── maintenance-keeper.agent.md
+│   ├── maintenance-keeper.agent.md
+│   └── code-reviewer.agent.md     # Multi-dimensional PR review agent
 ├── skills/
 │   ├── security-patch/SKILL.md
 │   ├── feature-delivery/SKILL.md
-│   └── maintenance-update/SKILL.md
+│   ├── maintenance-update/SKILL.md
+│   ├── code-review/SKILL.md       # 5-dimension review rubric
+│   └── harness-review/SKILL.md    # Harness self-evolution checklist
+├── evolution/
+│   ├── journal.md      # Append-only agent decision log
+│   ├── patterns.md     # Successful patterns for reuse
+│   ├── rejected.md     # Lessons from rejected PRs
+│   └── active-work.md  # Cross-agent coordination state
 └── workflows/
     ├── ci.yml
     ├── release.yml
@@ -235,6 +252,9 @@ scripts/
     ├── feature-daily.md
     ├── maintenance-daily.md
     ├── self-improve-weekly.md
+    ├── review-on-pr.md             # PR-triggered multi-dimensional review
+    ├── coordinator-daily.md        # Cross-agent coordination (00:00 UTC)
+    ├── harness-evolve-monthly.md   # Self-modifying harness evolution
     └── *.lock.yml       # Compiled gh-aw workflow lock files
 ```
 
@@ -305,9 +325,57 @@ Published as `@hongymagic/q` (`npm install -g @hongymagic/q`). Binary installs a
 
 - **Deterministic** (`deps-update.yml`): Daily at 00:00 UTC. Runs `npx npm-check-updates -u` + `bun install`, creates/updates PR on `deps/automated-update`.
 - **Copilot handoff** (`deps-update-copilot.yml`): Manual trigger. Creates an issue and assigns `@copilot`.
-- **Agentic** (`gh-aw`): Daily workflows (`security-daily.md`, `feature-daily.md`, `maintenance-daily.md`) + weekly (`self-improve-weekly.md`). Source in `.github/workflows/`, compiled to `.lock.yml`. Run `gh aw compile --validate` after frontmatter changes.
+- **Agentic** (`gh-aw`): Daily workflows (`security-daily.md`, `feature-daily.md`, `maintenance-daily.md`) + weekly (`self-improve-weekly.md`) + monthly (`harness-evolve-monthly.md`). Source in `.github/workflows/`, compiled to `.lock.yml`. Run `gh aw compile --validate` after frontmatter changes.
   - Required secrets: `COPILOT_GITHUB_TOKEN`, `GH_AW_AGENT_TOKEN`
   - All workflows enforce a plan-first gate before implementation.
+  - All workflows read `.github/evolution/` memory before acting.
+  - `coordinator-daily.md` runs at 00:00 UTC before all other dailies.
+  - `review-on-pr.md` runs on every PR (not scheduled).
+  - `harness-evolve-monthly.md` can modify workflow files (with safety invariants).
+
+---
+
+## Self-Evolving Harness
+
+The project uses a multi-agent system that autonomously writes, reviews, and improves both the product code and its own automation infrastructure.
+
+### Agent Ecosystem
+
+| Agent | Schedule | Scope | Purpose |
+|-------|----------|-------|---------|
+| Coordinator | Daily 00:00 UTC | `.github/evolution/` | Shares context between agents |
+| Security | Daily 00:11 UTC | Product code | Finds and fixes vulnerabilities |
+| Feature | Daily 00:23 UTC | Product code | Implements feature gaps |
+| Maintenance | Daily 00:37 UTC | Product code | Fixes dead code, test gaps, docs drift |
+| Code Reviewer | On every PR | All files | Multi-dimensional review (5 dimensions) |
+| Self-Improve | Weekly Monday | Product code | Fixes recurring quality patterns |
+| Harness Evolve | Monthly 1st | Workflow files | Improves the agents themselves |
+
+### Evolution Memory (`.github/evolution/`)
+
+Agents share persistent memory across runs:
+- `journal.md` — Append-only decision log
+- `patterns.md` — Successful patterns to reuse
+- `rejected.md` — Lessons from failed approaches
+- `active-work.md` — Current in-flight work (updated by coordinator)
+
+### Quality Metrics (`scripts/metrics.ts`)
+
+Tracked metrics: test coverage, test count, binary size, bundle size, source/test LOC, lint violations, dependency count. Baseline stored in `metrics/baseline.json`.
+
+### Benchmarks (`scripts/benchmark.ts`)
+
+Tracked benchmarks: startup time, binary size, bundle size, config parse time.
+
+### Safety Invariants
+
+1. All harness PRs are draft + require human review
+2. `safe-outputs`, `permissions`, `engine` blocks are immutable
+3. Planning gates cannot be removed from any agent
+4. All workflows default to noop (healthy state)
+5. Product-code agents never touch workflow files
+6. Each workflow creates at most 1 PR per run
+7. All automation PRs expire after 14 days
 
 ---
 
