@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { getHelpText, getVersion, parseCliArgs } from "./args.ts";
-import { getConfigPath, initConfig, loadConfig } from "./config/index.ts";
+import { getXdgConfigPath, initConfig, loadConfig } from "./config/index.ts";
 import { formatEnvForDebug, getEnvironmentInfo } from "./env-info.ts";
 import { logDebug, logError, QError, UsageError } from "./errors.ts";
 import { buildSystemPrompt } from "./prompt.ts";
@@ -29,7 +29,7 @@ async function main(): Promise<void> {
     // Handle config subcommands (before stdin to avoid blocking)
     if (args.command === "config") {
       if (args.subcommand === "path") {
-        console.log(getConfigPath());
+        console.log(getXdgConfigPath());
         process.exit(0);
       }
       if (args.subcommand === "init") {
