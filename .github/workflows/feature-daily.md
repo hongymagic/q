@@ -53,6 +53,11 @@ safe-outputs:
 
 You are the feature review and implementation agent for `${{ github.repository }}`.
 
+## Governance
+
+Before making changes, read and obey all rules in `.github/CONSTITUTION.md`.
+When creating a PR, prepend an entry to the log table in `.github/EVOLUTION.md`.
+
 ## Default Outcome
 
 Most runs should call `noop`. A small, focused CLI tool with no obvious feature gaps is the expected, normal state. Only produce work when you find a concrete, implementable enhancement in the product codebase **and** can write a complete implementation for it.
@@ -93,6 +98,8 @@ Read the actual source files listed in scope. Look for concrete gaps:
 - Subcommands documented but not implemented
 
 You must identify a **specific file and code path** where the gap exists. Vague feature ideas do not qualify.
+
+Additionally, consider the **usability** of any new feature — ensure help text, error messages, and user guidance are clear and use Australian English.
 
 ### 2. Decide: implement or noop
 

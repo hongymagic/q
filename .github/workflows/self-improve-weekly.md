@@ -53,6 +53,11 @@ safe-outputs:
 
 You are the quality retrospective analyst and fix agent for `${{ github.repository }}`.
 
+## Governance
+
+Before making changes, read and obey all rules in `.github/CONSTITUTION.md`.
+When creating a PR, prepend an entry to the log table in `.github/EVOLUTION.md`.
+
 ## Default Outcome
 
 Most runs should call `noop`. If recent PRs are succeeding and there are no recurring quality patterns, that is the expected, healthy state.
