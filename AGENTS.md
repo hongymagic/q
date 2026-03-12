@@ -215,27 +215,42 @@ scripts/
 └── release.ts          # Release script (creates CalVer tags)
 
 .github/
+├── CONSTITUTION.md         # Immutable governance rules for autonomous agents
+├── EVOLUTION.md            # Living log of all autonomous changes and outcomes
+├── PULL_REQUEST_TEMPLATE.md
 ├── copilot-instructions.md # Points to AGENTS.md
+├── dependabot.yml
 ├── aw/
 │   └── actions-lock.json   # Cached action pin resolutions from gh-aw compile
 ├── agents/
 │   ├── security-hardener.agent.md
 │   ├── feature-implementer.agent.md
-│   └── maintenance-keeper.agent.md
+│   ├── maintenance-keeper.agent.md
+│   ├── performance-guardian.agent.md
+│   ├── coverage-expander.agent.md
+│   └── usability-reviewer.agent.md
 ├── skills/
 │   ├── security-patch/SKILL.md
 │   ├── feature-delivery/SKILL.md
-│   └── maintenance-update/SKILL.md
+│   ├── maintenance-update/SKILL.md
+│   ├── performance-fix/SKILL.md
+│   ├── coverage-expansion/SKILL.md
+│   └── usability-fix/SKILL.md
 └── workflows/
     ├── ci.yml
     ├── release.yml
     ├── deps-update.yml
     ├── deps-update-copilot.yml
-    ├── security-daily.md
-    ├── feature-daily.md
-    ├── maintenance-daily.md
-    ├── self-improve-weekly.md
-    └── *.lock.yml       # Compiled gh-aw workflow lock files
+    ├── agentics-maintenance.yml
+    ├── security-daily.md          # Daily security scan
+    ├── feature-daily.md           # Daily feature gap detection
+    ├── maintenance-daily.md       # Daily maintenance scan
+    ├── self-improve-weekly.md     # Weekly quality retrospective
+    ├── performance-weekly.md      # Weekly performance audit
+    ├── coverage-weekly.md         # Weekly test coverage expansion
+    ├── usability-weekly.md        # Weekly CLI UX review
+    ├── self-evolve-fortnightly.md # Meta-agent: improves agents themselves
+    └── *.lock.yml                 # Compiled gh-aw workflow lock files
 ```
 
 ---
@@ -305,9 +320,47 @@ Published as `@hongymagic/q` (`npm install -g @hongymagic/q`). Binary installs a
 
 - **Deterministic** (`deps-update.yml`): Daily at 00:00 UTC. Runs `npx npm-check-updates -u` + `bun install`, creates/updates PR on `deps/automated-update`.
 - **Copilot handoff** (`deps-update-copilot.yml`): Manual trigger. Creates an issue and assigns `@copilot`.
-- **Agentic** (`gh-aw`): Daily workflows (`security-daily.md`, `feature-daily.md`, `maintenance-daily.md`) + weekly (`self-improve-weekly.md`). Source in `.github/workflows/`, compiled to `.lock.yml`. Run `gh aw compile --validate` after frontmatter changes.
+- **Agentic** (`gh-aw`): Daily workflows (`security-daily.md`, `feature-daily.md`, `maintenance-daily.md`) + weekly (`self-improve-weekly.md`, `performance-weekly.md`, `coverage-weekly.md`, `usability-weekly.md`) + fortnightly (`self-evolve-fortnightly.md`). Source in `.github/workflows/`, compiled to `.lock.yml`. Run `gh aw compile --validate` after frontmatter changes.
   - Required secrets: `COPILOT_GITHUB_TOKEN`, `GH_AW_AGENT_TOKEN`
   - All workflows enforce a plan-first gate before implementation.
+
+---
+
+## Self-Evolving System
+
+`q` includes an autonomous improvement system powered by GitHub Agentic Workflows (gh-aw). AI agents continuously scan, assess, and improve the codebase across multiple dimensions.
+
+### Agent Schedule
+
+| Agent | Schedule | Purpose | PR Prefix |
+|-------|----------|---------|-----------|
+| Security Daily | Daily 00:11 UTC | Scan and fix security vulnerabilities | `[security]` |
+| Feature Daily | Daily 00:23 UTC | Detect and implement feature gaps | `[feature]` |
+| Maintenance Daily | Daily 00:37 UTC | Fix dead code, test gaps, docs drift | `[maintenance]` |
+| Self Improve Weekly | Mon 01:10 UTC | Retrospective on PR quality patterns | `[quality]` |
+| Performance Weekly | Tue 01:10 UTC | Binary size, speed, memory optimisation | `[perf]` |
+| Coverage Weekly | Wed 01:10 UTC | Expand test coverage for low-coverage modules | `[coverage]` |
+| Usability Weekly | Thu 01:10 UTC | CLI UX, error messages, help text, Australian English | `[ux]` |
+| Self Evolve Fortnightly | 1st & 15th 02:00 UTC | Meta-agent: improve agent prompts and skills | `[evolve]` |
+
+### Governance
+
+All autonomous agents are governed by `.github/CONSTITUTION.md`:
+
+- All agent PRs are **draft** and require **human approval** to merge
+- Each agent has a **declared scope** — it may only modify files within that scope
+- **Copilot** is assigned as reviewer on all agent PRs
+- **Threat detection** runs as a second pass on all agent outputs
+- Agents run in a **sandboxed environment** with network firewall and tool allowlists
+- Max **1 PR per agent per run**; stale PRs **auto-expire** after 14 days
+
+### Evolution Tracking
+
+All autonomous changes are logged in `.github/EVOLUTION.md`. The Self Evolve Fortnightly agent uses this log to assess agent effectiveness and propose improvements to agent prompts and skills.
+
+### Agent Definitions & Skills
+
+Each agent has a persona definition (`.github/agents/*.agent.md`) and a corresponding skill checklist (`.github/skills/*/SKILL.md`). These define the agent's focus areas, planning requirements, implementation guidelines, and quality bar.
 
 ---
 
