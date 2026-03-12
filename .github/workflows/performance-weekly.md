@@ -27,8 +27,8 @@ tools:
     - "bun run typecheck"
     - "bun run test"
     - "bun run build"
-    - "du -sh"
-    - "wc -l"
+    - "du -sh dist/q-*"
+    - "wc -l src/**/*.ts"
 
 network:
   allowed:
