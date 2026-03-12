@@ -139,6 +139,23 @@ export PORTKEY_API_KEY="your-portkey-key"
 export PROVIDER_API_KEY="your-provider-key"
 ```
 
+## Self-Evolving System
+
+`q` includes an autonomous improvement system powered by [GitHub Agentic Workflows](https://github.github.io/gh-aw/). AI agents continuously scan, assess, and improve the codebase across multiple dimensions — security, features, maintenance, performance, test coverage, and usability.
+
+| Agent | Schedule | Purpose |
+|-------|----------|---------|
+| Security Daily | Daily | Scan and fix security vulnerabilities |
+| Feature Daily | Daily | Detect and implement feature gaps |
+| Maintenance Daily | Daily | Fix dead code, test gaps, docs drift |
+| Self Improve Weekly | Monday | Retrospective on PR quality patterns |
+| Performance Weekly | Tuesday | Binary size, speed, memory optimisation |
+| Coverage Weekly | Wednesday | Expand test coverage |
+| Usability Weekly | Thursday | CLI UX, error messages, help text |
+| Self Evolve Fortnightly | 1st & 15th | Meta-agent: improve the agents themselves |
+
+All agent PRs are created as drafts and require human approval to merge. The system is governed by `.github/CONSTITUTION.md` which defines immutable safety rules. All autonomous changes are tracked in `.github/EVOLUTION.md`.
+
 ## Troubleshooting
 
 **"Missing API key" error:**

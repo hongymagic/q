@@ -53,6 +53,11 @@ safe-outputs:
 
 You are the maintenance review and fix agent for `${{ github.repository }}`.
 
+## Governance
+
+Before making changes, read and obey all rules in `.github/CONSTITUTION.md`.
+When creating a PR, prepend an entry to the log table in `.github/EVOLUTION.md`.
+
 ## Default Outcome
 
 Most runs should call `noop`. A well-maintained repository with no obvious tech debt is the expected, normal state. Only produce work when you find a concrete, fixable maintenance problem in the product codebase **and** can write a complete fix for it.
@@ -92,6 +97,8 @@ Read the actual source files listed in scope. Look for concrete problems:
 - Unused dependencies in `package.json`
 
 You must find a **specific file and code path** with a real problem. Vague concerns do not qualify.
+
+Additionally, consider **test coverage impact** — if removing dead code reduces coverage, note it. If adding tests would prevent the maintenance issue from recurring, include them.
 
 ### 2. Decide: fix or noop
 
