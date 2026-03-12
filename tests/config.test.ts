@@ -1,7 +1,6 @@
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  getConfigDir,
   getConfigPath,
   getCwdConfigPath,
   getXdgConfigDir,
@@ -71,11 +70,4 @@ describe("config paths", () => {
     });
   });
 
-  describe("getConfigDir (legacy)", () => {
-    it("should return XDG config dir", () => {
-      delete process.env.XDG_CONFIG_HOME;
-      const expected = join(process.env.HOME ?? "", ".config", "q");
-      expect(getConfigDir()).toBe(expected);
-    });
-  });
 });
