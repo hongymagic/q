@@ -26,7 +26,7 @@ export async function runQuery(options: RunOptions): Promise<RunResult> {
       prompt: userPrompt,
     });
 
-    let fullText = "";
+    const chunks: string[] = [];
     const stripper = createAnsiStripper();
 
     for await (const textPart of result.textStream) {
@@ -35,8 +35,10 @@ export async function runQuery(options: RunOptions): Promise<RunResult> {
       // but sanitize stdout to protect the user's terminal
       const safeText = stripper(textPart);
       process.stdout.write(safeText);
-      fullText += textPart;
+      chunks.push(textPart);
     }
+
+    const fullText = chunks.join("");
 
     // Check against safeText buffer equivalent would be ideal but complex.
     // Using simple check against stdout write logic:
