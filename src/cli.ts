@@ -70,7 +70,9 @@ async function main(): Promise<void> {
     }
 
     // Read stdin if piped (do this before help check)
-    const stdinInput = await readStdin();
+    const stdinMaxLength =
+      args.query.length > 0 ? MAX_CONTEXT_LENGTH : MAX_QUERY_LENGTH;
+    const stdinInput = await readStdin(stdinMaxLength);
 
     // Handle --help (after stdin check for proper stdin-only mode)
     // Show help if explicitly requested OR if no query and no stdin

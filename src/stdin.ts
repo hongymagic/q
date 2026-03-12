@@ -27,7 +27,9 @@ function checkLength(currentLength: number, maxLength: number) {
  * Read input from stdin if piped (non-TTY).
  * Returns null content if stdin is a TTY (interactive terminal).
  */
-export async function readStdin(): Promise<StdinInput> {
+export async function readStdin(
+  maxLength = MAX_CONTEXT_LENGTH,
+): Promise<StdinInput> {
   // Return null if TTY (interactive terminal)
   if (process.stdin.isTTY) {
     return { content: null, hasInput: false };
@@ -41,7 +43,7 @@ export async function readStdin(): Promise<StdinInput> {
   for await (const chunk of Bun.stdin.stream()) {
     const text = decoder.decode(chunk, { stream: true });
     totalLength += text.length;
-    checkLength(totalLength, MAX_CONTEXT_LENGTH);
+    checkLength(totalLength, maxLength);
     chunks.push(text);
   }
 
@@ -49,7 +51,7 @@ export async function readStdin(): Promise<StdinInput> {
   const final = decoder.decode();
   if (final) {
     totalLength += final.length;
-    checkLength(totalLength, MAX_CONTEXT_LENGTH);
+    checkLength(totalLength, maxLength);
     chunks.push(final);
   }
 

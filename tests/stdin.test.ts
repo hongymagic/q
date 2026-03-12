@@ -87,6 +87,52 @@ describe("stdin module", () => {
         });
       }
     });
+
+    it("should honour a custom max length for stdin input", async () => {
+      const { readStdin, MAX_QUERY_LENGTH } = await import("../src/stdin.ts");
+
+      const originalIsTTY = process.stdin.isTTY;
+      Object.defineProperty(process.stdin, "isTTY", {
+        value: false,
+        configurable: true,
+      });
+
+      const mockStream = {
+        [Symbol.asyncIterator]: async function* () {
+          const largeString = "a".repeat(MAX_QUERY_LENGTH + 1);
+          yield new TextEncoder().encode(largeString);
+        },
+      };
+
+      // biome-ignore lint/suspicious/noExplicitAny: Mocking Bun
+      const globalAny = globalThis as any;
+
+      if (!globalAny.Bun) {
+        vi.stubGlobal("Bun", {
+          stdin: {
+            stream: () => mockStream,
+          },
+        });
+      } else {
+        vi.spyOn(globalAny.Bun.stdin, "stream").mockImplementation(
+          () => mockStream,
+        );
+      }
+
+      try {
+        await expect(readStdin(MAX_QUERY_LENGTH)).rejects.toThrow(
+          `maximum of ${MAX_QUERY_LENGTH} characters`,
+        );
+      } finally {
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+
+        Object.defineProperty(process.stdin, "isTTY", {
+          value: originalIsTTY,
+          configurable: true,
+        });
+      }
+    });
   });
 
   describe("resolveInput", () => {
