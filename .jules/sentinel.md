@@ -39,3 +39,8 @@
 **Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
 **Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
 **Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
+
+## 2026-03-13 - Secret Leakage in Debug Logs via Length-based Redaction
+**Vulnerability:** The `redactValue` function in `src/logging.ts` and the logging logic in `src/providers/portkey.ts` conditionally masked sensitive values based on their length (e.g., exposing the first 8 and last 4 characters if longer than 12). This meant short secrets (like `sk-...` or short auth tokens) were logged entirely in plain text or partially leaked, which is a critical risk.
+**Learning:** Partial masking of sensitive values (like API keys or tokens) is risky because it can still leak enough information to facilitate an attack, especially for shorter keys. Conditional logic based on length can inadvertently expose entire secrets.
+**Prevention:** All identified sensitive values must be unconditionally and completely masked (e.g., replaced entirely with `"********"`), regardless of their length, to prevent any partial credential leakage.
