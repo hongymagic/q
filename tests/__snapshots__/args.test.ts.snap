@@ -1,6 +1,6 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+// Bun Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`CLI argument parsing > getHelpText > should match snapshot 1`] = `
+exports[`CLI argument parsing getHelpText should match snapshot 1`] = `
 "q - Quick AI answers from the command line
 
 USAGE:
