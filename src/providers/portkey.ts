@@ -57,15 +57,22 @@ export function createPortkeyProvider(
 
   logDebug(`Portkey base URL: ${config.base_url}`, debug);
   logDebug(`Portkey headers:`, debug);
+
+  const SENSITIVE_FIELD_PATTERNS = [
+    "key",
+    "secret",
+    "token",
+    "password",
+    "auth",
+    "credential",
+  ];
+
   for (const [key, value] of Object.entries(headers)) {
-    const isSensitive =
-      key.toLowerCase().includes("key") ||
-      key.toLowerCase() === "authorization";
-    const maskedValue = isSensitive
-      ? value.length > 12
-        ? `${value.substring(0, 8)}...${value.substring(value.length - 4)}`
-        : "********"
-      : value;
+    const lowerKey = key.toLowerCase();
+    const isSensitive = SENSITIVE_FIELD_PATTERNS.some((pattern) =>
+      lowerKey.includes(pattern),
+    );
+    const maskedValue = isSensitive ? "********" : value;
     logDebug(`  ${key}: ${maskedValue}`, debug);
   }
 
