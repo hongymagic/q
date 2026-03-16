@@ -191,6 +191,7 @@ src/
 ├── failure-prompt.ts   # Interactive retry/view-log prompt for TTY failures
 ├── loading-indicator.ts # TTY loading spinner while waiting for first output
 ├── logging.ts          # stderr logging + failure log writer
+├── sensitive.ts        # Shared sensitive-field patterns + redaction helpers
 ├── stdin.ts            # Stdin/pipe input handling
 ├── config/
 │   └── index.ts        # Config class, schemas, paths (consolidated)

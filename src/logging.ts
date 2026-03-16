@@ -3,6 +3,7 @@ import { join } from "node:path";
 import envPaths from "env-paths";
 import pc from "picocolors";
 import pkg from "../package.json";
+import { isSensitiveKey } from "./sensitive.ts";
 
 type LogLevel = "debug" | "warn" | "error";
 type LogContextValue = boolean | number | string;
@@ -260,20 +261,6 @@ function formatValue(value: unknown): string {
 
 function formatPropertyValue(key: string, value: unknown): string {
   return isSensitiveKey(key) ? String(redactValue(value)) : formatValue(value);
-}
-
-const SENSITIVE_FIELD_PATTERNS = [
-  "key",
-  "secret",
-  "token",
-  "password",
-  "auth",
-  "credential",
-];
-
-function isSensitiveKey(key: string): boolean {
-  const lowerKey = key.toLowerCase();
-  return SENSITIVE_FIELD_PATTERNS.some((pattern) => lowerKey.includes(pattern));
 }
 
 function redactValue(_value: unknown): string {

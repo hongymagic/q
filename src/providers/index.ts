@@ -2,6 +2,7 @@ import type { LanguageModel } from "ai";
 import type { ConfigData, ProviderConfig } from "../config/index.ts";
 import { MissingApiKeyError, ProviderNotFoundError } from "../errors.ts";
 import { logDebug } from "../logging.ts";
+import { filterSensitiveFields } from "../sensitive.ts";
 import { createAnthropicProvider } from "./anthropic.ts";
 import { createAzureProvider } from "./azure.ts";
 import { createBedrockProvider } from "./bedrock.ts";
@@ -18,42 +19,7 @@ export interface ResolvedProvider {
   modelId: string;
 }
 
-const SENSITIVE_FIELD_PATTERNS = [
-  "key",
-  "secret",
-  "token",
-  "password",
-  "auth",
-  "credential",
-];
-
-function isSensitiveKey(key: string): boolean {
-  const lowerKey = key.toLowerCase();
-  return SENSITIVE_FIELD_PATTERNS.some((pattern) => lowerKey.includes(pattern));
-}
-
-/**
- * Filter sensitive fields from a provider config for safe logging.
- * Removes sensitive fields recursively using a JSON replacer to safely
- * handle arrays and nested objects without mutating the original.
- * @internal Exported for testing only
- */
-export function filterSensitiveFields(
-  config: Record<string, unknown>,
-): Record<string, unknown> {
-  try {
-    return JSON.parse(
-      JSON.stringify(config, (key, value) => {
-        if (!key) {
-          return value;
-        }
-        return isSensitiveKey(key) ? undefined : value;
-      }),
-    );
-  } catch {
-    return {};
-  }
-}
+export { filterSensitiveFields } from "../sensitive.ts";
 
 /**
  * Resolve an API key from an environment variable name.

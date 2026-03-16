@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { parseCliArgs } from "../src/args.ts";
 import { interpolateValue } from "../src/config/index.ts";
 import { ConfigValidationError } from "../src/errors.ts";
-import { filterSensitiveFields } from "../src/providers/index.ts";
+import { filterSensitiveFields } from "../src/sensitive.ts";
 
 describe("security", () => {
   describe("query length validation", () => {
