@@ -39,3 +39,8 @@
 **Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
 **Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
 **Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
+
+## 2026-03-16 - Secret Leakage via Partial Masking
+**Vulnerability:** Partial masking of secrets in logs could leak parts of credentials, and shorter credentials could be fully exposed due to flawed conditional logic.
+**Learning:** Conditional masking logic often fails to account for shorter strings or edge cases in lengths.
+**Prevention:** Unconditionally mask all sensitive data with `********`.
