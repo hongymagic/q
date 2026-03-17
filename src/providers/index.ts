@@ -47,7 +47,7 @@ export function filterSensitiveFields(
         if (!key) {
           return value;
         }
-        return isSensitiveKey(key) ? undefined : value;
+        return isSensitiveKey(key) ? "********" : value;
       }),
     );
   } catch {

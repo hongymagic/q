@@ -110,7 +110,7 @@ describe("security", () => {
 
       expect(filtered).toHaveProperty("type");
       expect(filtered).toHaveProperty("base_url");
-      expect(filtered).not.toHaveProperty("api_key_env");
+      expect(filtered).toHaveProperty("api_key_env", "********");
     });
 
     it("should filter various sensitive field names", () => {
@@ -130,11 +130,11 @@ describe("security", () => {
       expect(filtered).toHaveProperty("type");
       expect(filtered).toHaveProperty("normal_field");
       expect(filtered).toHaveProperty("base_url");
-      expect(filtered).not.toHaveProperty("api_key_env");
-      expect(filtered).not.toHaveProperty("secret_value");
-      expect(filtered).not.toHaveProperty("auth_header");
-      expect(filtered).not.toHaveProperty("password_field");
-      expect(filtered).not.toHaveProperty("access_token");
+      expect(filtered).toHaveProperty("api_key_env", "********");
+      expect(filtered).toHaveProperty("secret_value", "********");
+      expect(filtered).toHaveProperty("auth_header", "********");
+      expect(filtered).toHaveProperty("password_field", "********");
+      expect(filtered).toHaveProperty("access_token", "********");
     });
 
     it("should be case-insensitive", () => {
@@ -150,8 +150,8 @@ describe("security", () => {
       );
 
       expect(filtered).toHaveProperty("type");
-      expect(filtered).not.toHaveProperty("API_KEY_ENV");
-      expect(filtered).not.toHaveProperty("SECRET_VALUE");
+      expect(filtered).toHaveProperty("API_KEY_ENV", "********");
+      expect(filtered).toHaveProperty("SECRET_VALUE", "********");
     });
 
     it("should recursively filter sensitive fields in nested objects like headers", () => {
@@ -177,8 +177,8 @@ describe("security", () => {
       const filteredHeaders = filtered.headers as Record<string, string>;
       expect(filteredHeaders).toHaveProperty("Content-Type");
       expect(filteredHeaders).toHaveProperty("x-custom-header");
-      expect(filteredHeaders).not.toHaveProperty("Authorization");
-      expect(filteredHeaders).not.toHaveProperty("x-api-key");
+      expect(filteredHeaders).toHaveProperty("Authorization", "********");
+      expect(filteredHeaders).toHaveProperty("x-api-key", "********");
     });
 
     it("should safely filter arrays of objects without leaking", () => {
@@ -195,8 +195,8 @@ describe("security", () => {
       expect(filtered).toHaveProperty("items");
       // biome-ignore lint/suspicious/noExplicitAny: using any for testing dynamic shapes
       const items = filtered.items as any[];
-      expect(items[0]).not.toHaveProperty("api_key");
-      expect(items[1]).not.toHaveProperty("token");
+      expect(items[0]).toHaveProperty("api_key", "********");
+      expect(items[1]).toHaveProperty("token", "********");
       expect(items[1]).toHaveProperty("safe", "value");
     });
   });
