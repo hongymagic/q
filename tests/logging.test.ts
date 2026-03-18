@@ -38,19 +38,33 @@ describe("formatErrorDiagnostics", () => {
       request: {
         headers: {
           Authorization: "secret-token",
+          "X-Api-Key": "very-long-secret-key-that-should-be-fully-masked",
         },
         api_key: "abcd1234",
+        api_secret: "12345678",
+        access_token: "token123",
+        credentials: "my-credentials",
         safe: "value",
       },
     });
 
     expect(diagnostics).toContain('"password": "********"');
     expect(diagnostics).toContain('"Authorization": "********"');
+    expect(diagnostics).toContain('"X-Api-Key": "********"');
     expect(diagnostics).toContain('"api_key": "********"');
+    expect(diagnostics).toContain('"api_secret": "********"');
+    expect(diagnostics).toContain('"access_token": "********"');
+    expect(diagnostics).toContain('"credentials": "********"');
     expect(diagnostics).toContain('"safe": "value"');
     expect(diagnostics).not.toContain("hunter2");
     expect(diagnostics).not.toContain("secret-token");
+    expect(diagnostics).not.toContain(
+      "very-long-secret-key-that-should-be-fully-masked",
+    );
     expect(diagnostics).not.toContain("abcd1234");
+    expect(diagnostics).not.toContain("12345678");
+    expect(diagnostics).not.toContain("token123");
+    expect(diagnostics).not.toContain("my-credentials");
   });
 
   it("redacts sensitive fields on error properties and causes", () => {
