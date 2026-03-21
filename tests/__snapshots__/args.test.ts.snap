@@ -35,3 +35,39 @@ EXAMPLES:
   q config init
 "
 `;
+
+exports[`CLI argument parsing getHelpText should match snapshot 1`] = `
+"q - Quick AI answers from the command line
+
+USAGE:
+  q [options] <query...>       Ask a question
+  q config path                Print config file path
+  q config init                Create example config file
+  q providers                  List configured providers
+
+OPTIONS:
+  -p, --provider <name>        Override the default provider
+  -m, --model <id>             Override the default model
+  --copy                       Copy answer to clipboard
+  --no-copy                    Disable copy (overrides config)
+  --debug                      Enable debug logging to stderr
+  -h, --help                   Show this help message
+  -v, --version                Show version
+
+ENVIRONMENT:
+  Q_PROVIDER                   Override default provider
+  Q_MODEL                      Override default model
+  Q_COPY                       Override default copy behaviour (true/false)
+
+CONFIG:
+  Config is loaded from (in order, later overrides earlier):
+    1. ~/.config/q/config.toml (or $XDG_CONFIG_HOME/q/config.toml)
+    2. ./config.toml (current directory)
+    3. Environment variables (Q_PROVIDER, Q_MODEL, Q_COPY)
+
+EXAMPLES:
+  q how do I restart docker
+  q -p openai --model gpt-4o what is recursion
+  q config init
+"
+`;

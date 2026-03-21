@@ -262,14 +262,17 @@ function formatPropertyValue(key: string, value: unknown): string {
   return isSensitiveKey(key) ? String(redactValue(value)) : formatValue(value);
 }
 
+const SENSITIVE_FIELD_PATTERNS = [
+  "key",
+  "secret",
+  "token",
+  "password",
+  "authorization",
+];
+
 function isSensitiveKey(key: string): boolean {
   const lowerKey = key.toLowerCase();
-  return (
-    lowerKey === "authorization" ||
-    lowerKey === "password" ||
-    lowerKey === "token" ||
-    lowerKey.endsWith("_key")
-  );
+  return SENSITIVE_FIELD_PATTERNS.some((pattern) => lowerKey.includes(pattern));
 }
 
 function redactValue(value: unknown): string {
