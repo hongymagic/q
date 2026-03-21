@@ -262,17 +262,48 @@ function formatPropertyValue(key: string, value: unknown): string {
   return isSensitiveKey(key) ? String(redactValue(value)) : formatValue(value);
 }
 
-const SENSITIVE_FIELD_PATTERNS = [
+const EXACT_MATCHES = new Set([
+  "authorization",
+  "password",
+  "token",
+  "secret",
+  "credential",
+  "credentials",
+]);
+
+const SENSITIVE_WORDS = new Set([
   "key",
   "secret",
   "token",
   "password",
+  "credential",
+  "credentials",
   "authorization",
-];
+]);
 
 function isSensitiveKey(key: string): boolean {
+  if (!key) {
+    return false;
+  }
+
   const lowerKey = key.toLowerCase();
-  return SENSITIVE_FIELD_PATTERNS.some((pattern) => lowerKey.includes(pattern));
+  if (EXACT_MATCHES.has(lowerKey)) {
+    return true;
+  }
+
+  // Convert camelCase to snake_case for unified parsing
+  const snakeKey = key.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase();
+
+  const parts = snakeKey.split(/[_-]/);
+  const lastPart = parts[parts.length - 1];
+
+  // If the key is made of multiple words and ends with a sensitive word, redact it.
+  // This safely catches `apiKey`, `client_secret`, `x_api_key` without catching `key` or `keyboard`.
+  if (parts.length > 1 && lastPart && SENSITIVE_WORDS.has(lastPart)) {
+    return true;
+  }
+
+  return false;
 }
 
 function redactValue(value: unknown): string {
