@@ -262,23 +262,25 @@ function formatPropertyValue(key: string, value: unknown): string {
   return isSensitiveKey(key) ? String(redactValue(value)) : formatValue(value);
 }
 
-function isSensitiveKey(key: string): boolean {
-  const lowerKey = key.toLowerCase();
-  return (
-    lowerKey === "authorization" ||
-    lowerKey === "password" ||
-    lowerKey === "token" ||
-    lowerKey.endsWith("_key")
+export function isSensitiveKey(key: string): boolean {
+  const parts = key
+    .replace(/([a-z])([A-Z])/g, "$1-$2")
+    .toLowerCase()
+    .split(/[_-]/);
+
+  return parts.some(
+    (part) =>
+      part === "authorization" ||
+      part === "password" ||
+      part === "token" ||
+      part === "secret" ||
+      part === "key" ||
+      part === "credential" ||
+      part === "auth",
   );
 }
 
-function redactValue(value: unknown): string {
-  if (typeof value === "string") {
-    return value.length > 12
-      ? `${value.substring(0, 8)}...${value.substring(value.length - 4)}`
-      : "********";
-  }
-
+export function redactValue(_value: unknown): string {
   return "********";
 }
 

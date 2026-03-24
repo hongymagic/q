@@ -1,7 +1,7 @@
 import type { LanguageModel } from "ai";
 import type { ConfigData, ProviderConfig } from "../config/index.ts";
 import { MissingApiKeyError, ProviderNotFoundError } from "../errors.ts";
-import { logDebug } from "../logging.ts";
+import { isSensitiveKey, logDebug } from "../logging.ts";
 import { createAnthropicProvider } from "./anthropic.ts";
 import { createAzureProvider } from "./azure.ts";
 import { createBedrockProvider } from "./bedrock.ts";
@@ -16,20 +16,6 @@ export interface ResolvedProvider {
   model: LanguageModel;
   providerName: string;
   modelId: string;
-}
-
-const SENSITIVE_FIELD_PATTERNS = [
-  "key",
-  "secret",
-  "token",
-  "password",
-  "auth",
-  "credential",
-];
-
-function isSensitiveKey(key: string): boolean {
-  const lowerKey = key.toLowerCase();
-  return SENSITIVE_FIELD_PATTERNS.some((pattern) => lowerKey.includes(pattern));
 }
 
 /**

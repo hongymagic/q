@@ -1,7 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import type { ProviderConfig } from "../config/index.ts";
 import { ConfigValidationError } from "../errors.ts";
-import { logDebug } from "../logging.ts";
+import { isSensitiveKey, logDebug, redactValue } from "../logging.ts";
 import { resolveApiKey } from "./index.ts";
 
 /**
@@ -58,14 +58,7 @@ export function createPortkeyProvider(
   logDebug(`Portkey base URL: ${config.base_url}`, debug);
   logDebug(`Portkey headers:`, debug);
   for (const [key, value] of Object.entries(headers)) {
-    const isSensitive =
-      key.toLowerCase().includes("key") ||
-      key.toLowerCase() === "authorization";
-    const maskedValue = isSensitive
-      ? value.length > 12
-        ? `${value.substring(0, 8)}...${value.substring(value.length - 4)}`
-        : "********"
-      : value;
+    const maskedValue = isSensitiveKey(key) ? redactValue(value) : value;
     logDebug(`  ${key}: ${maskedValue}`, debug);
   }
 
