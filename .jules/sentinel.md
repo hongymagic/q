@@ -39,3 +39,8 @@
 **Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
 **Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
 **Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
+
+## 2026-03-25 - Secret Leakage in Debug Logs via Insufficient Pattern Matching
+**Vulnerability:** The \`isSensitiveKey\` function in \`src/logging.ts\` and the inline logging checks in \`src/providers/portkey.ts\` did not cover common credential patterns like \`secret\`, \`auth\`, or \`credential\`, potentially logging sensitive data in plaintext.
+**Learning:** Hardcoding a strict list of exact key names is insufficient for redacting sensitive headers and configuration values, as APIs use a wide variety of naming conventions.
+**Prevention:** Use broad pattern matching (e.g., \`.includes("secret")\`) for sensitive key detection, and ensure conditional masking logic (like checking string length) securely masks short strings by unconditionally replacing them with a fixed mask like \`"********"\`.

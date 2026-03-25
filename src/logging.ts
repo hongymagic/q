@@ -268,17 +268,15 @@ function isSensitiveKey(key: string): boolean {
     lowerKey === "authorization" ||
     lowerKey === "password" ||
     lowerKey === "token" ||
-    lowerKey.endsWith("_key")
+    lowerKey.endsWith("_key") ||
+    lowerKey.includes("key") ||
+    lowerKey.includes("secret") ||
+    lowerKey.includes("auth") ||
+    lowerKey.includes("credential")
   );
 }
 
-function redactValue(value: unknown): string {
-  if (typeof value === "string") {
-    return value.length > 12
-      ? `${value.substring(0, 8)}...${value.substring(value.length - 4)}`
-      : "********";
-  }
-
+function redactValue(_value: unknown): string {
   return "********";
 }
 

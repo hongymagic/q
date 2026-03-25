@@ -60,12 +60,11 @@ export function createPortkeyProvider(
   for (const [key, value] of Object.entries(headers)) {
     const isSensitive =
       key.toLowerCase().includes("key") ||
+      key.toLowerCase().includes("secret") ||
+      key.toLowerCase().includes("auth") ||
+      key.toLowerCase().includes("credential") ||
       key.toLowerCase() === "authorization";
-    const maskedValue = isSensitive
-      ? value.length > 12
-        ? `${value.substring(0, 8)}...${value.substring(value.length - 4)}`
-        : "********"
-      : value;
+    const maskedValue = isSensitive ? "********" : value;
     logDebug(`  ${key}: ${maskedValue}`, debug);
   }
 
