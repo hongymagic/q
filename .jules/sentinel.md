@@ -39,3 +39,8 @@
 **Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
 **Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
 **Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
+
+## 2026-03-26 - Insecure File Permissions for Configuration and Log Files
+**Vulnerability:** The configuration file and the failure log files were created with default file permissions, making them potentially readable by other users on the system. These files may contain sensitive API keys and request context.
+**Learning:** Utilities like `mkdir` and default file writing implementations (`writeFile`, `Bun.write`) do not automatically restrict permissions. When writing files that contain sensitive secrets (configs or failure logs), the file system must actively block access from other system users.
+**Prevention:** Use explicit restrict permissions (`mode: 0o600` for files, `mode: 0o700` for directories) when creating files or directories that may store sensitive data.

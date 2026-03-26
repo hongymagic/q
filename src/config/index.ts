@@ -1,4 +1,4 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 import { env } from "../env.ts";
@@ -370,13 +370,16 @@ export async function initConfig(): Promise<string> {
   const configPath = getXdgConfigPath();
   const configDir = getXdgConfigDir();
 
-  await mkdir(configDir, { recursive: true });
+  await mkdir(configDir, { recursive: true, mode: 0o700 });
 
   const file = Bun.file(configPath);
   if (await file.exists()) {
     return `Config already exists at: ${configPath}`;
   }
 
-  await Bun.write(configPath, EXAMPLE_CONFIG);
+  await writeFile(configPath, EXAMPLE_CONFIG, {
+    encoding: "utf8",
+    mode: 0o600,
+  });
   return `Created config file at: ${configPath}`;
 }
