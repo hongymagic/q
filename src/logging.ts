@@ -103,7 +103,7 @@ export async function writeFailureLog(
   displayMessage: string,
 ): Promise<string> {
   const logDir = getFailureLogDir();
-  await mkdir(logDir, { recursive: true });
+  await mkdir(logDir, { recursive: true, mode: 0o700 });
 
   const timestamp = new Date();
   const fileName = `error-${timestamp.toISOString().replaceAll(":", "-")}.log`;
@@ -114,7 +114,7 @@ export async function writeFailureLog(
     error,
   );
 
-  await writeFile(logPath, report, "utf8");
+  await writeFile(logPath, report, { encoding: "utf8", mode: 0o600 });
   return logPath;
 }
 

@@ -3,6 +3,7 @@ import { parseCliArgs } from "../src/args.ts";
 import { interpolateValue } from "../src/config/index.ts";
 import { ConfigValidationError } from "../src/errors.ts";
 import { filterSensitiveFields } from "../src/providers/index.ts";
+import { isSensitiveKey } from "../src/sensitive.ts";
 
 describe("security", () => {
   describe("query length validation", () => {
@@ -99,6 +100,15 @@ describe("security", () => {
   });
 
   describe("sensitive field filtering", () => {
+    it("should detect sensitive keys across common naming styles", () => {
+      expect(isSensitiveKey("Authorization")).toBe(true);
+      expect(isSensitiveKey("access_token")).toBe(true);
+      expect(isSensitiveKey("x-api-token")).toBe(true);
+      expect(isSensitiveKey("clientSecret")).toBe(true);
+      expect(isSensitiveKey("credentialRef")).toBe(true);
+      expect(isSensitiveKey("Content-Type")).toBe(false);
+    });
+
     it("should filter fields containing sensitive patterns", () => {
       const testConfig = {
         type: "openai" as const,
@@ -121,6 +131,8 @@ describe("security", () => {
         auth_header: "should-be-filtered",
         password_field: "should-be-filtered",
         access_token: "should-be-filtered",
+        apiKey: "should-be-filtered",
+        clientSecret: "should-be-filtered",
         normal_field: "should-remain",
         base_url: "should-remain",
       };
@@ -135,6 +147,8 @@ describe("security", () => {
       expect(filtered).not.toHaveProperty("auth_header");
       expect(filtered).not.toHaveProperty("password_field");
       expect(filtered).not.toHaveProperty("access_token");
+      expect(filtered).not.toHaveProperty("apiKey");
+      expect(filtered).not.toHaveProperty("clientSecret");
     });
 
     it("should be case-insensitive", () => {
@@ -161,8 +175,10 @@ describe("security", () => {
         headers: {
           Authorization: "Bearer secret-token",
           "x-api-key": "secret-key",
+          "x-api-token": "token-value",
           "Content-Type": "application/json",
           "x-custom-header": "safe-value",
+          credentialRef: "secret-ref",
         },
       };
 
@@ -179,6 +195,8 @@ describe("security", () => {
       expect(filteredHeaders).toHaveProperty("x-custom-header");
       expect(filteredHeaders).not.toHaveProperty("Authorization");
       expect(filteredHeaders).not.toHaveProperty("x-api-key");
+      expect(filteredHeaders).not.toHaveProperty("x-api-token");
+      expect(filteredHeaders).not.toHaveProperty("credentialRef");
     });
 
     it("should safely filter arrays of objects without leaking", () => {

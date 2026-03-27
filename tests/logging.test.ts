@@ -34,12 +34,14 @@ describe("formatErrorDiagnostics secret redaction", () => {
     Object.assign(error, {
       api_key: "sk-secret-12345",
       auth_token: "Bearer super-secret",
+      apiKey: "camel-case-secret",
       statusCode: 403,
     });
 
     const output = formatErrorDiagnostics(error);
     expect(output).not.toContain("sk-secret-12345");
     expect(output).not.toContain("super-secret");
+    expect(output).not.toContain("camel-case-secret");
     expect(output).toContain("[REDACTED]");
     expect(output).toContain("statusCode");
     expect(output).toContain("403");
@@ -52,12 +54,18 @@ describe("formatErrorDiagnostics secret redaction", () => {
         Authorization: "Bearer sk-secret-key",
         "Content-Type": "application/json",
         "x-api-key": "secret-key-value",
+        "x-portkey-api-key": "very-long-secret-key-that-was-partially-masked",
+        access_token: "short-token",
       },
     });
 
     const output = formatErrorDiagnostics(error);
     expect(output).not.toContain("sk-secret-key");
     expect(output).not.toContain("secret-key-value");
+    expect(output).not.toContain(
+      "very-long-secret-key-that-was-partially-masked",
+    );
+    expect(output).not.toContain("short-token");
     expect(output).toContain("[REDACTED]");
     expect(output).toContain("application/json");
   });

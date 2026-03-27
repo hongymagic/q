@@ -26,7 +26,7 @@ export function parseCalVerTag(
   tag: string,
 ): { year: number; monthDay: string; patch: number } | null {
   const match = tag.match(CALVER_TAG_REGEX);
-  if (!match || !match[1] || !match[2] || !match[3]) return null;
+  if (!match?.[1] || !match[2] || !match[3]) return null;
   return {
     year: parseInt(match[1], 10),
     monthDay: match[2],

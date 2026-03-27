@@ -172,4 +172,4 @@ ${safeContext}
 Question: ${query}`;
 }
 
-export { getEnvironmentInfo, type EnvironmentInfo };
+export { type EnvironmentInfo, getEnvironmentInfo };
