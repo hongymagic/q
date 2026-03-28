@@ -2,12 +2,15 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 import { env } from "../env.ts";
-import {
-  ConfigNotFoundError,
-  ConfigParseError,
-  ConfigValidationError,
-} from "../errors.ts";
+import { ConfigParseError, ConfigValidationError } from "../errors.ts";
 import { logWarning } from "../logging.ts";
+import {
+  detectLocalProvider,
+  getBuiltInProviderConfigs,
+  getDefaultModelForProvider,
+  getProviderStatusSummary,
+  inferProviderFromEnvironment,
+} from "../provider-catalog.ts";
 
 export const ProviderType = z.enum([
   "openai",
@@ -42,8 +45,8 @@ export const ProviderConfigSchema = z.object({
 export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
 
 export const DefaultConfigSchema = z.object({
-  provider: z.string(),
-  model: z.string(),
+  provider: z.string().optional(),
+  model: z.string().optional(),
   copy: z.boolean().optional(),
 });
 export type DefaultConfig = z.infer<typeof DefaultConfigSchema>;
@@ -91,7 +94,7 @@ export function getConfigDir(): string {
 }
 
 export class Config {
-  readonly default: { provider: string; model: string; copy?: boolean };
+  readonly default: { provider?: string; model?: string; copy?: boolean };
   readonly providers: Record<string, ProviderConfig>;
 
   private constructor(data: ConfigData) {
@@ -105,20 +108,26 @@ export class Config {
       Config.tryLoadFile(getCwdConfigPath()),
     ]);
 
-    if (!xdgConfig && !cwdConfig) {
-      throw new ConfigNotFoundError(getXdgConfigPath());
-    }
-
     const mergedDefault = {
       ...(xdgConfig?.default ?? {}),
       ...(cwdConfig?.default ?? {}),
     };
     const mergedProviders = {
+      ...getBuiltInProviderConfigs(),
       ...(xdgConfig?.providers ?? {}),
       ...(cwdConfig?.providers ?? {}),
     };
 
+    const inferredProvider = await Config.inferDefaultProvider(mergedDefault);
+    const providerForDefaultModel =
+      env.Q_PROVIDER ?? mergedDefault.provider ?? inferredProvider;
+    const inferredModel = providerForDefaultModel
+      ? getDefaultModelForProvider(mergedProviders[providerForDefaultModel])
+      : undefined;
+
     const finalDefault = {
+      ...(inferredProvider ? { provider: inferredProvider } : {}),
+      ...(inferredModel ? { model: inferredModel } : {}),
       ...mergedDefault,
       ...(env.Q_PROVIDER ? { provider: env.Q_PROVIDER } : {}),
       ...(env.Q_MODEL ? { model: env.Q_MODEL } : {}),
@@ -139,8 +148,28 @@ export class Config {
     return new Config(interpolated);
   }
 
+  private static async inferDefaultProvider(
+    mergedDefault: Partial<DefaultConfig>,
+  ): Promise<string | undefined> {
+    if (mergedDefault.provider || env.Q_PROVIDER) {
+      return undefined;
+    }
+
+    const envProvider = inferProviderFromEnvironment();
+    if (envProvider) {
+      return envProvider;
+    }
+
+    return detectLocalProvider();
+  }
+
   getProvider(name?: string): ProviderConfig {
     const providerName = name ?? this.default.provider;
+    if (!providerName) {
+      throw new ConfigValidationError(
+        "No default provider is configured. Set Q_PROVIDER, pass --provider, install Ollama, set an API key, or run 'q config init'.",
+      );
+    }
     const provider = this.providers[providerName];
     if (!provider) {
       throw new ConfigValidationError(
@@ -231,6 +260,8 @@ const ALLOWED_INTERPOLATION_VARS = new Set([
   // Provider API keys
   "ANTHROPIC_API_KEY",
   "OPENAI_API_KEY",
+  "GEMINI_API_KEY",
+  "GOOGLE_API_KEY",
   "PORTKEY_API_KEY",
   "GOOGLE_GENERATIVE_AI_API_KEY",
   "GROQ_API_KEY",
@@ -318,19 +349,23 @@ export async function runConfigDoctor(): Promise<DoctorReport> {
     xdgFile.exists(),
     cwdFile.exists(),
   ]);
+  const [xdgData, cwdData] = await Promise.all([
+    xdgExists ? safeParseToml(xdgFile) : Promise.resolve(null),
+    cwdExists ? safeParseToml(cwdFile) : Promise.resolve(null),
+  ]);
 
   const layers: ConfigLayer[] = [
     {
       source: "XDG config",
       path: xdgPath,
       found: xdgExists,
-      data: xdgExists ? await safeParseToml(xdgFile) : null,
+      data: xdgData,
     },
     {
       source: "CWD config",
       path: cwdPath,
       found: cwdExists,
-      data: cwdExists ? await safeParseToml(cwdFile) : null,
+      data: cwdData,
     },
   ];
 
@@ -353,28 +388,57 @@ export async function runConfigDoctor(): Promise<DoctorReport> {
   ];
 
   const providerIssues: DoctorReport["providerIssues"] = [];
+  const configuredProviderNames = new Set<string>([
+    ...Object.keys(
+      ((xdgData ?? {}) as { providers?: Record<string, unknown> }).providers ??
+        {},
+    ),
+    ...Object.keys(
+      ((cwdData ?? {}) as { providers?: Record<string, unknown> }).providers ??
+        {},
+    ),
+  ]);
 
   // Try loading the full config to check providers
   try {
     const config = await Config.load();
 
-    for (const [name, providerConfig] of Object.entries(config.providers)) {
-      if (providerConfig.api_key_env) {
-        if (!process.env[providerConfig.api_key_env]) {
-          providerIssues.push({
-            provider: name,
-            issue: `${providerConfig.api_key_env} is not set`,
-          });
-        }
+    if (!xdgExists && !cwdExists) {
+      if (config.default.provider) {
+        providerIssues.push({
+          provider: "(setup)",
+          issue: `No config file found. Using built-in defaults with provider '${config.default.provider}'.`,
+        });
+      } else {
+        providerIssues.push({
+          provider: "(setup)",
+          issue:
+            "No config file or detected provider found. Install Ollama, set GEMINI_API_KEY or GROQ_API_KEY, or run 'q config init'.",
+        });
+      }
+    }
+
+    if (config.default.provider) {
+      configuredProviderNames.add(config.default.provider);
+    }
+
+    if (configuredProviderNames.size === 0 && config.default.provider) {
+      configuredProviderNames.add(config.default.provider);
+    }
+
+    for (const name of configuredProviderNames) {
+      const providerConfig = config.providers[name];
+      if (!providerConfig) {
+        providerIssues.push({
+          provider: name,
+          issue: "Provider is not available.",
+        });
+        continue;
       }
 
-      if (providerConfig.provider_api_key_env) {
-        if (!process.env[providerConfig.provider_api_key_env]) {
-          providerIssues.push({
-            provider: name,
-            issue: `${providerConfig.provider_api_key_env} is not set`,
-          });
-        }
+      const { issues } = getProviderStatusSummary(providerConfig);
+      for (const issue of issues) {
+        providerIssues.push({ provider: name, issue });
       }
     }
   } catch (err) {
@@ -382,11 +446,10 @@ export async function runConfigDoctor(): Promise<DoctorReport> {
     providerIssues.push({ provider: "(config)", issue: message });
   }
 
-  const noConfigAtAll = !xdgExists && !cwdExists;
   const configLoadFailed = providerIssues.some(
     (i) => i.provider === "(config)",
   );
-  const hasErrors = noConfigAtAll || configLoadFailed;
+  const hasErrors = configLoadFailed;
   const hasWarnings = providerIssues.length > 0;
 
   return {
@@ -469,72 +532,62 @@ export function formatZodErrors(error: z.ZodError): string {
 export const EXAMPLE_CONFIG = `# q configuration file
 # Location: ~/.config/q/config.toml
 #
-# Config resolution order (later overrides earlier):
-#   1. This file (XDG_CONFIG_HOME/q/config.toml or ~/.config/q/config.toml)
-#   2. ./config.toml in current directory (project-specific)
-#   3. Environment variables: Q_PROVIDER, Q_MODEL, Q_COPY
+# This file is optional. q can run with built-in defaults:
+#   - install Ollama for local usage, or
+#   - set GEMINI_API_KEY / GROQ_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY
+#
+# Add settings here only when you want to pin behaviour or customise providers.
 
 [default]
-provider = "anthropic"
-model = "claude-sonnet-4-20250514"
-# copy = true  # Always copy answer to clipboard (override with --no-copy)
+# provider = "google"          # Optional: q auto-detects a provider when possible
+# model = "gemini-2.5-flash"   # Optional: q uses provider defaults when omitted
+# copy = true                   # Optional: always copy answer to clipboard
 
-[providers.anthropic]
-type = "anthropic"
-api_key_env = "ANTHROPIC_API_KEY"
-# model = "claude-sonnet-4-20250514"  # Optional per-provider default model
+# Local-first example
+# [providers.ollama]
+# type = "ollama"
+# # base_url = "http://localhost:11434"
+# # model = "gemma3"
 
-[providers.openai]
-type = "openai"
-api_key_env = "OPENAI_API_KEY"
-# model = "gpt-4o"  # Optional per-provider default model
+# Free cloud example (Google Gemini)
+# [providers.google]
+# type = "google"
+# # api_key_env = "GEMINI_API_KEY"
+# # model = "gemini-2.5-flash"
 
-# Example: OpenAI-compatible provider (e.g., local LLM via LM Studio)
+# Free cloud example (Groq)
+# [providers.groq]
+# type = "groq"
+# # api_key_env = "GROQ_API_KEY"
+# # model = "openai/gpt-oss-20b"
+
+# Advanced examples
+# [providers.work_openai]
+# type = "openai"
+# api_key_env = "OPENAI_API_KEY"
+# model = "gpt-4o-mini"
+
 # [providers.local]
 # type = "openai_compatible"
 # base_url = "http://localhost:1234/v1"
-# api_key_env = "LOCAL_API_KEY"
+# # api_key_env = "LOCAL_API_KEY"
 
-# Example: Portkey Gateway
-# [providers.portkey_internal]
-# type = "portkey"
-# base_url = "https://your-portkey-gateway.internal/v1"
-# provider_slug = "@your-org/bedrock-provider"
-# api_key_env = "PORTKEY_API_KEY"
-# provider_api_key_env = "PROVIDER_API_KEY"
-# headers = { "x-portkey-trace-id" = "\${HOSTNAME}" }  # Only allowlisted env vars
-
-# Example: Ollama (local models)
-# [providers.ollama]
-# type = "ollama"
-# base_url = "http://localhost:11434"
-
-# Example: Google Gemini
-# [providers.google]
-# type = "google"
-# api_key_env = "GOOGLE_GENERATIVE_AI_API_KEY"
-# # Models: gemini-2.5-pro, gemini-2.5-flash, gemini-2.0-flash
-
-# Example: Groq (ultra-fast inference)
-# [providers.groq]
-# type = "groq"
-# api_key_env = "GROQ_API_KEY"
-# # Models: llama-3.3-70b-versatile, qwen-qwq-32b, deepseek-r1-distill-llama-70b
-
-# Example: Azure OpenAI
 # [providers.azure]
 # type = "azure"
-# resource_name = "my-azure-resource"  # Or use base_url instead
+# resource_name = "my-azure-resource"
 # api_key_env = "AZURE_API_KEY"
-# api_version = "v1"  # Optional, defaults to v1
-# # Model = deployment name (e.g., "gpt-4o-deployment")
+# # model = "gpt-4o-deployment"
 
-# Example: AWS Bedrock
 # [providers.bedrock]
 # type = "bedrock"
-# region = "us-east-1"  # Optional, defaults to AWS_REGION env var
-# # Uses standard AWS env vars: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-# # Models: anthropic.claude-3-5-sonnet-20241022-v2:0, us.amazon.nova-pro-v1:0
+# region = "us-east-1"
+# # model = "us.anthropic.claude-sonnet-4-20250514-v1:0"
+
+# [providers.portkey]
+# type = "portkey"
+# base_url = "https://api.portkey.ai/v1"
+# provider_slug = "openai"
+# api_key_env = "PORTKEY_API_KEY"
 `;
 
 export async function initConfig(): Promise<string> {

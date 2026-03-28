@@ -1,8 +1,17 @@
 import type { LanguageModel } from "ai";
 import type { ConfigData, ProviderConfig } from "../config/index.ts";
 import { env } from "../env.ts";
-import { MissingApiKeyError, ProviderNotFoundError } from "../errors.ts";
+import {
+  MissingApiKeyError,
+  ModelNotConfiguredError,
+  ProviderNotFoundError,
+  SetupRequiredError,
+} from "../errors.ts";
 import { logDebug } from "../logging.ts";
+import {
+  getDefaultModelForProvider,
+  getProviderStatusSummary,
+} from "../provider-catalog.ts";
 import { isSensitiveKey } from "../sensitive.ts";
 import { createAnthropicProvider } from "./anthropic.ts";
 import { createAzureProvider } from "./azure.ts";
@@ -64,6 +73,20 @@ export function resolveApiKey(
   return apiKey;
 }
 
+export function resolveApiKeyCandidates(
+  envVarNames: readonly string[],
+  providerName: string,
+): string {
+  for (const envVarName of envVarNames) {
+    const apiKey = process.env[envVarName];
+    if (apiKey) {
+      return apiKey;
+    }
+  }
+
+  throw new MissingApiKeyError(envVarNames.join(" or "), providerName);
+}
+
 /**
  * Resolve a provider and model from config, with optional overrides
  */
@@ -73,14 +96,18 @@ export function resolveProvider(
   modelOverride?: string,
   debug = false,
 ): ResolvedProvider {
-  const providerName = providerOverride ?? config.default.provider;
+  const providerName =
+    providerOverride ?? env.Q_PROVIDER ?? config.default.provider;
+  if (!providerName) {
+    throw new SetupRequiredError();
+  }
   const providerConfig = config.providers[providerName];
 
   if (!providerConfig) {
     throw new ProviderNotFoundError(providerName);
   }
 
-  // Resolution: CLI --model > Q_MODEL env > provider.model > config.default.model
+  // Resolution: CLI --model > Q_MODEL env > provider.model > config.default.model > built-in provider default
   // NOTE: config.default.model already includes Q_MODEL (applied during config
   // loading). The explicit env.Q_MODEL check here is still necessary so that
   // Q_MODEL takes precedence over providerConfig.model.
@@ -88,7 +115,12 @@ export function resolveProvider(
     modelOverride ??
     env.Q_MODEL ??
     providerConfig.model ??
-    config.default.model;
+    config.default.model ??
+    getDefaultModelForProvider(providerConfig);
+
+  if (!modelId) {
+    throw new ModelNotConfiguredError(providerName);
+  }
 
   logDebug(
     `Provider config: ${JSON.stringify(filterSensitiveFields(providerConfig), null, 2)}`,
@@ -153,45 +185,8 @@ function createModel(
   }
 }
 
-type CredentialStatus = {
-  envVar: string;
-  present: boolean;
-};
-
-const CREDENTIAL_FIELDS = [
-  "api_key_env",
-  "provider_api_key_env",
-  "access_key_env",
-  "secret_key_env",
-] as const;
-
-function getCredentialStatuses(
-  providerConfig: ProviderConfig,
-): CredentialStatus[] {
-  return CREDENTIAL_FIELDS.reduce<CredentialStatus[]>((acc, field) => {
-    const envVar = providerConfig[field];
-    if (envVar) {
-      acc.push({ envVar, present: Boolean(process.env[envVar]) });
-    }
-    return acc;
-  }, []);
-}
-
-function formatCredentialLine(statuses: CredentialStatus[]): string {
-  if (statuses.length === 0) {
-    return "    Key: (none required)";
-  }
-
-  return statuses
-    .map(({ envVar, present }) => {
-      const status = present ? "set" : "missing";
-      return `    Key: ${envVar} (${status})`;
-    })
-    .join("\n");
-}
-
 /**
- * List all configured providers with model and credential status
+ * List available providers with model and credential status
  */
 export function listProviders(config: ConfigData): string {
   const providers = Object.keys(config.providers);
@@ -205,21 +200,25 @@ export function listProviders(config: ConfigData): string {
 
     const marker = isDefault ? " (default)" : "";
     const header = `  ${name}${marker} [${providerConfig.type}]`;
-    const modelDisplay = providerConfig.model ?? "(default)";
+    const modelDisplay =
+      providerConfig.model ??
+      getDefaultModelForProvider(providerConfig) ??
+      "(set with --model or config)";
     const modelLine = `    Model: ${modelDisplay}`;
-    const credentialLine = formatCredentialLine(
-      getCredentialStatuses(providerConfig),
+    const credentialLines = getProviderStatusSummary(providerConfig).lines.map(
+      (line) => `    ${line}`,
     );
 
-    return [header, modelLine, credentialLine].join("\n");
+    return [header, modelLine, ...credentialLines].join("\n");
   });
 
   const lines = [
-    "Configured providers:",
+    "Available providers:",
     "",
     ...providerBlocks,
     "",
-    `Default model: ${defaultModel}`,
+    `Default provider: ${defaultProvider ?? "(choose with --provider or env)"}`,
+    `Default model: ${defaultModel ?? "(provider default)"}`,
   ];
 
   return lines.join("\n");

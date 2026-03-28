@@ -25,23 +25,37 @@ bun install && bun run build
 
 ## Setup
 
-1. **Create config:**
+`q` works without a config file.
+
+1. **Free local setup with Ollama**
+
+```bash
+ollama pull gemma3
+q --provider ollama --model gemma3 explain this stack trace
+```
+
+2. **Free cloud setup with Gemini**
+
+```bash
+export GEMINI_API_KEY="your-key-here"
+q explain rust lifetimes
+```
+
+3. **Optional: create a pinned config**
 
 ```bash
 q config init
 ```
 
-2. **Set your API key:**
-
-```bash
-export ANTHROPIC_API_KEY="your-key-here"
-```
+`q` auto-detects common provider keys (`GEMINI_API_KEY`, `GROQ_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) and falls back to local Ollama when available.
 
 ## Usage
 
 ```bash
 q how do I restart docker
+GEMINI_API_KEY="your-key" q explain closures in javascript
 q --copy what is a kubernetes pod
+q --provider ollama --model gemma3 explain this error
 ```
 
 ### Piping Content
@@ -85,47 +99,57 @@ q --mode explain how do I restart docker # Returns a detailed explanation
 
 ```bash
 q config path    # Print config file path
-q config init    # Create example config
-q config doctor  # Diagnose config and provider issues
-q providers      # List configured providers + model and credential status
+q config init    # Create optional config file
+q config doctor  # Diagnose config and setup issues
+q providers      # List available providers + model and credential status
 ```
 
 ## Configuration
 
-Config is loaded from (later overrides earlier):
+Config is optional. `q` starts with built-in provider presets and per-provider defaults, then applies overrides (later overrides earlier):
 
-1. `$XDG_CONFIG_HOME/q/config.toml` (or `~/.config/q/config.toml`)
-2. `./config.toml` (project-specific)
-3. Environment: `Q_PROVIDER`, `Q_MODEL`, `Q_COPY`
+1. Built-in defaults (`google`, `groq`, `anthropic`, `openai`, `ollama`, `azure`, `bedrock`)
+2. `$XDG_CONFIG_HOME/q/config.toml` (or `~/.config/q/config.toml`)
+3. `./config.toml` (project-specific)
+4. Environment: `Q_PROVIDER`, `Q_MODEL`, `Q_COPY`
+5. CLI flags: `--provider`, `--model`
 
 Each provider can specify its own default `model`, which takes precedence over `default.model` but is overridden by `Q_MODEL` or `--model`:
 
 ```toml
 [default]
-provider = "anthropic"
-model = "claude-sonnet-4-20250514"   # Global default
+provider = "google"
+# model = "gemini-2.5-flash"         # Optional global default
 
-[providers.anthropic]
-type = "anthropic"
-api_key_env = "ANTHROPIC_API_KEY"
-model = "claude-sonnet-4-20250514"   # Per-provider default
+[providers.google]
+type = "google"
+api_key_env = "GEMINI_API_KEY"
+model = "gemini-2.5-flash"           # Optional per-provider default
 ```
 
 See [config.example.toml](config.example.toml) for all options.
 
+### Free Setup Options
+
+| Option | Cost | What you need | Notes |
+|------|------|---------------|-------|
+| `ollama` | Free local | Ollama installed and a local model | Best zero-key/offline option |
+| `google` | Free tier | `GEMINI_API_KEY` (or `GOOGLE_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY`) | Best free cloud default |
+| `groq` | Free tier | `GROQ_API_KEY` | Fast free cloud fallback |
+
 ### Provider Types
 
-| Type | Description |
-|------|-------------|
-| `anthropic` | Anthropic Claude API |
-| `openai` | OpenAI API |
-| `openai_compatible` | Any OpenAI-compatible API |
-| `ollama` | Local Ollama instance |
-| `portkey` | Portkey AI Gateway (self-hosted or cloud) |
-| `google` | Google Gemini API |
-| `groq` | Groq (ultra-fast Llama, Mixtral inference) |
-| `azure` | Azure OpenAI deployments |
-| `bedrock` | AWS Bedrock (Claude, Titan, Llama) |
+| Type | Built in | Description |
+|------|----------|-------------|
+| `google` | Yes | Google Gemini API |
+| `groq` | Yes | Groq (ultra-fast open models) |
+| `ollama` | Yes | Local Ollama instance |
+| `anthropic` | Yes | Anthropic Claude API |
+| `openai` | Yes | OpenAI API |
+| `azure` | Yes | Azure OpenAI deployments |
+| `bedrock` | Yes | AWS Bedrock (Claude, Titan, Llama) |
+| `openai_compatible` | No | Any OpenAI-compatible API (needs `base_url`) |
+| `portkey` | No | Portkey AI Gateway (needs `base_url` and `provider_slug`) |
 
 ### Portkey Gateway Setup
 
@@ -182,21 +206,32 @@ All agent PRs are created as drafts and require human approval to merge. The sys
 
 ## Troubleshooting
 
+**"Setup required" error:**
+
+Use one of these quick starts:
+
+```bash
+export GEMINI_API_KEY="your-key-here"
+q explain kubernetes pods
+```
+
+```bash
+q --provider ollama --model gemma3 explain kubernetes pods
+```
+
+Or create a config file with `q config init`.
+
 **"Missing API key" error:**
 
 Ensure your API key environment variable is set:
 
 ```bash
-export ANTHROPIC_API_KEY="your-key-here"
+export GEMINI_API_KEY="your-key-here"
 ```
-
-**"Config file not found" error:**
-
-Run `q config init` to create a default configuration file.
 
 **Diagnose config issues:**
 
-Run `q config doctor` to check config files, environment overrides, and provider health at a glance.
+Run `q config doctor` to check config files, environment overrides, built-in defaults, and provider health at a glance.
 
 **Failure logs:**
 

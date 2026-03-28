@@ -148,6 +148,19 @@ describe("config schema", () => {
       }
     });
 
+    it("should allow provider and model to be omitted in default section", () => {
+      const config = {
+        default: {},
+        providers: {
+          ollama: {
+            type: "ollama",
+          },
+        },
+      };
+      const result = ConfigSchema.safeParse(config);
+      expect(result.success).toBe(true);
+    });
+
     it("should reject config without default section", () => {
       const config = {
         providers: {
@@ -178,17 +191,19 @@ describe("config schema", () => {
       const config = {
         default: {
           provider: "anthropic",
-          // missing model
         },
-        providers: {},
+        providers: {
+          anthropic: {
+            type: "invalid_provider",
+          },
+        },
       };
       const result = ConfigSchema.safeParse(config);
       expect(result.success).toBe(false);
       if (!result.success) {
         const formatted = formatZodErrors(result.error);
-        expect(formatted).toContain("default.model");
-        // Zod 4 error message format
-        expect(formatted).toContain("expected string");
+        expect(formatted).toContain("providers.anthropic.type");
+        expect(formatted).toContain("Invalid option");
       }
     });
   });

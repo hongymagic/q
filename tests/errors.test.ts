@@ -5,8 +5,10 @@ import {
   ConfigValidationError,
   getUserErrorMessage,
   MissingApiKeyError,
+  ModelNotConfiguredError,
   ProviderError,
   ProviderNotFoundError,
+  SetupRequiredError,
   shouldWriteFailureLog,
   UsageError,
 } from "../src/errors.ts";
@@ -36,6 +38,18 @@ describe("getUserErrorMessage", () => {
         new MissingApiKeyError("ANTHROPIC_API_KEY", "anthropic"),
       ),
     ).toBe("Missing API key. Set ANTHROPIC_API_KEY.");
+  });
+
+  it("formats missing model errors concisely", () => {
+    expect(getUserErrorMessage(new ModelNotConfiguredError("local"))).toBe(
+      "No model configured for provider 'local'. Set --model, Q_MODEL, provider.model, or default.model.",
+    );
+  });
+
+  it("formats setup guidance errors concisely", () => {
+    expect(getUserErrorMessage(new SetupRequiredError())).toBe(
+      "Setup required. Install Ollama, set GEMINI_API_KEY or GROQ_API_KEY, or run 'q config init'.",
+    );
   });
 
   it("formats provider lookup errors concisely", () => {
