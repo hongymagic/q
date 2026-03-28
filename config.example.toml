@@ -1,75 +1,59 @@
 # q configuration file
 # Copy to ~/.config/q/config.toml or run `q config init`
 #
-# Config resolution order (later overrides earlier):
-#   1. XDG config: ~/.config/q/config.toml (or $XDG_CONFIG_HOME/q/config.toml)
-#   2. Project config: ./config.toml in current directory
-#   3. Environment variables: Q_PROVIDER, Q_MODEL, Q_COPY
+# This file is optional. q can run with built-in defaults:
+#   - install Ollama for local usage, or
+#   - set GEMINI_API_KEY / GROQ_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY
+#
+# Add settings here only when you want to pin behaviour or customise providers.
 
 [default]
-provider = "anthropic"
-model = "claude-sonnet-4-20250514"
-# copy = true  # Always copy answer to clipboard (override with --no-copy)
+# provider = "google"          # Optional: q auto-detects a provider when possible
+# model = "gemini-2.5-flash"   # Optional: q uses provider defaults when omitted
+# copy = true                   # Optional: always copy answer to clipboard
 
-[providers.anthropic]
-type = "anthropic"
-api_key_env = "ANTHROPIC_API_KEY"
+# Local-first example
+# [providers.ollama]
+# type = "ollama"
+# # base_url = "http://localhost:11434"
+# # model = "gemma3"
 
-[providers.openai]
-type = "openai"
-api_key_env = "OPENAI_API_KEY"
+# Free cloud example (Google Gemini)
+# [providers.google]
+# type = "google"
+# # api_key_env = "GEMINI_API_KEY"
+# # model = "gemini-2.5-flash"
 
-# OpenAI-compatible provider (e.g., LM Studio, LocalAI)
+# Free cloud example (Groq)
+# [providers.groq]
+# type = "groq"
+# # api_key_env = "GROQ_API_KEY"
+# # model = "openai/gpt-oss-20b"
+
+# Advanced examples
+# [providers.work_openai]
+# type = "openai"
+# api_key_env = "OPENAI_API_KEY"
+# model = "gpt-4o-mini"
+
 # [providers.local]
 # type = "openai_compatible"
 # base_url = "http://localhost:1234/v1"
-# api_key_env = "LOCAL_API_KEY"
+# # api_key_env = "LOCAL_API_KEY"
 
-# Portkey Gateway - Internal/Self-hosted deployment
-# Use type = "portkey" for first-class Portkey support
-# [providers.portkey_internal]
-# type = "portkey"
-# base_url = "https://your-portkey-gateway.internal/v1"
-# provider_slug = "@your-org/bedrock-provider"  # Maps to x-portkey-provider header
-# api_key_env = "PORTKEY_API_KEY"               # Maps to x-portkey-api-key header (optional)
-# provider_api_key_env = "PROVIDER_API_KEY"     # Maps to Authorization header (optional)
-# headers = { "x-portkey-trace-id" = "${HOSTNAME}" }  # Only allowlisted env vars (see docs)
+# [providers.azure]
+# type = "azure"
+# resource_name = "my-azure-resource"
+# api_key_env = "AZURE_API_KEY"
+# # model = "gpt-4o-deployment"
 
-# Portkey Cloud (public API)
+# [providers.bedrock]
+# type = "bedrock"
+# region = "us-east-1"
+# # model = "us.anthropic.claude-sonnet-4-20250514-v1:0"
+
 # [providers.portkey]
 # type = "portkey"
 # base_url = "https://api.portkey.ai/v1"
 # provider_slug = "openai"
 # api_key_env = "PORTKEY_API_KEY"
-
-# Ollama (local models)
-# [providers.ollama]
-# type = "ollama"
-# base_url = "http://localhost:11434"
-
-# Google Gemini
-# [providers.google]
-# type = "google"
-# api_key_env = "GOOGLE_GENERATIVE_AI_API_KEY"
-# # Models: gemini-2.5-pro, gemini-2.5-flash, gemini-2.0-flash
-
-# Groq (ultra-fast inference)
-# [providers.groq]
-# type = "groq"
-# api_key_env = "GROQ_API_KEY"
-# # Models: llama-3.3-70b-versatile, qwen-qwq-32b, deepseek-r1-distill-llama-70b
-
-# Azure OpenAI
-# [providers.azure]
-# type = "azure"
-# resource_name = "my-azure-resource"  # Or use base_url instead
-# api_key_env = "AZURE_API_KEY"
-# api_version = "v1"  # Optional, defaults to v1
-# # Model = deployment name (e.g., "gpt-4o-deployment")
-
-# AWS Bedrock
-# [providers.bedrock]
-# type = "bedrock"
-# region = "us-east-1"  # Optional, defaults to AWS_REGION env var
-# # Uses standard AWS env vars: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-# # Models: anthropic.claude-3-5-sonnet-20241022-v2:0, us.amazon.nova-pro-v1:0

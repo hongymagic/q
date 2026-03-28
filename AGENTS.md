@@ -48,9 +48,9 @@ bunx lefthook install    # Install pre-commit + pre-push hooks
 ```
 q [options] <query...>      # Run a query and print answer
 q config path               # Print the resolved config file path
-q config init               # Generate an example config file
-q config doctor             # Diagnose config and provider issues
-q providers                 # List configured providers + default
+q config init               # Generate an optional config file
+q config doctor             # Diagnose config and setup issues
+q providers                 # List available providers + defaults/status
 ```
 
 ### Stdin/Pipe Support
@@ -88,11 +88,14 @@ q providers                 # List configured providers + default
 
 ### Resolution Order (Cascade Merge)
 
-Config is loaded from multiple sources. Later sources override earlier ones:
+Config is optional. `q` starts with built-in provider presets and then applies overrides. Later sources override earlier ones:
 
-1. **XDG config**: `$XDG_CONFIG_HOME/q/config.toml` or `~/.config/q/config.toml`
-2. **CWD config**: `./config.toml` in current directory
-3. **Environment variables**: `Q_PROVIDER`, `Q_MODEL`, `Q_COPY`
+1. **Built-in defaults**: common providers (`google`, `groq`, `anthropic`, `openai`, `ollama`, `azure`, `bedrock`) plus per-provider default models
+2. **XDG config**: `$XDG_CONFIG_HOME/q/config.toml` or `~/.config/q/config.toml`
+3. **CWD config**: `./config.toml` in current directory
+4. **Environment variables**: `Q_PROVIDER`, `Q_MODEL`, `Q_COPY`
+
+`q` auto-detects common provider keys (for example `GEMINI_API_KEY`, `GROQ_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) and falls back to local Ollama when available.
 
 ### Environment Variables
 
@@ -109,21 +112,21 @@ Support `${VAR_NAME}` syntax in specific fields for allowlisted variables only:
 - `headers` values
 - `provider_slug` (Portkey-specific)
 
-**Allowlisted variables:** `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `PORTKEY_API_KEY`, `PORTKEY_BASE_URL`, `PORTKEY_PROVIDER`, `GOOGLE_GENERATIVE_AI_API_KEY`, `GROQ_API_KEY`, `AZURE_API_KEY`, `AZURE_RESOURCE_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AWS_REGION`, `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`, `HOME`, `USER`, `HOSTNAME`
+**Allowlisted variables:** `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `PORTKEY_API_KEY`, `PORTKEY_BASE_URL`, `PORTKEY_PROVIDER`, `GROQ_API_KEY`, `AZURE_API_KEY`, `AZURE_RESOURCE_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AWS_REGION`, `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`, `HOME`, `USER`, `HOSTNAME`
 
 ### Schema (TOML)
 
 ```toml
 [default]
-provider = "anthropic"
-model = "claude-sonnet-4-20250514"
+provider = "google"           # Optional
+# model = "gemini-2.5-flash"  # Optional
 
-[providers.anthropic]
-type = "anthropic"
-api_key_env = "ANTHROPIC_API_KEY"
+[providers.google]
+type = "google"
+api_key_env = "GEMINI_API_KEY"
 ```
 
-Each provider entry requires `type` and typically `api_key_env`. Optional fields: `base_url`, `headers`, and type-specific fields (see `ProviderConfig` below).
+Each provider entry requires `type`. Common built-in providers can run without any config file at all; custom providers still use optional fields like `api_key_env`, `base_url`, `headers`, and type-specific fields (see `ProviderConfig` below).
 
 ### Secrets
 
@@ -194,6 +197,7 @@ src/
 ├── failure-prompt.ts   # Interactive retry/view-log prompt for TTY failures
 ├── loading-indicator.ts # TTY loading spinner while waiting for first output
 ├── logging.ts          # stderr logging + failure log writer
+├── provider-catalog.ts # Built-in provider presets, defaults, and setup helpers
 ├── sensitive.ts        # Shared sensitive-key detection for redaction
 ├── stdin.ts            # Stdin/pipe input handling
 ├── config/

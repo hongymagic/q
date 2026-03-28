@@ -1,9 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfigData } from "../src/config/index.ts";
-import { MissingApiKeyError, ProviderNotFoundError } from "../src/errors.ts";
+import {
+  MissingApiKeyError,
+  ProviderNotFoundError,
+  SetupRequiredError,
+} from "../src/errors.ts";
 import {
   listProviders,
   resolveApiKey,
+  resolveApiKeyCandidates,
   resolveProvider,
 } from "../src/providers/index.ts";
 import { normaliseBaseURL } from "../src/providers/ollama.ts";
@@ -120,6 +125,17 @@ describe("provider resolution", () => {
       );
     });
 
+    it("should throw SetupRequiredError when no provider can be resolved", () => {
+      const configWithoutDefault: ConfigData = {
+        default: {},
+        providers: mockConfig.providers,
+      };
+
+      expect(() => resolveProvider(configWithoutDefault)).toThrow(
+        SetupRequiredError,
+      );
+    });
+
     it("should throw MissingApiKeyError when API key env var is not set", () => {
       delete process.env.ANTHROPIC_API_KEY;
       expect(() => resolveProvider(mockConfig)).toThrow(MissingApiKeyError);
@@ -163,6 +179,23 @@ describe("provider resolution", () => {
       it("should use per-provider model when no overrides", () => {
         const result = resolveProvider(configWithProviderModels);
         expect(result.modelId).toBe("claude-sonnet-4-20250514");
+      });
+
+      it("should fall back to provider-type default model", () => {
+        const configWithMinimalDefaults: ConfigData = {
+          default: {
+            provider: "openai",
+          },
+          providers: {
+            openai: {
+              type: "openai",
+              api_key_env: "OPENAI_API_KEY",
+            },
+          },
+        };
+
+        const result = resolveProvider(configWithMinimalDefaults);
+        expect(result.modelId).toBe("gpt-4o-mini");
       });
 
       it("should use per-provider model for switched provider", () => {
@@ -229,7 +262,7 @@ describe("provider resolution", () => {
       };
       const output = listProviders(configWithModels);
       expect(output).toContain("Model: claude-sonnet-4-20250514");
-      expect(output).toContain("Model: (default)");
+      expect(output).toContain("Model: gpt-4o-mini");
     });
 
     it("should show credential status", () => {
@@ -272,6 +305,16 @@ describe("provider resolution", () => {
       expect(() => resolveApiKey("MISSING_KEY", "my-provider")).toThrow(
         /my-provider/,
       );
+    });
+
+    it("should resolve from the first available candidate env var", () => {
+      process.env.GOOGLE_API_KEY = "google-key";
+      const result = resolveApiKeyCandidates(
+        ["GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY"],
+        "google",
+      );
+      expect(result).toBe("google-key");
+      delete process.env.GOOGLE_API_KEY;
     });
   });
 

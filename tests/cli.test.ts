@@ -122,18 +122,46 @@ describe("CLI integration", () => {
     expect(stderr).not.toContain("Full log:");
   });
 
-  it("prints concise config errors and writes a failure log", () => {
+  it("lists available providers without requiring config", () => {
     const { rootDir, env } = createIsolatedEnv();
 
     try {
-      const { stderr, exitCode } = runCli("hello", env);
+      const { stdout, exitCode } = runCli("providers", {
+        ...env,
+        ANTHROPIC_API_KEY: undefined,
+        OPENAI_API_KEY: undefined,
+        GEMINI_API_KEY: undefined,
+        GOOGLE_API_KEY: undefined,
+        GOOGLE_GENERATIVE_AI_API_KEY: undefined,
+        GROQ_API_KEY: undefined,
+      });
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain("Available providers:");
+      expect(stdout).toContain("anthropic");
+      expect(stdout).toContain("google");
+      expect(stdout).toContain("groq");
+      expect(stdout).toContain("ollama");
+    } finally {
+      rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
+
+  it("prints provider-specific setup errors and writes a failure log", () => {
+    const { rootDir, env } = createIsolatedEnv();
+
+    try {
+      const { stderr, exitCode } = runCli("--provider anthropic hello", {
+        ...env,
+        ANTHROPIC_API_KEY: undefined,
+      });
 
       expect(exitCode).toBe(2);
       expect(stderr).toContain(
-        "Error: Config file not found. Run 'q config init'.",
+        "Error: Missing API key. Set ANTHROPIC_API_KEY.",
       );
       expect(stderr).toContain("Full log: ");
-      expect(stderr).not.toContain("Error: Config file not found:");
+      expect(stderr).not.toContain("Config file not found");
 
       const match = stderr.match(/^Full log: (.+)$/m);
       expect(match?.[1]).toBeTruthy();
@@ -143,9 +171,9 @@ describe("CLI integration", () => {
 
       const logContent = readFileSync(logPath as string, "utf8");
       expect(logContent).toContain(
-        "Display message:\nConfig file not found. Run 'q config init'.",
+        "Display message:\nMissing API key. Set ANTHROPIC_API_KEY.",
       );
-      expect(logContent).toContain("Config file not found:");
+      expect(logContent).toContain("Missing API key:");
       expect(logContent).toContain("Session context:");
     } finally {
       rmSync(rootDir, { recursive: true, force: true });
@@ -156,15 +184,21 @@ describe("CLI integration", () => {
     const { rootDir, env } = createIsolatedEnv();
 
     try {
-      const { stderr, exitCode } = runCli("--debug hello", env);
+      const { stderr, exitCode } = runCli(
+        "--debug --provider anthropic hello",
+        {
+          ...env,
+          ANTHROPIC_API_KEY: undefined,
+        },
+      );
 
       expect(exitCode).toBe(2);
       expect(stderr).toContain("[debug] Source:");
       expect(stderr).toContain("[debug] Loading config...");
       expect(stderr).toContain(
-        "Error: Config file not found. Run 'q config init'.",
+        "Error: Missing API key. Set ANTHROPIC_API_KEY.",
       );
-      expect(stderr).toContain("name: ConfigNotFoundError");
+      expect(stderr).toContain("name: MissingApiKeyError");
       expect(stderr).toContain("Full log: ");
     } finally {
       rmSync(rootDir, { recursive: true, force: true });
