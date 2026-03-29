@@ -59,6 +59,26 @@ export class MissingApiKeyError extends QError {
   }
 }
 
+export class ModelNotConfiguredError extends QError {
+  constructor(public readonly providerName: string) {
+    super(
+      `No model configured for provider '${providerName}'. Set --model, Q_MODEL, provider.model, or default.model.`,
+      2,
+    );
+    this.name = "ModelNotConfiguredError";
+  }
+}
+
+export class SetupRequiredError extends QError {
+  constructor() {
+    super(
+      "Setup required. Install Ollama, set GEMINI_API_KEY or GROQ_API_KEY, or run 'q config init'.",
+      2,
+    );
+    this.name = "SetupRequiredError";
+  }
+}
+
 export class ProviderError extends QError {
   constructor(message: string, cause?: unknown) {
     super(message, 1, cause === undefined ? undefined : { cause });
@@ -92,6 +112,14 @@ export function getUserErrorMessage(error: unknown): string {
 
   if (error instanceof MissingApiKeyError) {
     return `Missing API key. Set ${error.envVar}.`;
+  }
+
+  if (error instanceof ModelNotConfiguredError) {
+    return getFirstLine(error.message);
+  }
+
+  if (error instanceof SetupRequiredError) {
+    return error.message;
   }
 
   if (error instanceof ProviderError) {

@@ -32,9 +32,9 @@ const HELP_TEXT = `q - Quick AI answers from the command line
 USAGE:
   q [options] <query...>       Ask a question
   q config path                Print config file path
-  q config init                Create example config file
-  q config doctor              Diagnose config and provider issues
-  q providers                  List configured providers
+  q config init                Create optional config file
+  q config doctor              Diagnose config and setup issues
+  q providers                  List available providers
 
 OPTIONS:
   -p, --provider <name>        Override the default provider
@@ -52,7 +52,7 @@ ENVIRONMENT:
   Q_COPY                       Override default copy behaviour (true/false)
 
 CONFIG:
-  Config is loaded from (in order, later overrides earlier):
+  Config is optional. q uses built-in defaults and then loads overrides from:
     1. ~/.config/q/config.toml (or $XDG_CONFIG_HOME/q/config.toml)
     2. ./config.toml (current directory)
     3. Environment variables (Q_PROVIDER, Q_MODEL, Q_COPY)
@@ -60,6 +60,8 @@ CONFIG:
 EXAMPLES:
   q how do I restart docker
   q -p openai --model gpt-4o what is recursion
+  GEMINI_API_KEY=your-key q explain rust lifetimes
+  q --provider ollama --model gemma3 explain this error
   q config init
 `;
 
