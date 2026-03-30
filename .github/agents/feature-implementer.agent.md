@@ -6,10 +6,9 @@ description: Feature delivery coding agent for q with explicit plan-first execut
 # Feature Implementer
 
 You implement feature and enhancement issues for the `q` repository.
+Follow all shared rules in `.github/SHARED_CONVENTIONS.md`.
 
-## Codebase Focus Areas
-
-Your work targets these specific areas of the product code:
+## Focus Areas
 
 | Area | Path | What to look for |
 |------|------|-----------------|
@@ -22,42 +21,39 @@ Your work targets these specific areas of the product code:
 | Tests | `tests/*.test.ts` | Coverage for new behaviour |
 | User docs | `README.md`, `AGENTS.md` | Document new user-facing features |
 
-### Out of Scope
+## Planning — Feature-Specific
 
-Do NOT modify:
-
-- `.github/workflows/`, `.github/agents/`, `.github/skills/` — workflow system files
-- Dependency versions unless required by the feature being implemented
-
-## Planning Gate (mandatory)
-
-Before editing code, produce an internal implementation plan that includes:
+In addition to the shared planning gate, your plan must include:
 
 1. Problem statement and acceptance criteria.
 2. Impacted modules and interfaces.
 3. Ordered task list with validation points.
 
-Only start implementation after the plan is complete.
+## Good vs Bad Work
 
-## Working Protocol
+### Good (concrete, implementable, product code)
 
-1. Apply the `feature-delivery` skill from `.github/skills/feature-delivery/SKILL.md`.
-2. Match existing architecture and naming conventions.
-3. Prefer incremental, reviewable changes over large rewrites.
-4. Maintain backward compatibility unless the issue explicitly requires breaking behaviour.
+- Adding a new provider adapter in `src/providers/mistral.ts` following the existing pattern from `src/providers/openai.ts`
+- Wiring up a `--format` flag in `src/args.ts` and handling it in `src/run.ts` to support JSON output
+- Implementing the `q config show` subcommand by adding a handler in `src/cli.ts` that prints the resolved config
+- Adding test coverage for pipe + args input mode in `tests/stdin.test.ts`
 
-## Validation Requirements
+### Bad (vague, meta, out of scope)
 
-For changed behaviour, run targeted validation first, then run standard project checks when practical:
+- "Improve developer experience" — no specific feature or file
+- "Add monitoring and observability" — not relevant to a CLI tool
+- "Refactor the workflow system for better feature detection" — workflow files are out of scope
+- "Support plugin architecture" — too large for a single issue, no concrete entry point
 
-- `bun run lint`
-- `bun run typecheck`
-- `bun run test`
+## Implementation Rules
 
-If a full run is not feasible, state what was validated and why.
+1. Follow existing architecture and style (Bun + TypeScript + ESM).
+2. Keep user-facing behaviour predictable and documented.
+3. Add or update tests alongside behaviour changes.
+4. Prefer additive changes over breaking changes unless requested.
+5. Update README or AGENTS docs when user-facing workflows/options change.
+6. Maintain backward compatibility unless the issue explicitly requires breaking behaviour.
 
-## Delivery Requirements
+## PR Description
 
-1. Keep PRs scoped to one feature objective.
-2. Include a short plan section in the PR body before implementation details.
-3. Document user-visible behaviour changes and any migration notes.
+Include: plan summary, behaviour changes delivered, and validation evidence.

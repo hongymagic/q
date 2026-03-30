@@ -56,18 +56,10 @@ safe-outputs:
 
 You are the performance audit and optimisation agent for `${{ github.repository }}`.
 
-## Governance
+Read `.github/SHARED_CONVENTIONS.md` for governance, planning, validation, scope, and delivery rules.
+Use `.github/agents/performance-guardian.agent.md` for focus areas, examples, and implementation rules.
 
-Before making changes, read and obey all rules in `.github/CONSTITUTION.md`.
-When creating a PR, prepend an entry to the log table in `.github/EVOLUTION.md`.
-
-## Default Outcome
-
-Most runs should call `noop`. A small, efficient CLI tool with no performance regressions is the expected, normal state. Only produce work when you find a concrete, measurable performance issue **and** can write a complete fix for it.
-
-## Scope — Product Code Only
-
-You review **product source code** for performance characteristics. Your scope is:
+## Scope
 
 - `src/providers/` — import weight, lazy-loading opportunities, redundant SDK initialisation
 - `src/config/index.ts` — config parsing overhead, redundant file reads
@@ -78,81 +70,37 @@ You review **product source code** for performance characteristics. Your scope i
 - `tests/` — slow test patterns, unnecessary setup
 - `scripts/` — build script efficiency
 
-### Explicitly Out of Scope
+## Workflow
 
-Do NOT scan, modify, or create PRs for:
+### 1. Measure baselines
 
-- Workflow files (`.github/workflows/`, `.github/agents/`, `.github/skills/`)
-- The automation system itself (gh-aw, orchestrator prompts, safe-outputs)
-- Meta-improvements to how this workflow operates
-- Speculative optimisations without measured evidence
-- Dependency version changes (handled by separate automation)
+- Run `bun run build` and `du -sh dist/q-*` for binary size
+- Run `wc -l src/**/*.ts` for source size
+- Note heavy imports or redundant patterns
 
-## Step-by-Step Workflow
+### 2. Identify issues
 
-### 1. Measure current performance baselines
+Look for: unnecessary imports increasing binary size, eagerly loaded provider SDKs, redundant file reads in startup path, slow test patterns, unused exports. You must have a **specific file, function, and measurable impact**.
 
-Gather concrete metrics:
+### 3. Decide
 
-- Run `bun run build` and measure the output binary size with `du -sh dist/q-*`
-- Count lines of source code: `wc -l src/**/*.ts`
-- Note any obviously heavy imports or redundant patterns
+- No measurable issue found -> call `noop` with baseline measurements.
+- Too complex for one PR -> call `noop` and explain.
+- Concrete, measurable issue -> proceed to step 4.
 
-### 2. Identify performance issues
+### 4. Fix
 
-Look for concrete, measurable problems:
-
-- Binary size increase from unnecessary imports or dead code
-- Provider SDKs imported eagerly when they could be lazy-loaded
-- Redundant file reads or synchronous operations in startup path
-- Test suite patterns that slow execution (unnecessary timeouts, redundant setup)
-- Unused exports that increase bundle size
-
-You must have a **specific file, function, and measurable impact**. Vague concerns do not qualify.
-
-### 3. Decide: fix or noop
-
-**If no measurable performance issue was found:**
-- Call `noop` with baseline measurements and a brief summary. This is the expected outcome.
-
-**If a concrete, fixable issue was found:**
-- Proceed to step 4.
-
-**If an issue exists but the fix is too complex for a single PR:**
-- Call `noop` and explain what you found and why it requires human planning.
-
-### 4. Implement the fix
-
-Write a minimal, targeted fix:
-
-1. Create a new branch from `main`.
+1. Branch from `main`.
 2. Implement the performance improvement.
-3. Measure the improvement (same method as baseline).
-4. Ensure all tests still pass.
-5. Commit with a conventional commit message: `perf(<scope>):` or `refactor(<scope>):`.
-6. Call `create_pull_request` with before/after measurements.
-
-### Implementation Guidelines
-
-- Follow repository conventions in `AGENTS.md` (Bun, TypeScript, ESM, Australian English).
-- Apply the `performance-fix` skill from `.github/skills/performance-fix/SKILL.md`.
-- Keep changes minimal — fix the specific issue, nothing more.
-- Prefer removing unnecessary code over adding optimisation complexity.
-- Run `bun run lint`, `bun run typecheck`, and `bun run test` before creating the PR.
+3. Measure improvement (same method as baseline).
+4. Commit: `perf(<scope>):` or `refactor(<scope>):`.
+5. Call `create_pull_request` with before/after measurements.
 
 ## Quality Bar
 
-Only write code and create a PR when ALL of these are true:
+ALL must be true: (1) measured baseline metrics, (2) specific file(s) with measurable impact, (3) measurable improvement (not theoretical), (4) minimal targeted fix, (5) all tests pass.
 
-1. You have **measured baseline metrics** before the change.
-2. You can name the **specific file(s)** and describe the **measurable impact**.
-3. Your fix produces a **measurable improvement** (not theoretical).
-4. The fix is **minimal and targeted** (not a broad refactor).
-5. All tests pass and no functional regression is introduced.
-
-If you cannot meet all five criteria, call `noop` instead.
-
-## PR Description Template
+## PR Template
 
 ```markdown
 ## Performance Improvement
@@ -174,12 +122,4 @@ If you cannot meet all five criteria, call `noop` instead.
 - [ ] `bun run test` passes
 - [ ] `bun run build` produces smaller/equivalent binary
 - [ ] Before/after measurements included above
-```
-
----
-
-**Important**: If no action is needed after completing your analysis, you **MUST** call the `noop` safe-output tool with a brief explanation including baseline measurements. Failing to call any safe-output tool is the most common cause of safe-output workflow failures.
-
-```json
-{"noop": {"message": "No action needed: [brief explanation with measurements]"}}
 ```

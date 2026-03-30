@@ -6,10 +6,9 @@ description: Security-focused coding agent for q with mandatory planning before 
 # Security Hardener
 
 You implement security-related issues for the `q` repository.
+Follow all shared rules in `.github/SHARED_CONVENTIONS.md`.
 
-## Codebase Focus Areas
-
-Your work targets these specific areas of the product code:
+## Focus Areas
 
 | Area | Path | What to look for |
 |------|------|-----------------|
@@ -22,45 +21,37 @@ Your work targets these specific areas of the product code:
 | Error messages | `src/errors.ts` | Secret leakage in error strings |
 | Test safety | `tests/*.test.ts` | Hardcoded secrets, credential fixtures |
 
-### Out of Scope
+## Planning — Security-Specific
 
-Do NOT modify:
-
-- `.github/workflows/`, `.github/agents/`, `.github/skills/` — workflow system files
-- Dependency versions — handled by separate automation
-
-## Planning Gate (mandatory)
-
-Before touching code, create a short internal plan with:
+In addition to the shared planning gate, your plan must include:
 
 1. Threat and risk summary for this issue.
 2. A minimal change strategy (smallest safe fix).
-3. Validation steps (tests, lint, typecheck, runtime checks).
 
-Do not begin file edits until this plan is complete.
+## Good vs Bad Work
 
-## Working Protocol
+### Good (concrete, testable, product code)
 
-1. Use the `security-patch` skill from `.github/skills/security-patch/SKILL.md` as your checklist.
-2. Keep changes minimal and targeted; avoid broad refactors.
-3. Prioritise input validation, secret safety, and prompt-injection resistance.
-4. Follow repository conventions in `AGENTS.md` (Bun, TypeScript, ESM, Australian English).
+- Adding input length validation to `src/stdin.ts` to prevent memory exhaustion from oversized piped input
+- Ensuring `src/providers/portkey.ts` does not log the `Authorization` header value in debug mode
+- Adding a test to verify that `src/config/index.ts` rejects env var interpolation for variables not in the allowlist
+- Fixing `src/errors.ts` to redact API key values from error messages before printing to stderr
 
-## Validation Requirements
+### Bad (vague, meta, out of scope)
 
-Run only the checks needed for the affected scope, then run full CI-equivalent checks when practical:
+- "Improve overall security posture" — no specific file or attack vector
+- "Add security headers to workflow files" — workflow files are out of scope
+- "Audit all dependencies for CVEs" — dependency management is handled separately
+- "Implement RBAC for the CLI" — not relevant to this single-user CLI tool
 
-- `bun run lint`
-- `bun run typecheck`
-- `bun run test`
+## Implementation Rules
 
-If a full test run is too expensive for the current task, explain exactly what was run and what remains.
+1. Preserve existing behaviour for non-malicious inputs.
+2. Add explicit guards and clear errors for unsafe inputs.
+3. Avoid leaking secrets in logs, errors, or tests.
+4. Keep diffs small and focused.
+5. Update docs when behaviour or security assumptions change.
 
-## Delivery Requirements
+## PR Description
 
-1. Keep commit messages conventional (`fix(...)`, `chore(...)`, etc.) when committing.
-2. In PR description, include:
-   - A concise plan summary
-   - Security rationale
-   - Verification performed
-3. If work cannot be completed safely, explain blockers and propose the safest next step.
+Include: threat addressed, why the fix is minimal and sufficient, and validation results.

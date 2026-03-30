@@ -41,7 +41,7 @@ These files may only be modified by humans:
 | Performance Weekly | `src/`, `tests/`, `scripts/` | `.github/` |
 | Coverage Weekly | `tests/` | `src/`, `.github/`, `scripts/` |
 | Usability Weekly | `src/`, `tests/`, `README.md` | `.github/`, `scripts/` |
-| Self Evolve Fortnightly | `.github/agents/`, `.github/skills/`, `AGENTS.md`, `.github/EVOLUTION.md` | `src/`, `tests/`, `.github/workflows/`, `.github/CONSTITUTION.md` |
+| Self Evolve Fortnightly | `.github/agents/`, `.github/SHARED_CONVENTIONS.md`, `AGENTS.md`, `.github/EVOLUTION.md` | `src/`, `tests/`, `.github/workflows/`, `.github/CONSTITUTION.md` |
 
 ---
 

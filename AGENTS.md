@@ -230,6 +230,7 @@ scripts/
 ├── dependabot.yml
 ├── aw/
 │   └── actions-lock.json   # Cached action pin resolutions from gh-aw compile
+├── SHARED_CONVENTIONS.md    # Shared agent conventions (planning, validation, delivery)
 ├── agents/
 │   ├── security-hardener.agent.md
 │   ├── feature-implementer.agent.md
@@ -237,13 +238,6 @@ scripts/
 │   ├── performance-guardian.agent.md
 │   ├── coverage-expander.agent.md
 │   └── usability-reviewer.agent.md
-├── skills/
-│   ├── security-patch/SKILL.md
-│   ├── feature-delivery/SKILL.md
-│   ├── maintenance-update/SKILL.md
-│   ├── performance-fix/SKILL.md
-│   ├── coverage-expansion/SKILL.md
-│   └── usability-fix/SKILL.md
 └── workflows/
     ├── ci.yml
     ├── release.yml
@@ -366,9 +360,9 @@ All autonomous agents are governed by `.github/CONSTITUTION.md`:
 
 All autonomous changes are logged in `.github/EVOLUTION.md`. The Self Evolve Fortnightly agent uses this log to assess agent effectiveness and propose improvements to agent prompts and skills.
 
-### Agent Definitions & Skills
+### Agent Definitions
 
-Each agent has a persona definition (`.github/agents/*.agent.md`) and a corresponding skill checklist (`.github/skills/*/SKILL.md`). These define the agent's focus areas, planning requirements, implementation guidelines, and quality bar.
+Each agent has a persona definition in `.github/agents/*.agent.md` containing focus areas, good/bad work examples, implementation rules, and domain-specific planning requirements. Shared conventions (governance, planning gate, validation, delivery, Australian English) live in `.github/SHARED_CONVENTIONS.md` to avoid repetition.
 
 ---
 
