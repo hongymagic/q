@@ -59,7 +59,7 @@ export function createPortkeyProvider(
   logDebug(`Portkey base URL: ${config.base_url}`, debug);
   logDebug(`Portkey headers:`, debug);
   for (const [key, value] of Object.entries(headers)) {
-    const maskedValue = isSensitiveKey(key) ? "[REDACTED]" : value;
+    const maskedValue = isSensitiveKey(key) ? "********" : value;
     logDebug(`  ${key}: ${maskedValue}`, debug);
   }
 
