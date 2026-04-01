@@ -112,10 +112,15 @@ export class Config {
       ...(xdgConfig?.default ?? {}),
       ...(cwdConfig?.default ?? {}),
     };
+    if (cwdConfig?.providers && Object.keys(cwdConfig.providers).length > 0) {
+      logWarning(
+        "Ignoring [providers] in project-specific config (./config.toml) for security reasons. Define providers in ~/.config/q/config.toml instead.",
+      );
+    }
+
     const mergedProviders = {
       ...getBuiltInProviderConfigs(),
       ...(xdgConfig?.providers ?? {}),
-      ...(cwdConfig?.providers ?? {}),
     };
 
     const inferredProvider = await Config.inferDefaultProvider(mergedDefault);

@@ -212,7 +212,7 @@ function formatUnknownValue(value: unknown, depth = 0): string {
       lines.push(`${prefix}properties:`);
       for (const [key, propertyValue] of properties) {
         const displayValue = isSensitiveKey(key)
-          ? "[REDACTED]"
+          ? "********"
           : formatValue(propertyValue);
         lines.push(`${prefix}  ${key}: ${displayValue}`);
       }
@@ -236,7 +236,7 @@ function formatUnknownValue(value: unknown, depth = 0): string {
 
 function sensitiveKeyReplacer(key: string, value: unknown): unknown {
   if (key && isSensitiveKey(key)) {
-    return "[REDACTED]";
+    return "********";
   }
   return value;
 }
