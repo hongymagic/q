@@ -42,7 +42,7 @@ describe("formatErrorDiagnostics secret redaction", () => {
     expect(output).not.toContain("sk-secret-12345");
     expect(output).not.toContain("super-secret");
     expect(output).not.toContain("camel-case-secret");
-    expect(output).toContain("[REDACTED]");
+    expect(output).toContain("********");
     expect(output).toContain("statusCode");
     expect(output).toContain("403");
   });
@@ -66,7 +66,7 @@ describe("formatErrorDiagnostics secret redaction", () => {
       "very-long-secret-key-that-was-partially-masked",
     );
     expect(output).not.toContain("short-token");
-    expect(output).toContain("[REDACTED]");
+    expect(output).toContain("********");
     expect(output).toContain("application/json");
   });
 

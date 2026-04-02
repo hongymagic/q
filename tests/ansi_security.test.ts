@@ -77,6 +77,37 @@ describe("runQuery Security", () => {
   });
 });
 
+import { sanitizeForTerminal } from "../src/ansi.ts";
+
+describe("sanitizeForTerminal", () => {
+  test("strips ANSI escape codes", () => {
+    const input = "\u001b[31mRed\u001b[0m Text";
+    expect(sanitizeForTerminal(input)).toBe("Red Text");
+  });
+
+  test("preserves safe whitespace (newlines and tabs)", () => {
+    const input = "Line 1\n\tIndented";
+    expect(sanitizeForTerminal(input)).toBe(input);
+  });
+
+  test("escapes dangerous carriage returns to hex representation", () => {
+    const input = "Line 1\rLine 2";
+    expect(sanitizeForTerminal(input)).toBe("Line 1\\x0DLine 2");
+  });
+
+  test("escapes dangerous C0 control characters to hex representation", () => {
+    const input = "Null\x00 Bell\x07 Backspace\x08 Escape\x1b";
+    expect(sanitizeForTerminal(input)).toBe(
+      "Null\\x00 Bell\\x07 Backspace\\x08 Escape\\x1B",
+    );
+  });
+
+  test("escapes DEL character (0x7F)", () => {
+    const input = "Delete\x7f";
+    expect(sanitizeForTerminal(input)).toBe("Delete\\x7F");
+  });
+});
+
 describe("sanitizeForClipboard", () => {
   test("strips ANSI escape codes", () => {
     const input = "\u001b[31mRed\u001b[0m Text";
