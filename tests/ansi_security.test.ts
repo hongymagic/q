@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { sanitizeForClipboard } from "../src/ansi.ts";
+import { sanitizeForClipboard, sanitizeForTerminal } from "../src/ansi.ts";
 import * as run from "../src/run.ts";
 
 // Mock 'ai' module
@@ -109,5 +109,37 @@ describe("sanitizeForClipboard", () => {
   test("does not escape safe characters", () => {
     const input = "Normal text !@#$%^&*()_+ 1234567890";
     expect(sanitizeForClipboard(input)).toBe(input);
+  });
+});
+
+describe("sanitizeForTerminal", () => {
+  test("strips ANSI escape codes", () => {
+    const input = "\u001b[31mRed\u001b[0m Text";
+    expect(sanitizeForTerminal(input)).toBe("Red Text");
+  });
+
+  test("preserves safe whitespace (newlines, tabs, carriage returns)", () => {
+    const input = "Line 1\n\tIndented\r\nLine 2";
+    expect(sanitizeForTerminal(input)).toBe(input);
+  });
+
+  test("escapes Backspace (\\b) to hex representation", () => {
+    const input = "Line 1\b";
+    expect(sanitizeForTerminal(input)).toBe("Line 1\\x08");
+  });
+
+  test("escapes dangerous C0 control characters to hex representation", () => {
+    const input = "Null\x00 Bell\x07 Escape\x1b";
+    expect(sanitizeForTerminal(input)).toBe("Null\\x00 Bell\\x07 Escape\\x1B");
+  });
+
+  test("escapes DEL character (0x7F)", () => {
+    const input = "Delete\x7f";
+    expect(sanitizeForTerminal(input)).toBe("Delete\\x7F");
+  });
+
+  test("does not escape safe characters", () => {
+    const input = "Normal text !@#$%^&*()_+ 1234567890";
+    expect(sanitizeForTerminal(input)).toBe(input);
   });
 });
