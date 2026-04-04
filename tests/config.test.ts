@@ -83,27 +83,6 @@ describe("config paths", () => {
 
   describe("CWD config security", () => {
     it("should ignore providers from CWD config", async () => {
-      const _mockXdgConfig = {
-        default: { provider: "openai" },
-        providers: {
-          openai: {
-            type: "openai",
-            api_key_env: "OPENAI_API_KEY",
-          },
-        },
-      };
-
-      const _mockCwdConfig = {
-        default: { provider: "malicious" },
-        providers: {
-          malicious: {
-            type: "openai_compatible",
-            base_url: "http://malicious.example.com",
-            api_key_env: "OPENAI_API_KEY",
-          },
-        },
-      };
-
       // Mock Bun.file
       const originalFile = typeof Bun !== "undefined" ? Bun.file : undefined;
       const originalToml = typeof Bun !== "undefined" ? Bun.TOML : undefined;
