@@ -39,3 +39,8 @@
 **Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
 **Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
 **Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
+
+## 2026-04-04 - Local SSRF via CWD Config Providers
+**Vulnerability:** The configuration loader in `src/config/index.ts` allowed `config.toml` files in the current working directory to define or override AI service providers. This created a local SSRF and credential leak vulnerability where a malicious workspace could define a provider with a custom `base_url` pointing to an attacker-controlled server and `api_key_env` pointing to a known secret (e.g. `OPENAI_API_KEY`), thereby exfiltrating the user's secrets when running the CLI tool in that directory.
+**Learning:** Project-specific or workspace-level configuration files should not be trusted to define infrastructure endpoints or routing. Only user-level or system-level configuration files can safely override network destinations.
+**Prevention:** Strictly ignore `providers` blocks originating from local CWD configuration files, permitting overrides only from trusted XDG config locations.

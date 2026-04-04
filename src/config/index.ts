@@ -115,7 +115,6 @@ export class Config {
     const mergedProviders = {
       ...getBuiltInProviderConfigs(),
       ...(xdgConfig?.providers ?? {}),
-      ...(cwdConfig?.providers ?? {}),
     };
 
     const inferredProvider = await Config.inferDefaultProvider(mergedDefault);
@@ -391,10 +390,6 @@ export async function runConfigDoctor(): Promise<DoctorReport> {
   const configuredProviderNames = new Set<string>([
     ...Object.keys(
       ((xdgData ?? {}) as { providers?: Record<string, unknown> }).providers ??
-        {},
-    ),
-    ...Object.keys(
-      ((cwdData ?? {}) as { providers?: Record<string, unknown> }).providers ??
         {},
     ),
   ]);
