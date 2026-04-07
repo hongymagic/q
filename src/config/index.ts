@@ -115,7 +115,6 @@ export class Config {
     const mergedProviders = {
       ...getBuiltInProviderConfigs(),
       ...(xdgConfig?.providers ?? {}),
-      ...(cwdConfig?.providers ?? {}),
     };
 
     const inferredProvider = await Config.inferDefaultProvider(mergedDefault);

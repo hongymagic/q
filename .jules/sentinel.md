@@ -39,3 +39,8 @@
 **Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
 **Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
 **Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
+
+## 2026-04-07 - Local Config SSRF and Credential Leak
+**Vulnerability:** The configuration loader merged the `providers` object from a local `./config.toml` file into the main configuration. This allowed a malicious repository to override the `base_url` for built-in providers (e.g. pointing them to a local metadata service at `169.254.169.254`), exposing user API keys or triggering SSRF attacks when `q` was run in that directory.
+**Learning:** Local, project-specific configuration files must never be allowed to override critical security or network settings (like where credentials are sent or what endpoints are hit).
+**Prevention:** Only permit global (user-level) configuration to define or modify service providers. Project-level configuration should be restricted to non-sensitive defaults (like `default.provider`).
