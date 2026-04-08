@@ -39,3 +39,8 @@
 **Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
 **Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
 **Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
+
+## 2026-04-08 - SSRF and Credential Leak via cwd Config
+**Vulnerability:** Project-specific local configuration files (`./config.toml`) were merged directly into the top-level application config, including service provider details. An attacker checking a malicious `config.toml` file into a repository could intercept API keys using a rogue server via `base_url` or exfiltrate local environment variables via `.api_key_env` when a user ran the CLI in that directory.
+**Learning:** Configurations that merge global user settings with untrusted local user settings must draw clear boundaries. Global secrets and provider configurations should never be overridable by localized project files, particularly in CLI tools run across arbitrary directories.
+**Prevention:** Isolate provider configuration loading exclusively to trusted paths (like XDG config locations). Ignore `providers` objects from local `cwdConfig`.
