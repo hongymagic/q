@@ -39,3 +39,8 @@
 **Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
 **Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
 **Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
+
+## 2026-04-13 - Terminal Injection via Control Characters
+**Vulnerability:** While ANSI codes were stripped from AI model output written to stdout, dangerous C0/C1 control characters (such as Backspace `\x08` or Bell `\x07`) could still be emitted, allowing for terminal output manipulation.
+**Learning:** Terminal sanitization requires more than just stripping ANSI escape sequences; standalone control characters can also be used maliciously.
+**Prevention:** Explicitly sanitize dangerous C0 and C1 control characters in text emitted to the terminal by escaping them to their hex representation, while preserving safe formatting characters.
