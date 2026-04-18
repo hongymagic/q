@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { sanitizeForClipboard } from "../src/ansi.ts";
+import { sanitizeForClipboard, sanitizeForTerminal } from "../src/ansi.ts";
 import * as run from "../src/run.ts";
 
 // Mock 'ai' module
@@ -74,6 +74,69 @@ describe("runQuery Security", () => {
 
     // return value should have codes
     expect(result.text).toBe("Start\u001b[31mRed\u001b[0m");
+  });
+
+  test("strips dangerous control characters from stdout but keeps them in returned text", async () => {
+    mockStreamText.mockReturnValue({
+      textStream: (async function* () {
+        yield "Start";
+        yield "\x08"; // Backspace
+        yield "safe";
+        yield "\x00"; // Null
+      })(),
+    });
+
+    const writeSpy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+
+    const result = await run.runQuery({
+      // @ts-expect-error - mocking model
+      model: {},
+      query: "test",
+      systemPrompt: "test",
+    });
+
+    // Check what was returned - SHOULD CONTAIN CONTROL CHARS
+    expect(result.text).toBe("Start\x08safe\x00");
+
+    // Check what was written to stdout - SHOULD NOT CONTAIN CONTROL CHARS
+    const calls = writeSpy.mock.calls.map((c) => c[0]).join("");
+    expect(calls).toBe("Start\\x08safe\\x00\n");
+  });
+});
+
+describe("sanitizeForTerminal", () => {
+  test("strips ANSI escape codes", () => {
+    const input = "\u001b[31mRed\u001b[0m Text";
+    expect(sanitizeForTerminal(input)).toBe("Red Text");
+  });
+
+  test("preserves safe whitespace (newlines, tabs, carriage returns)", () => {
+    const input = "Line 1\n\tIndented\r\nLine 2";
+    expect(sanitizeForTerminal(input)).toBe(input);
+  });
+
+  test("escapes dangerous C0 control characters to hex representation", () => {
+    const input = "Null\x00 Bell\x07 Backspace\x08 Escape\x1b";
+    expect(sanitizeForTerminal(input)).toBe(
+      "Null\\x00 Bell\\x07 Backspace\\x08 Escape\\x1B",
+    );
+  });
+
+  test("escapes DEL character (0x7F)", () => {
+    const input = "Delete\x7f";
+    expect(sanitizeForTerminal(input)).toBe("Delete\\x7F");
+  });
+
+  test("escapes C1 control character U+009B (CSI)", () => {
+    const input = "CSI\u009B Test";
+    expect(sanitizeForTerminal(input)).toBe("CSI\\x9B Test");
+  });
+
+  test("does not escape safe characters", () => {
+    const input = "Normal text !@#$%^&*()_+ 1234567890";
+    expect(sanitizeForTerminal(input)).toBe(input);
   });
 });
 
