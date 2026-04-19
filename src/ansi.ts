@@ -43,6 +43,21 @@ export function sanitizeForClipboard(str: string): string {
 }
 
 /**
+ * Sanitize text for the terminal by escaping dangerous control characters.
+ * @param str The string to sanitize
+ * @returns The sanitized string safe for terminal output
+ */
+export function sanitizeForTerminal(str: string): string {
+  if (!str) return str;
+
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally matching control characters to prevent terminal manipulation
+  return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, (char) => {
+    const hex = char.charCodeAt(0).toString(16).padStart(2, "0").toUpperCase();
+    return `\\x${hex}`;
+  });
+}
+
+/**
  * Creates a stateful ANSI stripper that handles split chunks.
  */
 export function createAnsiStripper() {
