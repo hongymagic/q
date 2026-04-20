@@ -172,7 +172,10 @@ function formatSessionContext(): string {
 
   return [...sessionContext.entries()]
     .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
-    .map(([key, value]) => `${key}: ${String(value)}`)
+    .map(([key, value]) => {
+      const displayValue = isSensitiveKey(key) ? "[REDACTED]" : String(value);
+      return `${key}: ${displayValue}`;
+    })
     .join("\n");
 }
 
