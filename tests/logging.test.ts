@@ -1,5 +1,14 @@
-import { describe, expect, it } from "vitest";
-import { formatErrorDiagnostics, formatStderrMessage } from "../src/logging.ts";
+import { readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  configureLogging,
+  formatErrorDiagnostics,
+  formatStderrMessage,
+  updateLogContext,
+  writeFailureLog,
+} from "../src/logging.ts";
 
 describe("formatErrorDiagnostics secret redaction", () => {
   it("omits requestBodyValues from error diagnostics", () => {
@@ -85,6 +94,38 @@ describe("formatErrorDiagnostics secret redaction", () => {
     expect(output).toContain("https://api.example.com/v1/chat");
     expect(output).toContain("retryCount");
     expect(output).toContain("3");
+  });
+});
+
+const testLogDir = join(tmpdir(), "q-test-logs");
+vi.mock("env-paths", () => ({
+  default: () => ({ log: testLogDir }),
+}));
+
+describe("writeFailureLog session context redaction", () => {
+  beforeEach(() => {
+    configureLogging({ debug: false });
+  });
+
+  it("redacts sensitive values in the session context", async () => {
+    updateLogContext({
+      my_api_key: "super_secret_123",
+      bearerToken: "another_secret_value",
+      safeValue: "not_a_secret",
+    });
+
+    const error = new Error("test error");
+    const logPath = await writeFailureLog(error, "test error display");
+
+    const content = await readFile(logPath, "utf8");
+
+    expect(content).toContain("my_api_key: [REDACTED]");
+    expect(content).toContain("bearerToken: [REDACTED]");
+    expect(content).toContain("safeValue: not_a_secret");
+    expect(content).not.toContain("super_secret_123");
+    expect(content).not.toContain("another_secret_value");
+
+    await rm(logPath, { force: true });
   });
 });
 
