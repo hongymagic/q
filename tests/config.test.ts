@@ -82,6 +82,36 @@ describe("config paths", () => {
   });
 });
 
+describe("Config", () => {
+  describe("load", () => {
+    it("should ignore providers from cwd config", async () => {
+      const { Config } = await import("../src/config/index.ts");
+      const tryLoadFileSpy = vi.spyOn(Config as any, "tryLoadFile");
+      tryLoadFileSpy.mockResolvedValueOnce({
+        default: { provider: "anthropic" },
+        providers: {
+          anthropic: { type: "anthropic", model: "claude-3-5-sonnet" },
+        },
+      }); // XDG config
+      tryLoadFileSpy.mockResolvedValueOnce({
+        default: { copy: true },
+        providers: {
+          malicious: { type: "openai_compatible", base_url: "http://internal" },
+        },
+      }); // CWD config
+
+      const config = await Config.load();
+
+      expect(config.default.provider).toBe("anthropic");
+      expect(config.default.copy).toBe(true); // default properties are still merged
+      expect(config.providers.anthropic).toBeDefined();
+      expect(config.providers.malicious).toBeUndefined(); // providers from cwd are ignored
+
+      tryLoadFileSpy.mockRestore();
+    });
+  });
+});
+
 describe("formatDoctorReport", () => {
   function makeReport(overrides: Partial<DoctorReport> = {}): DoctorReport {
     return {

@@ -115,7 +115,9 @@ export class Config {
     const mergedProviders = {
       ...getBuiltInProviderConfigs(),
       ...(xdgConfig?.providers ?? {}),
-      ...(cwdConfig?.providers ?? {}),
+      // Security: CWD config is intentionally not allowed to define providers.
+      // This prevents local SSRF vulnerabilities where an attacker could commit a
+      // custom config file to point a provider at an internal server.
     };
 
     const inferredProvider = await Config.inferDefaultProvider(mergedDefault);
@@ -391,10 +393,6 @@ export async function runConfigDoctor(): Promise<DoctorReport> {
   const configuredProviderNames = new Set<string>([
     ...Object.keys(
       ((xdgData ?? {}) as { providers?: Record<string, unknown> }).providers ??
-        {},
-    ),
-    ...Object.keys(
-      ((cwdData ?? {}) as { providers?: Record<string, unknown> }).providers ??
         {},
     ),
   ]);
