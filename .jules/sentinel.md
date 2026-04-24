@@ -39,3 +39,7 @@
 **Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
 **Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
 **Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
+## 2026-04-24 - Provider Injection via Local Config (SSRF)
+**Vulnerability:** The application allowed project-level (`./config.toml`) configuration files to define or override service providers. An attacker could commit a malicious config file that points an AI provider base URL to an internal server, leading to Server-Side Request Forgery (SSRF) when the CLI is run in that directory.
+**Learning:** Automatically trusting and loading complex configuration objects (like service providers or API URLs) from the Current Working Directory (CWD) is dangerous because it elevates the trust of potentially unreviewed project files to the level of the user's global execution environment.
+**Prevention:** Restrict provider definitions and overrides to the user's global XDG configuration file. CWD configuration files should only be allowed to modify safe, non-executable options (like default models or flags).
