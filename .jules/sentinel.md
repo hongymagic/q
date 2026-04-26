@@ -39,3 +39,8 @@
 **Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
 **Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
 **Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
+
+## 2026-03-12 - Local SSRF via Project-Specific Configs
+**Vulnerability:** The configuration loader merged provider configurations from the current working directory's config file (`./config.toml`). This allowed a malicious local repository to override a provider's `base_url` to point to a local service or a malicious endpoint, potentially leading to local SSRF or credential exfiltration when a user ran the CLI tool within that directory.
+**Learning:** Project-specific configuration files should never be trusted to define or override critical service parameters like API endpoints or authentication mechanisms. Such settings must exclusively reside in trusted, user-level configuration directories.
+**Prevention:** Restrict the loading of provider configurations to global/user-level config files (e.g., XDG config home) and ignore provider definitions in project-local configuration files.
