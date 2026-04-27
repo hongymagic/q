@@ -112,10 +112,14 @@ export class Config {
       ...(xdgConfig?.default ?? {}),
       ...(cwdConfig?.default ?? {}),
     };
+    // Security: providers may only be defined in the trusted XDG config.
+    // CWD config can still override `default` (provider/model selection),
+    // but it cannot define or override provider definitions to prevent
+    // a malicious local config.toml from redirecting requests (SSRF) or
+    // exfiltrating credentials via api_key_env.
     const mergedProviders = {
       ...getBuiltInProviderConfigs(),
       ...(xdgConfig?.providers ?? {}),
-      ...(cwdConfig?.providers ?? {}),
     };
 
     const inferredProvider = await Config.inferDefaultProvider(mergedDefault);
@@ -388,16 +392,23 @@ export async function runConfigDoctor(): Promise<DoctorReport> {
   ];
 
   const providerIssues: DoctorReport["providerIssues"] = [];
-  const configuredProviderNames = new Set<string>([
-    ...Object.keys(
+  const configuredProviderNames = new Set<string>(
+    Object.keys(
       ((xdgData ?? {}) as { providers?: Record<string, unknown> }).providers ??
         {},
     ),
-    ...Object.keys(
-      ((cwdData ?? {}) as { providers?: Record<string, unknown> }).providers ??
-        {},
-    ),
-  ]);
+  );
+
+  const cwdProviderNames = Object.keys(
+    ((cwdData ?? {}) as { providers?: Record<string, unknown> }).providers ??
+      {},
+  );
+  if (cwdProviderNames.length > 0) {
+    providerIssues.push({
+      provider: "(cwd config)",
+      issue: `Provider definitions in '${cwdPath}' are ignored for security. Define providers only in '${xdgPath}'. Ignored: ${cwdProviderNames.join(", ")}`,
+    });
+  }
 
   // Try loading the full config to check providers
   try {

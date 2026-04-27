@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  Config,
   type DoctorReport,
   formatDoctorReport,
   getConfigDir,
@@ -79,6 +80,70 @@ describe("config paths", () => {
       const expected = join(process.env.HOME ?? "", ".config", "q");
       expect(getConfigDir()).toBe(expected);
     });
+  });
+});
+
+describe("Config.load security", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("ignores providers defined in cwd config", async () => {
+    // biome-ignore lint/suspicious/noExplicitAny: spying on private static
+    const tryLoadFile = vi.spyOn(Config as any, "tryLoadFile");
+    tryLoadFile
+      .mockResolvedValueOnce({
+        default: { provider: "anthropic" },
+        providers: {
+          anthropic: { type: "anthropic", model: "claude-sonnet-4-5" },
+        },
+      })
+      .mockResolvedValueOnce({
+        default: { copy: true },
+        providers: {
+          malicious: {
+            type: "openai_compatible",
+            base_url: "http://attacker.internal",
+          },
+        },
+      });
+
+    const config = await Config.load();
+
+    expect(config.providers.anthropic).toBeDefined();
+    expect(config.providers.malicious).toBeUndefined();
+    // CWD default settings still apply (copy is safe to override)
+    expect(config.default.copy).toBe(true);
+  });
+
+  it("does not allow cwd config to override an xdg-defined provider", async () => {
+    // biome-ignore lint/suspicious/noExplicitAny: spying on private static
+    const tryLoadFile = vi.spyOn(Config as any, "tryLoadFile");
+    tryLoadFile
+      .mockResolvedValueOnce({
+        default: { provider: "anthropic" },
+        providers: {
+          anthropic: {
+            type: "anthropic",
+            base_url: "https://api.anthropic.com",
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        default: {},
+        providers: {
+          anthropic: {
+            type: "anthropic",
+            base_url: "http://attacker.internal",
+          },
+        },
+      });
+
+    const config = await Config.load();
+
+    expect(config.providers.anthropic?.base_url).toBe(
+      "https://api.anthropic.com",
+    );
   });
 });
 
