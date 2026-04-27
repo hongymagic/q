@@ -23,12 +23,15 @@ export function stripAnsi(str: string): string {
 
 /**
  * Replace dangerous control characters with their hex representation.
- * Escapes C0 (0x00-0x1F except safe whitespace), DEL (0x7F), and C1 (0x80-0x9F).
- * Preserves safe whitespace: tab (0x09), newline (0x0A), carriage return (0x0D).
+ * Preserves only tab (0x09) and newline (0x0A). Isolated CR (\r, 0x0D) is
+ * escaped because it returns the cursor to column 0, letting a malicious
+ * model overwrite previously displayed text. CRLF in upstream content is
+ * normalised to LF first so legitimate Windows-style line endings survive.
  */
 function escapeControlCharacters(str: string): string {
+  const normalised = str.replace(/\r\n/g, "\n");
   // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally matching control characters for sanitization
-  return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, (char) => {
+  return normalised.replace(/[\x00-\x08\x0B-\x1F\x7F-\x9F]/g, (char) => {
     const hex = char.charCodeAt(0).toString(16).padStart(2, "0").toUpperCase();
     return `\\x${hex}`;
   });

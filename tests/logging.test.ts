@@ -117,8 +117,9 @@ describe("writeFailureLog session context redaction", () => {
     const path = await writeFailureLog(new Error("boom"), "Failed");
     writtenLogPaths.push(path);
 
+    expect(path.startsWith(getFailureLogDir())).toBe(true);
+
     const content = await readFile(path, "utf8");
-    expect(content).toContain(getFailureLogDir().includes("/") ? "/" : "");
     expect(content).toContain("provider: anthropic");
     expect(content).toContain("api_key: [REDACTED]");
     expect(content).toContain("auth_token: [REDACTED]");

@@ -113,9 +113,14 @@ describe("sanitizeForClipboard", () => {
     expect(sanitizeForClipboard(input)).toBe("Red Text");
   });
 
-  test("preserves safe whitespace (newlines, tabs, carriage returns)", () => {
-    const input = "Line 1\n\tIndented\r\nLine 2";
-    expect(sanitizeForClipboard(input)).toBe(input);
+  test("preserves tab and newline; normalises CRLF to LF", () => {
+    expect(sanitizeForClipboard("Line 1\n\tIndented\r\nLine 2")).toBe(
+      "Line 1\n\tIndented\nLine 2",
+    );
+  });
+
+  test("escapes isolated carriage return to prevent terminal overwrite", () => {
+    expect(sanitizeForClipboard("safe\rEVIL")).toBe("safe\\x0DEVIL");
   });
 
   test("escapes dangerous C0 control characters to hex representation", () => {
@@ -155,9 +160,18 @@ describe("sanitizeForTerminal", () => {
     expect(sanitizeForTerminal("CSI")).toBe("CSI\\x9B");
   });
 
-  test("preserves safe whitespace", () => {
-    const input = "Line 1\n\tIndented\r\nLine 2";
-    expect(sanitizeForTerminal(input)).toBe(input);
+  test("preserves tab and newline; normalises CRLF to LF", () => {
+    expect(sanitizeForTerminal("Line 1\n\tIndented\r\nLine 2")).toBe(
+      "Line 1\n\tIndented\nLine 2",
+    );
+  });
+
+  test("escapes isolated CR (terminal overwrite vector)", () => {
+    // \r alone returns the cursor to column 0, letting a malicious model
+    // overwrite previously displayed text. Must be escaped.
+    expect(sanitizeForTerminal("safe command\rrm -rf /")).toBe(
+      "safe command\\x0Drm -rf /",
+    );
   });
 
   test("does not strip ANSI codes (caller is expected to strip them upstream)", () => {
