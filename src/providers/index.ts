@@ -29,12 +29,8 @@ export interface ResolvedProvider {
   modelId: string;
 }
 
-/**
- * Filter sensitive fields from a provider config for safe logging.
- * Removes sensitive fields recursively using a JSON replacer to safely
- * handle arrays and nested objects without mutating the original.
- * @internal Exported for testing only
- */
+// Recurses into arrays and nested objects via the JSON replacer so headers
+// and other deeply-nested credentials are scrubbed. Exported for tests.
 export function filterSensitiveFields(
   config: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -52,11 +48,6 @@ export function filterSensitiveFields(
   }
 }
 
-/**
- * Resolve an API key from an environment variable name.
- * Returns undefined if envVarName is not provided.
- * Throws MissingApiKeyError if envVarName is provided but the env var is not set.
- */
 export function resolveApiKey(
   envVarName: string | undefined,
   providerName: string,
@@ -107,9 +98,6 @@ export function createStandardProvider<T>(
   });
 }
 
-/**
- * Resolve a provider and model from config, with optional overrides
- */
 export function resolveProvider(
   config: ConfigData,
   providerOverride?: string,
@@ -154,9 +142,6 @@ export function resolveProvider(
   };
 }
 
-/**
- * Create a language model from provider config
- */
 function createModel(
   config: ProviderConfig,
   providerName: string,
@@ -202,9 +187,6 @@ function createModel(
   }
 }
 
-/**
- * List available providers with model and credential status
- */
 export function listProviders(config: ConfigData): string {
   const providers = Object.keys(config.providers);
   const defaultProvider = config.default.provider;

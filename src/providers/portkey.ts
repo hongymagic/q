@@ -5,14 +5,9 @@ import { logDebug } from "../logging.ts";
 import { isSensitiveKey } from "../sensitive.ts";
 import { resolveApiKey } from "./index.ts";
 
-/**
- * Portkey is an AI Gateway that routes to 250+ LLMs with a unified API.
- * This provider uses OpenAI SDK under the hood with Portkey-specific headers.
- *
- * IMPORTANT: We use openai.chat (Chat Completions API) instead of openai (Responses API)
- * because Portkey's backend providers (especially Bedrock) don't support the newer
- * OpenAI Responses API.
- */
+// Uses openai.chat (Chat Completions API) instead of openai (Responses API)
+// because Portkey's backend providers (especially Bedrock) don't support the
+// newer OpenAI Responses API.
 export function createPortkeyProvider(
   config: ProviderConfig,
   providerName: string,

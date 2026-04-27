@@ -1,7 +1,4 @@
-/**
- * regex to match ANSI escape codes.
- * Adapted from ansi-regex package.
- */
+// Adapted from the ansi-regex package.
 // eslint-disable-next-line no-control-regex
 const ANSI_REGEX = new RegExp(
   [
@@ -11,11 +8,6 @@ const ANSI_REGEX = new RegExp(
   "g",
 );
 
-/**
- * Strip ANSI escape codes from a string.
- * @param str The string to strip
- * @returns The string without ANSI codes
- */
 export function stripAnsi(str: string): string {
   if (!str) return str;
   return str.replace(ANSI_REGEX, "");
@@ -43,28 +35,22 @@ function escapeControlCharacters(str: string): string {
   );
 }
 
-/**
- * Sanitize text for the clipboard by stripping ANSI codes and escaping dangerous control characters.
- */
 export function sanitizeForClipboard(str: string): string {
   if (!str) return str;
   return escapeControlCharacters(stripAnsi(str));
 }
 
-/**
- * Sanitize text for terminal output by escaping dangerous control characters.
- * Assumes ANSI codes are stripped upstream (see createAnsiStripper for streaming).
- * Use this for stdout writes to prevent terminal hijacking via raw control bytes
- * (e.g. backspace, bell, isolated ESC) that the ANSI stripper does not catch.
- */
+// Assumes ANSI codes are already stripped upstream (see createAnsiStripper for
+// streaming). Use this on stdout writes to prevent terminal hijacking via raw
+// control bytes (backspace, bell, isolated ESC, CR, bidi overrides) that the
+// ANSI stripper does not catch.
 export function sanitizeForTerminal(str: string): string {
   if (!str) return str;
   return escapeControlCharacters(str);
 }
 
-/**
- * Creates a stateful ANSI stripper that handles split chunks.
- */
+// Stateful so it can buffer partial ANSI sequences that span chunk boundaries
+// (e.g. ESC arrives in chunk N and the rest in chunk N+1).
 export function createAnsiStripper() {
   let buffer = "";
 

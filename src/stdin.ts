@@ -1,9 +1,6 @@
 import { UsageError } from "./errors.ts";
 
-/** Maximum length for query input (characters) */
 export const MAX_QUERY_LENGTH = 5_000;
-
-/** Maximum length for context input (characters) */
 export const MAX_CONTEXT_LENGTH = 50_000;
 
 export interface StdinInput {
@@ -11,10 +8,6 @@ export interface StdinInput {
   hasInput: boolean;
 }
 
-/**
- * Checks if the input length exceeds the maximum allowed length.
- * @throws UsageError if length exceeds the limit
- */
 function checkLength(currentLength: number, maxLength: number) {
   if (currentLength > maxLength) {
     throw new UsageError(
@@ -23,10 +16,6 @@ function checkLength(currentLength: number, maxLength: number) {
   }
 }
 
-/**
- * Read input from stdin if piped (non-TTY).
- * Returns null content if stdin is a TTY (interactive terminal).
- */
 export async function readStdin(
   maxLength = MAX_CONTEXT_LENGTH,
 ): Promise<StdinInput> {
@@ -70,9 +59,6 @@ export interface ResolvedInput {
   context: string | null;
 }
 
-/**
- * Resolve the input source and extract query/context from args and stdin.
- */
 export function resolveInput(
   stdinInput: StdinInput,
   argsQuery: string[],

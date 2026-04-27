@@ -291,11 +291,7 @@ const ALLOWED_INTERPOLATION_VARS = new Set([
   "HOSTNAME",
 ]);
 
-/**
- * Interpolate environment variables in a string value.
- * Only allowlisted variables are permitted for security.
- * @internal Exported for testing only
- */
+// Exported only so tests can exercise it directly without rebuilding a Config.
 export function interpolateValue(value: string): string {
   return value.replace(/\$\{([^}]+)\}/g, (_, varName: string) => {
     // Security: Only allow specific env vars to prevent exfiltration
