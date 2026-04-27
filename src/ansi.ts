@@ -21,20 +21,26 @@ export function stripAnsi(str: string): string {
   return str.replace(ANSI_REGEX, "");
 }
 
-/**
- * Replace dangerous control characters with their hex representation.
- * Preserves only tab (0x09) and newline (0x0A). Isolated CR (\r, 0x0D) is
- * escaped because it returns the cursor to column 0, letting a malicious
- * model overwrite previously displayed text. CRLF in upstream content is
- * normalised to LF first so legitimate Windows-style line endings survive.
- */
 function escapeControlCharacters(str: string): string {
+  // Normalise CRLF first so Windows-style line endings survive; escape any
+  // remaining isolated CR because alone it overwrites the current line.
+  // Then escape:
+  //   - C0 control chars (0x00-0x1F) except tab (0x09) and newline (0x0A)
+  //   - DEL (0x7F) and C1 control chars (0x80-0x9F)
+  //   - Unicode bidi/direction-override (Trojan Source, CVE-2021-42574):
+  //     U+202A-U+202E (LRE/RLE/PDF/LRO/RLO) and U+2066-U+2069 (LRI/RLI/FSI/PDI)
   const normalised = str.replace(/\r\n/g, "\n");
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally matching control characters for sanitization
-  return normalised.replace(/[\x00-\x08\x0B-\x1F\x7F-\x9F]/g, (char) => {
-    const hex = char.charCodeAt(0).toString(16).padStart(2, "0").toUpperCase();
-    return `\\x${hex}`;
-  });
+  return normalised.replace(
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally matching control characters for sanitization
+    /[\x00-\x08\x0B-\x1F\x7F-\x9F‪-‮⁦-⁩]/g,
+    (char) => {
+      const code = char.charCodeAt(0);
+      if (code > 0xff) {
+        return `\\u${code.toString(16).toUpperCase().padStart(4, "0")}`;
+      }
+      return `\\x${code.toString(16).padStart(2, "0").toUpperCase()}`;
+    },
+  );
 }
 
 /**

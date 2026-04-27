@@ -141,6 +141,11 @@ describe("sanitizeForClipboard", () => {
     const input = "CSI\u009B Test";
     expect(sanitizeForClipboard(input)).toBe("CSI\\x9B Test");
   });
+
+  test("escapes Unicode bidi/direction-override characters", () => {
+    expect(sanitizeForClipboard("hello‮world")).toBe("hello\\u202Eworld");
+  });
+
   test("does not escape safe characters", () => {
     const input = "Normal text !@#$%^&*()_+ 1234567890";
     expect(sanitizeForClipboard(input)).toBe(input);
@@ -172,6 +177,21 @@ describe("sanitizeForTerminal", () => {
     expect(sanitizeForTerminal("safe command\rrm -rf /")).toBe(
       "safe command\\x0Drm -rf /",
     );
+  });
+
+  test("escapes Unicode bidi/direction-override characters (Trojan Source)", () => {
+    // U+202E (RLO) flips visual text direction — the classic Trojan Source attack.
+    // What looks like "git push origin main" can actually be a different command.
+    expect(sanitizeForTerminal("safe‮evil")).toBe("safe\\u202Eevil");
+    expect(sanitizeForTerminal("‪text‬")).toBe("\\u202Atext\\u202C");
+    expect(sanitizeForTerminal("⁦isolate⁩")).toBe("\\u2066isolate\\u2069");
+    // All 9 bidi controls
+    for (const code of [
+      0x202a, 0x202b, 0x202c, 0x202d, 0x202e, 0x2066, 0x2067, 0x2068, 0x2069,
+    ]) {
+      const char = String.fromCharCode(code);
+      expect(sanitizeForTerminal(char)).toMatch(/^\\u[0-9A-F]{4}$/);
+    }
   });
 
   test("does not strip ANSI codes (caller is expected to strip them upstream)", () => {
