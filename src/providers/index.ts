@@ -94,7 +94,6 @@ export function resolveProvider(
   config: ConfigData,
   providerOverride?: string,
   modelOverride?: string,
-  debug = false,
 ): ResolvedProvider {
   const providerName =
     providerOverride ?? env.Q_PROVIDER ?? config.default.provider;
@@ -124,10 +123,9 @@ export function resolveProvider(
 
   logDebug(
     `Provider config: ${JSON.stringify(filterSensitiveFields(providerConfig), null, 2)}`,
-    debug,
   );
 
-  const model = createModel(providerConfig, providerName, modelId, debug);
+  const model = createModel(providerConfig, providerName, modelId);
 
   return {
     model,
@@ -143,7 +141,6 @@ function createModel(
   config: ProviderConfig,
   providerName: string,
   modelId: string,
-  debug = false,
 ): LanguageModel {
   switch (config.type) {
     case "openai": {
@@ -163,7 +160,7 @@ function createModel(
       return provider(modelId);
     }
     case "portkey": {
-      const provider = createPortkeyProvider(config, providerName, debug);
+      const provider = createPortkeyProvider(config, providerName);
       return provider(modelId);
     }
     case "google": {

@@ -35,8 +35,8 @@ export function updateLogContext(
   }
 }
 
-export function logDebug(message: string, debug: boolean): void {
-  if (!debug) {
+export function logDebug(message: string): void {
+  if (sessionContext.get("debug") !== true) {
     return;
   }
 

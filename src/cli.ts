@@ -113,7 +113,7 @@ async function main(): Promise<void> {
       });
 
       try {
-        await runQueryAttempt(args, stdinInput, debug);
+        await runQueryAttempt(args, stdinInput);
         process.exit(0);
       } catch (err) {
         const action = await handleFailure(err, debug, stdinInput);
@@ -144,7 +144,6 @@ async function main(): Promise<void> {
 async function runQueryAttempt(
   args: ParsedArgs,
   stdinInput: StdinInput,
-  debug: boolean,
 ): Promise<void> {
   // Resolve input source and extract query/context
   const { source, query, context } = resolveInput(stdinInput, args.query);
@@ -153,7 +152,7 @@ async function runQueryAttempt(
     queryLength: query.length,
     contextLength: context?.length ?? 0,
   });
-  logDebug(`Source: ${source}`, debug);
+  logDebug(`Source: ${source}`);
 
   // Security: Limit query length to prevent abuse and excessive API costs
   if (query.length > MAX_QUERY_LENGTH) {
@@ -169,25 +168,23 @@ async function runQueryAttempt(
     );
   }
 
-  logDebug("Loading config...", debug);
+  logDebug("Loading config...");
   const config = await loadConfig();
 
   logDebug(
     `Resolving provider: ${args.options.provider ?? config.default.provider}`,
-    debug,
   );
   const { model, providerName, modelId } = resolveProvider(
     config,
     args.options.provider,
     args.options.model,
-    debug,
   );
   updateLogContext({ provider: providerName, model: modelId });
 
   const envInfo = getEnvironmentInfo();
-  logDebug(`Query: ${query}`, debug);
-  logDebug(`Provider: ${providerName}, Model: ${modelId}`, debug);
-  logDebug(formatEnvForDebug(envInfo), debug);
+  logDebug(`Query: ${query}`);
+  logDebug(`Provider: ${providerName}, Model: ${modelId}`);
+  logDebug(formatEnvForDebug(envInfo));
 
   const loadingIndicator = startLoadingIndicator({
     enabled: process.stderr.isTTY === true,
@@ -214,7 +211,7 @@ async function runQueryAttempt(
         const { sanitizeForClipboard } = await import("./ansi.ts");
         const safeClipboardText = sanitizeForClipboard(result.text);
         await clipboard.write(safeClipboardText);
-        logDebug("Copied to clipboard", debug);
+        logDebug("Copied to clipboard");
       } catch {
         // Clipboard failure is non-fatal — the answer was already streamed to stdout.
         // Common causes: xclip/xsel not installed, headless server, Wayland without wl-copy.

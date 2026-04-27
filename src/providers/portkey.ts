@@ -16,7 +16,6 @@ import { resolveApiKey } from "./index.ts";
 export function createPortkeyProvider(
   config: ProviderConfig,
   providerName: string,
-  debug = false,
 ) {
   if (!config.base_url) {
     throw new ConfigValidationError(
@@ -56,11 +55,11 @@ export function createPortkeyProvider(
     Object.assign(headers, config.headers);
   }
 
-  logDebug(`Portkey base URL: ${config.base_url}`, debug);
-  logDebug(`Portkey headers:`, debug);
+  logDebug(`Portkey base URL: ${config.base_url}`);
+  logDebug(`Portkey headers:`);
   for (const [key, value] of Object.entries(headers)) {
     const maskedValue = isSensitiveKey(key) ? "[REDACTED]" : value;
-    logDebug(`  ${key}: ${maskedValue}`, debug);
+    logDebug(`  ${key}: ${maskedValue}`);
   }
 
   const provider = createOpenAI({
@@ -70,6 +69,6 @@ export function createPortkeyProvider(
   });
 
   // Use Chat Completions API (not Responses API) for Portkey compatibility
-  logDebug("Using Chat Completions API (not Responses API)", debug);
+  logDebug("Using Chat Completions API (not Responses API)");
   return provider.chat;
 }
