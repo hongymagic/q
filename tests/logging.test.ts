@@ -1,5 +1,13 @@
-import { describe, expect, it } from "vitest";
-import { formatErrorDiagnostics, formatStderrMessage } from "../src/logging.ts";
+import { readFile, rm } from "node:fs/promises";
+import { afterAll, describe, expect, it } from "vitest";
+import {
+  configureLogging,
+  formatErrorDiagnostics,
+  formatStderrMessage,
+  getFailureLogDir,
+  updateLogContext,
+  writeFailureLog,
+} from "../src/logging.ts";
 
 describe("formatErrorDiagnostics secret redaction", () => {
   it("omits requestBodyValues from error diagnostics", () => {
@@ -85,6 +93,39 @@ describe("formatErrorDiagnostics secret redaction", () => {
     expect(output).toContain("https://api.example.com/v1/chat");
     expect(output).toContain("retryCount");
     expect(output).toContain("3");
+  });
+});
+
+describe("writeFailureLog session context redaction", () => {
+  const writtenLogPaths: string[] = [];
+
+  afterAll(async () => {
+    await Promise.all(writtenLogPaths.map((path) => rm(path, { force: true })));
+    // Reset session context for other tests
+    configureLogging({ debug: false });
+  });
+
+  it("redacts sensitive session context values in the failure log file", async () => {
+    configureLogging({ debug: false });
+    updateLogContext({
+      provider: "anthropic",
+      api_key: "sk-secret-12345",
+      auth_token: "Bearer super-secret",
+      Authorization: "Bearer top-secret",
+    });
+
+    const path = await writeFailureLog(new Error("boom"), "Failed");
+    writtenLogPaths.push(path);
+
+    const content = await readFile(path, "utf8");
+    expect(content).toContain(getFailureLogDir().includes("/") ? "/" : "");
+    expect(content).toContain("provider: anthropic");
+    expect(content).toContain("api_key: [REDACTED]");
+    expect(content).toContain("auth_token: [REDACTED]");
+    expect(content).toContain("Authorization: [REDACTED]");
+    expect(content).not.toContain("sk-secret-12345");
+    expect(content).not.toContain("super-secret");
+    expect(content).not.toContain("top-secret");
   });
 });
 
