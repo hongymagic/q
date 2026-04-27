@@ -167,7 +167,10 @@ describe("CLI integration", () => {
       expect(match?.[1]).toBeTruthy();
 
       const logPath = match?.[1];
-      expect(logPath).toContain(resolve(env.XDG_STATE_HOME, "q", "errors"));
+      // env-paths uses ~/Library/Logs/q on macOS, ~/.local/state/q on Linux.
+      // Either way it must land inside the isolated rootDir and under a q/errors path.
+      expect(logPath).toContain(rootDir);
+      expect(logPath).toMatch(/q[/\\](?:log[/\\])?errors[/\\]/);
 
       const logContent = readFileSync(logPath as string, "utf8");
       expect(logContent).toContain(
