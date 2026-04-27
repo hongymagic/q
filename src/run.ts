@@ -1,6 +1,6 @@
 import type { LanguageModel } from "ai";
 import { streamText } from "ai";
-import { createAnsiStripper } from "./ansi.ts";
+import { createAnsiStripper, sanitizeForTerminal } from "./ansi.ts";
 import { ProviderError } from "./errors.ts";
 import { buildUserPrompt } from "./prompt.ts";
 
@@ -42,10 +42,9 @@ export async function runQuery(options: RunOptions): Promise<RunResult> {
         onFirstChunk?.();
       }
 
-      // Security: Strip ANSI codes to prevent terminal manipulation
-      // We keep original text in fullText for the return value (e.g. for clipboard)
-      // but sanitize stdout to protect the user's terminal
-      const safeText = stripper(textPart);
+      // Security: strip ANSI codes AND escape raw control characters to prevent
+      // terminal hijacking. fullText keeps the raw text for clipboard/return value.
+      const safeText = sanitizeForTerminal(stripper(textPart));
       process.stdout.write(safeText);
       fullText += textPart;
     }

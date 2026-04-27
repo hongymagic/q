@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { sanitizeForClipboard } from "../src/ansi.ts";
+import { sanitizeForClipboard, sanitizeForTerminal } from "../src/ansi.ts";
 import * as run from "../src/run.ts";
 
 // Mock 'ai' module
@@ -44,6 +44,36 @@ describe("runQuery Security", () => {
     const calls = writeSpy.mock.calls.map((c) => c[0]).join("");
     expect(calls).not.toContain("\u001b[31m");
     expect(calls).toContain("echo safe");
+  });
+
+  test("escapes raw control characters in stdout output", async () => {
+    mockStreamText.mockReturnValue({
+      textStream: (async function* () {
+        yield "Hello\x08\x08\x08\x08\x08FAKE";
+        yield "\x07Bell";
+        yield "\x1bRawEsc";
+      })(),
+    });
+
+    const writeSpy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+
+    const result = await run.runQuery({
+      // @ts-expect-error - mocking model
+      model: {},
+      query: "test",
+      systemPrompt: "test",
+    });
+
+    const stdoutContent = writeSpy.mock.calls.map((c) => c[0]).join("");
+    expect(stdoutContent).not.toContain("\x08");
+    expect(stdoutContent).not.toContain("\x07");
+    expect(stdoutContent).toContain("\\x08");
+    expect(stdoutContent).toContain("\\x07");
+
+    // Return value (used for clipboard) keeps the raw text
+    expect(result.text).toContain("\x08");
   });
 
   test("handles split ANSI sequences across chunks", async () => {
@@ -109,5 +139,34 @@ describe("sanitizeForClipboard", () => {
   test("does not escape safe characters", () => {
     const input = "Normal text !@#$%^&*()_+ 1234567890";
     expect(sanitizeForClipboard(input)).toBe(input);
+  });
+});
+
+describe("sanitizeForTerminal", () => {
+  test("escapes C0 control characters except safe whitespace", () => {
+    expect(sanitizeForTerminal("Bell\x07")).toBe("Bell\\x07");
+    expect(sanitizeForTerminal("Backspace\x08")).toBe("Backspace\\x08");
+    expect(sanitizeForTerminal("RawEsc\x1b")).toBe("RawEsc\\x1B");
+    expect(sanitizeForTerminal("Null\x00")).toBe("Null\\x00");
+  });
+
+  test("escapes DEL and C1 control characters", () => {
+    expect(sanitizeForTerminal("Delete\x7f")).toBe("Delete\\x7F");
+    expect(sanitizeForTerminal("CSI")).toBe("CSI\\x9B");
+  });
+
+  test("preserves safe whitespace", () => {
+    const input = "Line 1\n\tIndented\r\nLine 2";
+    expect(sanitizeForTerminal(input)).toBe(input);
+  });
+
+  test("does not strip ANSI codes (caller is expected to strip them upstream)", () => {
+    // sanitizeForTerminal assumes the streaming ANSI stripper has already run.
+    // For inputs like raw ESC followed by [, the ESC alone is escaped but [ stays.
+    expect(sanitizeForTerminal("\x1b[31m")).toBe("\\x1B[31m");
+  });
+
+  test("returns empty string unchanged", () => {
+    expect(sanitizeForTerminal("")).toBe("");
   });
 });

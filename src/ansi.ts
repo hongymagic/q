@@ -22,24 +22,35 @@ export function stripAnsi(str: string): string {
 }
 
 /**
- * Sanitize text for the clipboard by stripping ANSI codes and escaping dangerous control characters.
- * @param str The string to sanitize
- * @returns The sanitized string safe for clipboard insertion
+ * Replace dangerous control characters with their hex representation.
+ * Escapes C0 (0x00-0x1F except safe whitespace), DEL (0x7F), and C1 (0x80-0x9F).
+ * Preserves safe whitespace: tab (0x09), newline (0x0A), carriage return (0x0D).
  */
-export function sanitizeForClipboard(str: string): string {
-  if (!str) return str;
-
-  // First strip ANSI escape codes
-  const stripped = stripAnsi(str);
-
-  // Then replace dangerous control characters with their hex representation
-  // We want to escape C0 control chars (0x00-0x1F), DEL (0x7F), and C1 control chars (0x80-0x9F)
-  // But we want to PRESERVE safe whitespace: \t (0x09), \n (0x0A), \r (0x0D)
+function escapeControlCharacters(str: string): string {
   // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally matching control characters for sanitization
-  return stripped.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, (char) => {
+  return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, (char) => {
     const hex = char.charCodeAt(0).toString(16).padStart(2, "0").toUpperCase();
     return `\\x${hex}`;
   });
+}
+
+/**
+ * Sanitize text for the clipboard by stripping ANSI codes and escaping dangerous control characters.
+ */
+export function sanitizeForClipboard(str: string): string {
+  if (!str) return str;
+  return escapeControlCharacters(stripAnsi(str));
+}
+
+/**
+ * Sanitize text for terminal output by escaping dangerous control characters.
+ * Assumes ANSI codes are stripped upstream (see createAnsiStripper for streaming).
+ * Use this for stdout writes to prevent terminal hijacking via raw control bytes
+ * (e.g. backspace, bell, isolated ESC) that the ANSI stripper does not catch.
+ */
+export function sanitizeForTerminal(str: string): string {
+  if (!str) return str;
+  return escapeControlCharacters(str);
 }
 
 /**
