@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseCliArgs } from "../src/args.ts";
 import { interpolateValue } from "../src/config/index.ts";
 import { ConfigValidationError } from "../src/errors.ts";
@@ -27,6 +27,8 @@ describe("security", () => {
       delete process.env.DANGEROUS_VAR;
       delete process.env.AWS_SECRET_ACCESS_KEY;
       delete process.env.PORTKEY_BASE_URL;
+      delete process.env.PORTKEY_API_KEY;
+      delete process.env.OPENAI_BASE_URL;
       delete process.env.NOT_ALLOWED;
     });
 
@@ -85,6 +87,32 @@ describe("security", () => {
       expect(result).toBe("https://static.example.com");
     });
 
+    it("should error when an unset var is embedded in a partial template", () => {
+      delete process.env.OPENAI_BASE_URL;
+
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: Testing literal interpolation syntax
+      expect(() => interpolateValue("https://${OPENAI_BASE_URL}/v1")).toThrow(
+        ConfigValidationError,
+      );
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: Testing literal interpolation syntax
+      expect(() => interpolateValue("https://${OPENAI_BASE_URL}/v1")).toThrow(
+        /OPENAI_BASE_URL.*not set/,
+      );
+    });
+
+    it("should resolve multiple allowlisted vars in one string", () => {
+      process.env.PORTKEY_BASE_URL = "https://gw.example.com";
+      process.env.PORTKEY_API_KEY = "pk-123";
+
+      const result = interpolateValue(
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: Testing literal interpolation syntax
+        "${PORTKEY_BASE_URL}/v1?key=${PORTKEY_API_KEY}",
+      );
+      expect(result).toBe("https://gw.example.com/v1?key=pk-123");
+
+      delete process.env.PORTKEY_API_KEY;
+    });
+
     it("should list allowed variables in error message", () => {
       process.env.NOT_ALLOWED = "value";
 
@@ -107,6 +135,16 @@ describe("security", () => {
       expect(isSensitiveKey("clientSecret")).toBe(true);
       expect(isSensitiveKey("credentialRef")).toBe(true);
       expect(isSensitiveKey("Content-Type")).toBe(false);
+    });
+
+    it("should mask all Portkey headers in debug output", () => {
+      // x-portkey-api-key and Authorization are real secrets.
+      // x-portkey-provider is the slug name — not actually a secret, but
+      // matches via "key" inside "portkey" so it gets masked. Over-masking
+      // is acceptable here per the project's safety-over-precision policy.
+      expect(isSensitiveKey("x-portkey-api-key")).toBe(true);
+      expect(isSensitiveKey("Authorization")).toBe(true);
+      expect(isSensitiveKey("x-portkey-provider")).toBe(true);
     });
 
     it("should filter fields containing sensitive patterns", () => {
@@ -242,13 +280,99 @@ describe("security", () => {
   });
 
   describe("insecure URL detection", () => {
-    it("should be tested via config loading with HTTP URLs", () => {
-      // The warnIfInsecureUrl method is private and called during config loading
-      // This test documents the expected behaviour:
-      // - HTTP URLs to localhost/127.0.0.1/::1/.local are allowed silently
-      // - HTTP URLs to other hosts trigger a console.error warning
-      // - HTTPS URLs are always allowed silently
-      expect(true).toBe(true);
+    it("warns when a non-localhost provider uses plain HTTP", async () => {
+      const { Config } = await import("../src/config/index.ts");
+      const logging = await import("../src/logging.ts");
+      const warnSpy = vi
+        .spyOn(logging, "logWarning")
+        .mockImplementation(() => {});
+
+      // biome-ignore lint/suspicious/noExplicitAny: spying on private static
+      const tryLoadFile = vi.spyOn(Config as any, "tryLoadFile");
+      tryLoadFile.mockResolvedValueOnce({
+        default: { provider: "remote" },
+        providers: {
+          remote: {
+            type: "openai_compatible",
+            base_url: "http://remote.example.com/v1",
+          },
+        },
+      });
+      tryLoadFile.mockResolvedValueOnce(undefined);
+
+      await Config.load();
+
+      expect(warnSpy).toHaveBeenCalled();
+      const message = warnSpy.mock.calls[0]?.[0] ?? "";
+      expect(message).toMatch(/insecure HTTP URL/);
+      expect(message).toMatch(/remote/);
+
+      tryLoadFile.mockRestore();
+      warnSpy.mockRestore();
+    });
+
+    it("does not warn for localhost / 127.0.0.1 / .local hosts", async () => {
+      const { Config } = await import("../src/config/index.ts");
+      const logging = await import("../src/logging.ts");
+      const warnSpy = vi
+        .spyOn(logging, "logWarning")
+        .mockImplementation(() => {});
+
+      // biome-ignore lint/suspicious/noExplicitAny: spying on private static
+      const tryLoadFile = vi.spyOn(Config as any, "tryLoadFile");
+      tryLoadFile.mockResolvedValueOnce({
+        default: { provider: "lan" },
+        providers: {
+          lan: {
+            type: "openai_compatible",
+            base_url: "http://ollama.local:8080",
+          },
+          local: {
+            type: "ollama",
+            base_url: "http://localhost:11434",
+          },
+          loopback: {
+            type: "openai_compatible",
+            base_url: "http://127.0.0.1:1234/v1",
+          },
+        },
+      });
+      tryLoadFile.mockResolvedValueOnce(undefined);
+
+      await Config.load();
+
+      expect(warnSpy).not.toHaveBeenCalled();
+
+      tryLoadFile.mockRestore();
+      warnSpy.mockRestore();
+    });
+
+    it("does not warn for HTTPS URLs", async () => {
+      const { Config } = await import("../src/config/index.ts");
+      const logging = await import("../src/logging.ts");
+      const warnSpy = vi
+        .spyOn(logging, "logWarning")
+        .mockImplementation(() => {});
+
+      // biome-ignore lint/suspicious/noExplicitAny: spying on private static
+      const tryLoadFile = vi.spyOn(Config as any, "tryLoadFile");
+      tryLoadFile.mockResolvedValueOnce({
+        default: { provider: "secure" },
+        providers: {
+          secure: {
+            type: "openai_compatible",
+            base_url: "https://api.example.com/v1",
+          },
+        },
+      });
+      tryLoadFile.mockResolvedValueOnce(undefined);
+
+      await Config.load();
+
+      expect(warnSpy).not.toHaveBeenCalled();
+
+      tryLoadFile.mockRestore();
+      warnSpy.mockRestore();
     });
   });
 });

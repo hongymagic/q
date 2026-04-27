@@ -256,10 +256,11 @@ export class Config {
   }
 }
 
-/**
- * Allowlist of environment variables permitted for interpolation.
- * This prevents exfiltration of sensitive env vars via base_url or headers.
- */
+// Allowlist of environment variables permitted for interpolation. The list
+// gates which env vars a config file can reference via ${VAR_NAME}; anything
+// outside it throws. The intent is defence-in-depth: even a trusted XDG
+// config can't accidentally interpolate a sensitive system var (e.g. PATH)
+// into a base_url and exfiltrate it via the AI provider request.
 const ALLOWED_INTERPOLATION_VARS = new Set([
   // Provider API keys
   "ANTHROPIC_API_KEY",
@@ -270,10 +271,15 @@ const ALLOWED_INTERPOLATION_VARS = new Set([
   "GOOGLE_GENERATIVE_AI_API_KEY",
   "GROQ_API_KEY",
   "AZURE_API_KEY",
-  // Provider base URLs
+  // Provider base URLs (one per provider type that supports a custom endpoint)
   "ANTHROPIC_BASE_URL",
   "OPENAI_BASE_URL",
+  "OPENAI_COMPATIBLE_BASE_URL",
   "PORTKEY_BASE_URL",
+  "GROQ_BASE_URL",
+  "OLLAMA_BASE_URL",
+  "GOOGLE_BASE_URL",
+  "AZURE_BASE_URL",
   // Portkey-specific
   "PORTKEY_PROVIDER",
   // Azure-specific
