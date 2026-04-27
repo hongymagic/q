@@ -87,6 +87,26 @@ export function resolveApiKeyCandidates(
   throw new MissingApiKeyError(envVarNames.join(" or "), providerName);
 }
 
+// Shared shape accepted by AI SDK provider factories that take a standard
+// (apiKey, baseURL, headers) configuration: openai, anthropic, groq.
+interface StandardProviderOptions {
+  apiKey?: string;
+  baseURL?: string;
+  headers?: Record<string, string>;
+}
+
+export function createStandardProvider<T>(
+  factory: (options: StandardProviderOptions) => T,
+  config: ProviderConfig,
+  providerName: string,
+): T {
+  return factory({
+    apiKey: resolveApiKey(config.api_key_env, providerName),
+    baseURL: config.base_url,
+    headers: config.headers,
+  });
+}
+
 /**
  * Resolve a provider and model from config, with optional overrides
  */
