@@ -147,9 +147,6 @@ export function buildSystemPrompt(
   }
 }
 
-/**
- * Build the user prompt, optionally wrapping with context.
- */
 export function buildUserPrompt(
   query: string,
   context?: string | null,
@@ -158,12 +155,12 @@ export function buildUserPrompt(
     return query;
   }
 
-  // Sanitize context to prevent XML tag injection
-  // Replace closing-tag variants (whitespace/attrs/case variants) with escaped form
-  const safeContext = context.replace(
-    /<\/\s*context\b[^>]*>/gi,
-    "<\\/context>",
-  );
+  // Escape both opening and closing <context> tags inside user content so a
+  // malicious context payload cannot inject a nested wrapper or close the
+  // outer block early. Match whitespace/attribute/case variants.
+  const safeContext = context
+    .replace(/<\s*context\b[^>]*>/gi, "<\\context>")
+    .replace(/<\/\s*context\b[^>]*>/gi, "<\\/context>");
 
   return `<context>
 ${safeContext}
