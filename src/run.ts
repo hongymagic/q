@@ -34,6 +34,7 @@ export async function runQuery(options: RunOptions): Promise<RunResult> {
 
     let fullText = "";
     let sawTextChunk = false;
+    let lastWriteEndsWithNewline = false;
     const stripper = createAnsiStripper();
 
     for await (const textPart of result.textStream) {
@@ -45,21 +46,21 @@ export async function runQuery(options: RunOptions): Promise<RunResult> {
       // Security: strip ANSI codes AND escape raw control characters to prevent
       // terminal hijacking. fullText keeps the raw text for clipboard/return value.
       const safeText = sanitizeForTerminal(stripper(textPart));
-      process.stdout.write(safeText);
+      if (safeText.length > 0) {
+        process.stdout.write(safeText);
+        lastWriteEndsWithNewline = safeText.endsWith("\n");
+      }
       fullText += textPart;
     }
 
     if (streamError !== undefined) {
-      if (fullText !== "" && !fullText.endsWith("\n")) {
+      if (sawTextChunk && !lastWriteEndsWithNewline) {
         process.stdout.write("\n");
       }
-
       throw streamError;
     }
 
-    // Check against safeText buffer equivalent would be ideal but complex.
-    // Using simple check against stdout write logic:
-    if (!fullText.endsWith("\n")) {
+    if (sawTextChunk && !lastWriteEndsWithNewline) {
       process.stdout.write("\n");
     }
 

@@ -230,6 +230,37 @@ describe("runQuery", () => {
     writeSpy.mockRestore();
   });
 
+  it("does NOT add a spurious newline when partial output already ended with one", async () => {
+    mockStreamText.mockImplementation(
+      (opts: { onError?: (event: { error: unknown }) => void }) => {
+        opts.onError?.({ error: new Error("stream interrupted") });
+
+        return {
+          textStream: (async function* () {
+            yield "partial\n";
+          })(),
+        };
+      },
+    );
+
+    const writeSpy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+
+    await expect(
+      runQuery({
+        // @ts-expect-error - mocking model
+        model: {},
+        query: "test",
+        systemPrompt: "test",
+      }),
+    ).rejects.toThrow("AI request failed: stream interrupted");
+
+    // Only the chunk should have been written, no separate "\n" call
+    expect(writeSpy.mock.calls.map((call) => call[0])).toEqual(["partial\n"]);
+    writeSpy.mockRestore();
+  });
+
   it("adds a newline before throwing after partial streamed output", async () => {
     mockStreamText.mockImplementation(
       (opts: { onError?: (event: { error: unknown }) => void }) => {
