@@ -439,10 +439,6 @@ export async function runConfigDoctor(): Promise<DoctorReport> {
       configuredProviderNames.add(config.default.provider);
     }
 
-    if (configuredProviderNames.size === 0 && config.default.provider) {
-      configuredProviderNames.add(config.default.provider);
-    }
-
     for (const name of configuredProviderNames) {
       const providerConfig = config.providers[name];
       if (!providerConfig) {
