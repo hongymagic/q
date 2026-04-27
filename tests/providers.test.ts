@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfigData } from "../src/config/index.ts";
 import {
+  ConfigValidationError,
   MissingApiKeyError,
   ProviderNotFoundError,
   SetupRequiredError,
@@ -315,6 +316,77 @@ describe("provider resolution", () => {
       );
       expect(result).toBe("google-key");
       delete process.env.GOOGLE_API_KEY;
+    });
+  });
+
+  describe("createPortkeyProvider validation", () => {
+    it("throws ConfigValidationError when base_url is missing", async () => {
+      const { createPortkeyProvider } = await import(
+        "../src/providers/portkey.ts"
+      );
+
+      expect(() =>
+        createPortkeyProvider(
+          {
+            type: "portkey",
+            provider_slug: "@my-org/openai",
+          },
+          "test-portkey",
+        ),
+      ).toThrow(ConfigValidationError);
+
+      expect(() =>
+        createPortkeyProvider(
+          {
+            type: "portkey",
+            provider_slug: "@my-org/openai",
+          },
+          "test-portkey",
+        ),
+      ).toThrow(/base_url/);
+    });
+
+    it("throws ConfigValidationError when provider_slug is missing", async () => {
+      const { createPortkeyProvider } = await import(
+        "../src/providers/portkey.ts"
+      );
+
+      expect(() =>
+        createPortkeyProvider(
+          {
+            type: "portkey",
+            base_url: "https://api.portkey.ai/v1",
+          },
+          "test-portkey",
+        ),
+      ).toThrow(ConfigValidationError);
+
+      expect(() =>
+        createPortkeyProvider(
+          {
+            type: "portkey",
+            base_url: "https://api.portkey.ai/v1",
+          },
+          "test-portkey",
+        ),
+      ).toThrow(/provider_slug/);
+    });
+
+    it("does not throw when required fields are set", async () => {
+      const { createPortkeyProvider } = await import(
+        "../src/providers/portkey.ts"
+      );
+
+      expect(() =>
+        createPortkeyProvider(
+          {
+            type: "portkey",
+            base_url: "https://api.portkey.ai/v1",
+            provider_slug: "@my-org/openai",
+          },
+          "test-portkey",
+        ),
+      ).not.toThrow();
     });
   });
 

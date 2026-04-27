@@ -94,6 +94,50 @@ describe("formatErrorDiagnostics secret redaction", () => {
     expect(output).toContain("retryCount");
     expect(output).toContain("3");
   });
+
+  it("redacts sensitive keys inside chained error.cause", () => {
+    const innerError = new Error("upstream auth failure");
+    Object.assign(innerError, {
+      api_key: "sk-inner-secret-12345",
+      Authorization: "Bearer inner-bearer",
+      statusCode: 401,
+    });
+
+    const outerError = new Error("Request failed", { cause: innerError });
+    Object.assign(outerError, { statusCode: 500 });
+
+    const output = formatErrorDiagnostics(outerError);
+
+    // Outer-level non-sensitive prop preserved
+    expect(output).toContain("statusCode");
+    expect(output).toContain("500");
+
+    // Inner cause is included
+    expect(output).toContain("upstream auth failure");
+    expect(output).toContain("401");
+
+    // Sensitive props from the inner cause are redacted, not leaked
+    expect(output).not.toContain("sk-inner-secret-12345");
+    expect(output).not.toContain("inner-bearer");
+    expect(output).toContain("[REDACTED]");
+  });
+
+  it("redacts sensitive keys nested 2+ levels deep through cause chains", () => {
+    const deepest = new Error("auth boundary");
+    Object.assign(deepest, { api_key: "sk-deepest" });
+
+    const middle = new Error("middleware error", { cause: deepest });
+    Object.assign(middle, { auth_token: "bearer-middle" });
+
+    const top = new Error("Top-level failure", { cause: middle });
+
+    const output = formatErrorDiagnostics(top);
+
+    expect(output).not.toContain("sk-deepest");
+    expect(output).not.toContain("bearer-middle");
+    expect(output).toContain("auth boundary");
+    expect(output).toContain("middleware error");
+  });
 });
 
 describe("writeFailureLog session context redaction", () => {
