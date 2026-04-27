@@ -3,7 +3,7 @@ import type { ParsedArgs } from "./args.ts";
 import { getHelpText, getVersion, parseCliArgs } from "./args.ts";
 import {
   formatDoctorReport,
-  getConfigPath,
+  getXdgConfigPath,
   initConfig,
   loadConfig,
   runConfigDoctor,
@@ -47,7 +47,7 @@ async function main(): Promise<void> {
     const args = parseCliArgs();
     debug = args.options.debug;
     configureLogging({ debug });
-    updateLogContext({ command: args.command, configPath: getConfigPath() });
+    updateLogContext({ command: args.command, configPath: getXdgConfigPath() });
 
     // Handle --version (before stdin to avoid blocking)
     if (args.options.version) {
@@ -59,7 +59,7 @@ async function main(): Promise<void> {
     if (args.command === "config") {
       switch (args.subcommand) {
         case "path":
-          console.log(getConfigPath());
+          console.log(getXdgConfigPath());
           process.exit(0);
           break;
         case "init": {
@@ -109,7 +109,7 @@ async function main(): Promise<void> {
       updateLogContext({
         attempt,
         command: args.command,
-        configPath: getConfigPath(),
+        configPath: getXdgConfigPath(),
       });
 
       try {
@@ -130,7 +130,7 @@ async function main(): Promise<void> {
     }
   } catch (err) {
     configureLogging({ debug });
-    updateLogContext({ configPath: getConfigPath() });
+    updateLogContext({ configPath: getXdgConfigPath() });
     await handleFailure(err, debug, null);
 
     if (err instanceof QError) {

@@ -85,14 +85,6 @@ export function getCwdConfigPath(): string {
   return join(process.cwd(), "config.toml");
 }
 
-export function getConfigPath(): string {
-  return getXdgConfigPath();
-}
-
-export function getConfigDir(): string {
-  return getXdgConfigDir();
-}
-
 export class Config {
   readonly default: { provider?: string; model?: string; copy?: boolean };
   readonly providers: Record<string, ProviderConfig>;
