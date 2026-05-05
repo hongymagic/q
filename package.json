@@ -56,7 +56,7 @@
     "@ai-sdk/google": "3.0.64",
     "@ai-sdk/groq": "3.0.35",
     "@ai-sdk/openai": "3.0.53",
-    "@ai-sdk/openai-compatible": "2.0.41",
+    "@ai-sdk/openai-compatible": "2.0.46",
     "@t3-oss/env-core": "0.13.11",
     "ai": "6.0.168",
     "clipboardy": "5.3.1",
