@@ -114,7 +114,8 @@ describe("sanitizeForClipboard", () => {
   });
 
   test("strips ANSI OSC sequences with String Terminator (ST)", () => {
-    const input = "\u001b]8;;http://malicious.com\u001b\\Malicious Link\u001b]8;;\u001b\\";
+    const input =
+      "\u001b]8;;http://malicious.com\u001b\\Malicious Link\u001b]8;;\u001b\\";
     expect(sanitizeForClipboard(input)).toBe("Malicious Link");
   });
 
