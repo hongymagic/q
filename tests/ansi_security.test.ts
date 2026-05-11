@@ -113,6 +113,11 @@ describe("sanitizeForClipboard", () => {
     expect(sanitizeForClipboard(input)).toBe("Red Text");
   });
 
+  test("strips ANSI OSC sequences with String Terminator (ST)", () => {
+    const input = "\u001b]8;;http://malicious.com\u001b\\Malicious Link\u001b]8;;\u001b\\";
+    expect(sanitizeForClipboard(input)).toBe("Malicious Link");
+  });
+
   test("preserves tab and newline; normalises CRLF to LF", () => {
     expect(sanitizeForClipboard("Line 1\n\tIndented\r\nLine 2")).toBe(
       "Line 1\n\tIndented\nLine 2",
