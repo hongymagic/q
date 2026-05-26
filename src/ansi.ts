@@ -2,7 +2,7 @@
 // eslint-disable-next-line no-control-regex
 const ANSI_REGEX = new RegExp(
   [
-    "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
+    "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?(?:\\u0007|\\u001B\\\\))",
     "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))",
   ].join("|"),
   "g",
@@ -59,10 +59,31 @@ export function createAnsiStripper() {
 
     // If the buffer ends with a partial ANSI sequence (starts with ESC), keep it in buffer
     // ESC is \u001B or \u009B
-    const lastEscIndex = Math.max(
+    let lastEscIndex = Math.max(
       buffer.lastIndexOf("\u001B"),
       buffer.lastIndexOf("\u009B"),
     );
+
+    // If the last ESC is part of an ST terminator (\u001B\\), it's not the start
+    // of an incomplete sequence, it's the end of an OSC sequence. We should look
+    // for the ESC that precedes it to find the actual start of a potentially
+    // incomplete sequence.
+    if (
+      lastEscIndex !== -1 &&
+      buffer.slice(lastEscIndex, lastEscIndex + 2) === "\u001B\\"
+    ) {
+      let checkIndex = lastEscIndex;
+      while (
+        checkIndex !== -1 &&
+        buffer.slice(checkIndex, checkIndex + 2) === "\u001B\\"
+      ) {
+        checkIndex = Math.max(
+          buffer.lastIndexOf("\u001B", checkIndex - 1),
+          buffer.lastIndexOf("\u009B", checkIndex - 1),
+        );
+      }
+      lastEscIndex = checkIndex;
+    }
 
     if (lastEscIndex !== -1) {
       // Check if this looks like an incomplete sequence

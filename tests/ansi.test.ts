@@ -35,3 +35,13 @@ test("createAnsiStripper handles alternating plain text and ANSI chunks", () => 
   expect(stripper("\u001b[33myellow\u001b[0m")).toBe("yellow");
   expect(stripper("final")).toBe("final");
 });
+
+test("createAnsiStripper handles ST sequences", () => {
+  const stripper = createAnsiStripper();
+  // String terminated with ST sequence (\u001b\)
+  const stSequence =
+    "\u001b]8;;http://example.com\u001b\\Link\u001b]8;;\u001b\\";
+
+  // Depending on whether it splits or is in one chunk, the result should be just the link text
+  expect(stripper(stSequence)).toBe("Link");
+});

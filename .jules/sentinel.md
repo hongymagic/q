@@ -39,3 +39,8 @@
 **Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
 **Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
 **Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
+
+## 2026-05-26 - Terminal Injection via ST (String Terminator) Sequences
+**Vulnerability:** The ANSI stripping logic only supported `\u0007` (Bell) as the terminator for Operating System Command (OSC) sequences. It failed to support the alternative ANSI standard terminator `\u001b\` (String Terminator, or ST). An attacker could bypass output sanitization by terminating a malicious hyperlink or other OSC sequence with `\u001b\`, leading to terminal injection.
+**Learning:** ANSI standards are complex and support multiple escape sequences. Relying on partial implementations (like only supporting BEL) leaves gaps that can be exploited for terminal injection when the output contains untrusted AI generation. Stateful stream chunking makes partial matching especially difficult if the terminator spans chunk boundaries.
+**Prevention:** Update ANSI removal regular expressions to fully match standard OSC terminators, specifically `(?:\u0007|\u001B\\)`. Ensure stream-chunk buffering logic correctly identifies the starts and ends of sequences, even when the terminator itself is a multi-character escape sequence.
