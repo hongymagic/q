@@ -39,3 +39,8 @@
 **Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
 **Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
 **Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
+
+## 2026-05-31 - Terminal Injection via Incomplete OSC Terminator regex
+**Vulnerability:** The regex in `src/ansi.ts` for stripping ANSI sequences only accounted for `\u0007` (Bell) as the Operating System Command (OSC) sequence terminator. It did not support the String Terminator (ST) `\u001B\`. An attacker could inject OSC sequences terminated by ST to bypass the ANSI stripping, leading to terminal injection.
+**Learning:** Security-critical regexes meant to strip escape sequences must handle all standard terminators (like both BEL and ST) to prevent bypass.
+**Prevention:** Update `ANSI_REGEX` to match `(?:\\u0007|\\u001B\\\\)` to cover both terminators.
