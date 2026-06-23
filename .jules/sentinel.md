@@ -39,3 +39,8 @@
 **Vulnerability:** The `filterSensitiveFields` function in `src/providers/index.ts` used a manual recursive loop to drop sensitive keys, but it failed to recurse into arrays. If a configuration object contained an array with sensitive nested objects, those secrets would be leaked in debug logs.
 **Learning:** Manual object traversal for redaction is prone to edge cases (like arrays or circular references).
 **Prevention:** Use a custom replacer function with `JSON.stringify` to safely and completely redact sensitive fields across all nested structures.
+
+## 2026-06-23 - Defense in Depth: Expanded Sensitive Key Redaction
+**Vulnerability:** The `SENSITIVE_KEY_PATTERNS` list used to detect and redact sensitive keys in logs was missing several common authentication and session tokens, such as `bearer`, `session`, `jwt`, and `cookie`. If these keys appeared in configuration or error objects, they would not be redacted and could leak sensitive information into logs.
+**Learning:** Security redaction lists should be comprehensive and account for modern web authentication patterns, not just basic keys and secrets.
+**Prevention:** Regularly review and expand sensitive key pattern lists to ensure new or alternative authentication tokens are caught.
