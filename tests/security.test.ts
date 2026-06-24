@@ -134,6 +134,10 @@ describe("security", () => {
       expect(isSensitiveKey("x-api-token")).toBe(true);
       expect(isSensitiveKey("clientSecret")).toBe(true);
       expect(isSensitiveKey("credentialRef")).toBe(true);
+      expect(isSensitiveKey("bearerToken")).toBe(true);
+      expect(isSensitiveKey("session_id")).toBe(true);
+      expect(isSensitiveKey("jwtPayload")).toBe(true);
+      expect(isSensitiveKey("set-cookie")).toBe(true);
       expect(isSensitiveKey("Content-Type")).toBe(false);
     });
 
