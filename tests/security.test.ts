@@ -134,6 +134,10 @@ describe("security", () => {
       expect(isSensitiveKey("x-api-token")).toBe(true);
       expect(isSensitiveKey("clientSecret")).toBe(true);
       expect(isSensitiveKey("credentialRef")).toBe(true);
+      expect(isSensitiveKey("bearerToken")).toBe(true);
+      expect(isSensitiveKey("session_id")).toBe(true);
+      expect(isSensitiveKey("jwt_payload")).toBe(true);
+      expect(isSensitiveKey("cookie")).toBe(true);
       expect(isSensitiveKey("Content-Type")).toBe(false);
     });
 
@@ -171,6 +175,10 @@ describe("security", () => {
         access_token: "should-be-filtered",
         apiKey: "should-be-filtered",
         clientSecret: "should-be-filtered",
+        bearer_token: "should-be-filtered",
+        session_id: "should-be-filtered",
+        jwt_token: "should-be-filtered",
+        cookie: "should-be-filtered",
         normal_field: "should-remain",
         base_url: "should-remain",
       };
@@ -187,6 +195,10 @@ describe("security", () => {
       expect(filtered).not.toHaveProperty("access_token");
       expect(filtered).not.toHaveProperty("apiKey");
       expect(filtered).not.toHaveProperty("clientSecret");
+      expect(filtered).not.toHaveProperty("bearer_token");
+      expect(filtered).not.toHaveProperty("session_id");
+      expect(filtered).not.toHaveProperty("jwt_token");
+      expect(filtered).not.toHaveProperty("cookie");
     });
 
     it("should be case-insensitive", () => {

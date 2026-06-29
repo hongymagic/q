@@ -8,6 +8,10 @@ const SENSITIVE_KEY_PATTERNS = [
   "auth",
   "credential",
   "authorization",
+  "bearer",
+  "session",
+  "jwt",
+  "cookie",
 ];
 
 export function isSensitiveKey(key: string): boolean {
