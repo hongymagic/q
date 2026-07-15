@@ -390,6 +390,122 @@ describe("provider resolution", () => {
     });
   });
 
+  describe("createAnthropicProvider", () => {
+    it("routes a Console API key through apiKey (x-api-key)", async () => {
+      const { createAnthropic } = await import("@ai-sdk/anthropic");
+      const { createAnthropicProvider } = await import(
+        "../src/providers/anthropic.ts"
+      );
+
+      process.env.ANTHROPIC_API_KEY = "sk-ant-api03-test-key";
+      createAnthropicProvider(
+        { type: "anthropic", api_key_env: "ANTHROPIC_API_KEY" },
+        "anthropic",
+      );
+
+      expect(createAnthropic).toHaveBeenCalledWith({
+        apiKey: "sk-ant-api03-test-key",
+        baseURL: undefined,
+        headers: undefined,
+      });
+    });
+
+    it("routes an OAuth access token through authToken + the oauth beta header", async () => {
+      const { createAnthropic } = await import("@ai-sdk/anthropic");
+      const { createAnthropicProvider } = await import(
+        "../src/providers/anthropic.ts"
+      );
+
+      process.env.ANTHROPIC_API_KEY = "sk-ant-oat01-test-token";
+      createAnthropicProvider(
+        { type: "anthropic", api_key_env: "ANTHROPIC_API_KEY" },
+        "anthropic",
+      );
+
+      expect(createAnthropic).toHaveBeenCalledWith({
+        authToken: "sk-ant-oat01-test-token",
+        baseURL: undefined,
+        headers: { "anthropic-beta": "oauth-2025-04-20" },
+      });
+    });
+
+    it("lets user-configured headers override the default oauth beta header", async () => {
+      const { createAnthropic } = await import("@ai-sdk/anthropic");
+      const { createAnthropicProvider } = await import(
+        "../src/providers/anthropic.ts"
+      );
+
+      process.env.ANTHROPIC_API_KEY = "sk-ant-oat01-test-token";
+      createAnthropicProvider(
+        {
+          type: "anthropic",
+          api_key_env: "ANTHROPIC_API_KEY",
+          headers: { "anthropic-beta": "custom-beta", "x-extra": "1" },
+        },
+        "anthropic",
+      );
+
+      expect(createAnthropic).toHaveBeenCalledWith({
+        authToken: "sk-ant-oat01-test-token",
+        baseURL: undefined,
+        headers: { "anthropic-beta": "custom-beta", "x-extra": "1" },
+      });
+    });
+
+    it("passes base_url through unchanged for both auth modes", async () => {
+      const { createAnthropic } = await import("@ai-sdk/anthropic");
+      const { createAnthropicProvider } = await import(
+        "../src/providers/anthropic.ts"
+      );
+
+      process.env.ANTHROPIC_API_KEY = "sk-ant-oat01-test-token";
+      createAnthropicProvider(
+        {
+          type: "anthropic",
+          api_key_env: "ANTHROPIC_API_KEY",
+          base_url: "https://proxy.example.com/v1",
+        },
+        "anthropic",
+      );
+
+      expect(createAnthropic).toHaveBeenCalledWith({
+        authToken: "sk-ant-oat01-test-token",
+        baseURL: "https://proxy.example.com/v1",
+        headers: { "anthropic-beta": "oauth-2025-04-20" },
+      });
+    });
+  });
+
+  describe("isOAuthAccessToken", () => {
+    it("returns true for OAuth-shaped access tokens", async () => {
+      const { isOAuthAccessToken } = await import(
+        "../src/providers/anthropic.ts"
+      );
+      expect(isOAuthAccessToken("sk-ant-oat01-abc123")).toBe(true);
+    });
+
+    it("returns false for Console API keys", async () => {
+      const { isOAuthAccessToken } = await import(
+        "../src/providers/anthropic.ts"
+      );
+      expect(isOAuthAccessToken("sk-ant-api03-abc123")).toBe(false);
+    });
+
+    it("returns false for arbitrary strings", async () => {
+      const { isOAuthAccessToken } = await import(
+        "../src/providers/anthropic.ts"
+      );
+      expect(isOAuthAccessToken("some-other-key")).toBe(false);
+    });
+
+    it("returns false for an empty string", async () => {
+      const { isOAuthAccessToken } = await import(
+        "../src/providers/anthropic.ts"
+      );
+      expect(isOAuthAccessToken("")).toBe(false);
+    });
+  });
+
   describe("ollama normaliseBaseURL", () => {
     it("should default to http://localhost:11434/api when undefined", () => {
       expect(normaliseBaseURL(undefined)).toBe("http://localhost:11434/api");

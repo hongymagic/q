@@ -26,6 +26,7 @@ bunx lefthook install    # Install pre-commit + pre-push hooks
 
 - The CLI blocks on stdin in non-interactive shells. Pipe empty input to avoid hangs: `echo "" | bun run src/cli.ts --help`
 - Unit tests (`bun run test`) do **not** require any API keys. End-to-end LLM tests need `ANTHROPIC_API_KEY` or equivalent.
+- `ANTHROPIC_API_KEY` isn't guaranteed to hold a Console API key — `ant auth login` and Claude Code sessions can export an OAuth access token (prefix `sk-ant-oat`) under that same name. The anthropic provider (`src/providers/anthropic.ts`) detects the shape and switches auth mode automatically; no config change needed.
 
 ---
 
@@ -162,7 +163,7 @@ type ProviderConfig = {
 Adapters:
 
 - `openai` → `@ai-sdk/openai` (use `createOpenAI`, custom baseURL if present)
-- `anthropic` → `@ai-sdk/anthropic`
+- `anthropic` → `@ai-sdk/anthropic` (auto-detects OAuth access tokens by prefix — `sk-ant-oat` vs a Console key's `sk-ant-api` — and authenticates via `authToken` + the `oauth-2025-04-20` beta header instead of `apiKey`/`x-api-key`)
 - `openai_compatible` → `@ai-sdk/openai-compatible`
 - `ollama` → `ollama-ai-provider-v2`
 - `portkey` → `@ai-sdk/openai` (with Portkey-specific headers for internal/cloud gateways)
