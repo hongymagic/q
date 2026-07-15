@@ -122,7 +122,7 @@ jobs:
             await main();
 
       - name: Install gh-aw
-        uses: github/gh-aw/actions/setup-cli@v0.68.3
+        uses: github/gh-aw/actions/setup-cli@v0.81.6
         with:
           version: v0.57.2
 
