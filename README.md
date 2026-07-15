@@ -119,12 +119,12 @@ Each provider can specify its own default `model`, which takes precedence over `
 ```toml
 [default]
 provider = "google"
-# model = "gemini-2.5-flash"         # Optional global default
+# model = "gemini-flash-latest"      # Optional global default
 
 [providers.google]
 type = "google"
 api_key_env = "GEMINI_API_KEY"
-model = "gemini-2.5-flash"           # Optional per-provider default
+model = "gemini-flash-latest"        # Optional per-provider default
 ```
 
 See [config.example.toml](config.example.toml) for all options.

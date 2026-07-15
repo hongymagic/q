@@ -111,7 +111,9 @@ describe("getDefaultModelForProviderType", () => {
     expect(getDefaultModelForProviderType("anthropic")).toBe(
       "claude-sonnet-4-20250514",
     );
-    expect(getDefaultModelForProviderType("google")).toBe("gemini-2.5-flash");
+    expect(getDefaultModelForProviderType("google")).toBe(
+      "gemini-flash-latest",
+    );
     expect(getDefaultModelForProviderType("ollama")).toBe("gemma3");
   });
 

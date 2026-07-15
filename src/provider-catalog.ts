@@ -24,7 +24,7 @@ export const GOOGLE_API_KEY_ENV_VARS = [
 const DEFAULT_MODEL_BY_PROVIDER_TYPE = {
   anthropic: "claude-sonnet-4-20250514",
   openai: "gpt-4o-mini",
-  google: "gemini-2.5-flash",
+  google: "gemini-flash-latest",
   groq: "openai/gpt-oss-20b",
   ollama: "gemma3",
   bedrock: "us.anthropic.claude-sonnet-4-20250514-v1:0",

@@ -541,7 +541,7 @@ export const EXAMPLE_CONFIG = `# q configuration file
 
 [default]
 # provider = "google"          # Optional: q auto-detects a provider when possible
-# model = "gemini-2.5-flash"   # Optional: q uses provider defaults when omitted
+# model = "gemini-flash-latest"   # Optional: q uses provider defaults when omitted
 # copy = true                   # Optional: always copy answer to clipboard
 
 # Local-first example
@@ -554,7 +554,7 @@ export const EXAMPLE_CONFIG = `# q configuration file
 # [providers.google]
 # type = "google"
 # # api_key_env = "GEMINI_API_KEY"
-# # model = "gemini-2.5-flash"
+# # model = "gemini-flash-latest"
 
 # Free cloud example (Groq)
 # [providers.groq]

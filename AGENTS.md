@@ -119,7 +119,7 @@ Support `${VAR_NAME}` syntax in specific fields for allowlisted variables only:
 ```toml
 [default]
 provider = "google"           # Optional
-# model = "gemini-2.5-flash"  # Optional
+# model = "gemini-flash-latest"  # Optional
 
 [providers.google]
 type = "google"
