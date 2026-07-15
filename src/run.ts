@@ -25,7 +25,7 @@ export async function runQuery(options: RunOptions): Promise<RunResult> {
 
     const result = streamText({
       model,
-      system: systemPrompt,
+      instructions: systemPrompt,
       prompt: userPrompt,
       onError: ({ error }) => {
         streamError ??= error;

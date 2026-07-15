@@ -1,4 +1,4 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createGoogle } from "@ai-sdk/google";
 import type { ProviderConfig } from "../config/index.ts";
 import { getGoogleApiKeyEnvVars } from "../provider-catalog.ts";
 import { resolveApiKeyCandidates } from "./index.ts";
@@ -7,7 +7,7 @@ export function createGoogleProvider(
   config: ProviderConfig,
   providerName: string,
 ) {
-  return createGoogleGenerativeAI({
+  return createGoogle({
     apiKey: resolveApiKeyCandidates(
       getGoogleApiKeyEnvVars(config.api_key_env),
       providerName,
