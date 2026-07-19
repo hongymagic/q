@@ -44,3 +44,7 @@
 **Vulnerability:** The `isSensitiveKey` function missed common credential identifiers like `bearer`, `session`, `jwt`, and `cookie`. These are frequently used in headers and objects, leading to plaintext exposure in logs.
 **Learning:** Hardcoded sensitive key patterns need to account for diverse authentication mechanisms, not just generic "key" or "secret" terms.
 **Prevention:** Include a comprehensive set of common credential token names (`bearer`, `session`, `jwt`, `cookie`) in the `SENSITIVE_KEY_PATTERNS` array.
+## 2025-02-14 - Leakage of Credentials via Error Properties
+**Vulnerability:** AI SDKs may attach objects like `requestHeaders` and `responseHeaders` to error instances, which bypasses shallow sensitive key checks and leads to full credential leakage in failure logs.
+**Learning:** Checking error properties dynamically with a shallow filter is insufficient when third-party SDKs nest sensitive payloads within complex structures.
+**Prevention:** Explicitly omit top-level error properties known to carry entire request/response contexts, such as `requestHeaders` and `responseHeaders`, before serialization.

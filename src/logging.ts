@@ -189,9 +189,15 @@ function formatSessionEntries(): string {
     .join("\n");
 }
 
-// Error properties that may contain full request/response payloads (prompts, bodies).
+// Error properties that may contain full request/response payloads (prompts, bodies)
+// or sensitive information like authorization tokens.
 // These are omitted entirely from failure logs.
-const OMITTED_ERROR_PROPERTIES = new Set(["requestBodyValues", "responseBody"]);
+const OMITTED_ERROR_PROPERTIES = new Set([
+  "requestBodyValues",
+  "responseBody",
+  "requestHeaders",
+  "responseHeaders",
+]);
 
 function formatUnknownValue(value: unknown, depth = 0): string {
   const prefix = "  ".repeat(depth);
