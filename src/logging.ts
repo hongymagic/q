@@ -191,7 +191,12 @@ function formatSessionEntries(): string {
 
 // Error properties that may contain full request/response payloads (prompts, bodies).
 // These are omitted entirely from failure logs.
-const OMITTED_ERROR_PROPERTIES = new Set(["requestBodyValues", "responseBody"]);
+const OMITTED_ERROR_PROPERTIES = new Set([
+  "requestBodyValues",
+  "responseBody",
+  "requestHeaders",
+  "responseHeaders",
+]);
 
 function formatUnknownValue(value: unknown, depth = 0): string {
   const prefix = "  ".repeat(depth);
