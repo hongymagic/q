@@ -37,6 +37,23 @@ describe("formatErrorDiagnostics secret redaction", () => {
     expect(output).toContain("statusCode");
   });
 
+  it("omits requestHeaders and responseHeaders from error diagnostics", () => {
+    const error = new Error("API error");
+    Object.assign(error, {
+      requestHeaders: { "x-api-key": "secret-key" },
+      responseHeaders: { "x-internal-id": "internal-val" },
+      statusCode: 403,
+    });
+
+    const output = formatErrorDiagnostics(error);
+    expect(output).not.toContain("secret-key");
+    expect(output).not.toContain("internal-val");
+    expect(output).not.toContain("requestHeaders");
+    expect(output).not.toContain("responseHeaders");
+    expect(output).toContain("statusCode");
+    expect(output).toContain("403");
+  });
+
   it("redacts properties with sensitive key names", () => {
     const error = new Error("Auth failed");
     Object.assign(error, {
