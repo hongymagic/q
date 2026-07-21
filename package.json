@@ -55,7 +55,7 @@
     "@ai-sdk/azure": "4.0.15",
     "@ai-sdk/google": "4.0.16",
     "@ai-sdk/groq": "4.0.11",
-    "@ai-sdk/openai": "4.0.14",
+    "@ai-sdk/openai": "4.0.16",
     "@ai-sdk/openai-compatible": "3.0.10",
     "@t3-oss/env-core": "0.13.11",
     "ai": "7.0.28",
