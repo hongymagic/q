@@ -50,7 +50,7 @@
     "release:dry": "bun run scripts/release.ts --dry-run"
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "5.0.22",
+    "@ai-sdk/amazon-bedrock": "5.0.25",
     "@ai-sdk/anthropic": "4.0.15",
     "@ai-sdk/azure": "4.0.15",
     "@ai-sdk/google": "4.0.16",
