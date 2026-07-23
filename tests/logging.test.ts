@@ -37,6 +37,23 @@ describe("formatErrorDiagnostics secret redaction", () => {
     expect(output).toContain("statusCode");
   });
 
+  it("omits requestHeaders and responseHeaders from error diagnostics", () => {
+    const error = new Error("API error");
+    Object.assign(error, {
+      requestHeaders: { Authorization: "Bearer leak-me" },
+      responseHeaders: { "set-cookie": "session=secret" },
+      statusCode: 401,
+    });
+
+    const output = formatErrorDiagnostics(error);
+    expect(output).not.toContain("leak-me");
+    expect(output).not.toContain("requestHeaders");
+    expect(output).not.toContain("session=secret");
+    expect(output).not.toContain("responseHeaders");
+    expect(output).toContain("statusCode");
+    expect(output).toContain("401");
+  });
+
   it("redacts properties with sensitive key names", () => {
     const error = new Error("Auth failed");
     Object.assign(error, {
