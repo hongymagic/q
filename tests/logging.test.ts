@@ -37,6 +37,23 @@ describe("formatErrorDiagnostics secret redaction", () => {
     expect(output).toContain("statusCode");
   });
 
+  it("omits requestHeaders and responseHeaders from error diagnostics", () => {
+    const error = new Error("Network error");
+    Object.assign(error, {
+      requestHeaders: { "x-api-key": "secret-key-123" },
+      responseHeaders: { "set-cookie": "session=secret-session" },
+      statusCode: 502,
+    });
+
+    const output = formatErrorDiagnostics(error);
+    expect(output).not.toContain("secret-key-123");
+    expect(output).not.toContain("requestHeaders");
+    expect(output).not.toContain("secret-session");
+    expect(output).not.toContain("responseHeaders");
+    expect(output).toContain("statusCode");
+    expect(output).toContain("502");
+  });
+
   it("redacts properties with sensitive key names", () => {
     const error = new Error("Auth failed");
     Object.assign(error, {
