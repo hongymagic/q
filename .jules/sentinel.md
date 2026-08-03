@@ -44,3 +44,7 @@
 **Vulnerability:** The `isSensitiveKey` function missed common credential identifiers like `bearer`, `session`, `jwt`, and `cookie`. These are frequently used in headers and objects, leading to plaintext exposure in logs.
 **Learning:** Hardcoded sensitive key patterns need to account for diverse authentication mechanisms, not just generic "key" or "secret" terms.
 **Prevention:** Include a comprehensive set of common credential token names (`bearer`, `session`, `jwt`, `cookie`) in the `SENSITIVE_KEY_PATTERNS` array.
+## 2026-08-03 - Terminal Injection via Unstripped OSC Sequences and Credential Leakage in Debug Logs
+**Vulnerability:** 1. The ANSI stripping regex missed the String Terminator (`\`) for OSC sequences, leading to potential terminal injection. 2. `requestHeaders` and `responseHeaders` were not explicitly omitted in error diagnostics, potentially leaking credentials attached by AI SDKs.
+**Learning:** 1. ANSI stripping regexes must exhaustively cover all terminators, including the often-missed ST (String Terminator). 2. Error diagnostics must be proactively sanitised by explicitly omitting structures (like headers) that AI SDKs frequently append in error traces.
+**Prevention:** 1. Include both `` and `\` as terminators in ANSI regex for OSC sequences. 2. Add `requestHeaders` and `responseHeaders` to error omission lists to prevent SDK-level credential leaks.
