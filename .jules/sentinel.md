@@ -44,3 +44,8 @@
 **Vulnerability:** The `isSensitiveKey` function missed common credential identifiers like `bearer`, `session`, `jwt`, and `cookie`. These are frequently used in headers and objects, leading to plaintext exposure in logs.
 **Learning:** Hardcoded sensitive key patterns need to account for diverse authentication mechanisms, not just generic "key" or "secret" terms.
 **Prevention:** Include a comprehensive set of common credential token names (`bearer`, `session`, `jwt`, `cookie`) in the `SENSITIVE_KEY_PATTERNS` array.
+
+## 2026-08-05 - Secret Leakage in Debug Logs via Request/Response Headers Object
+**Vulnerability:** The AI SDK occasionally attaches HTTP header objects (e.g. `requestHeaders`, `responseHeaders`) to error instances during failures. Since the logging utility only omitted `requestBodyValues` and `responseBody`, credentials included within these headers (like `Authorization` or `set-cookie`) could be inadvertently logged when errors were formatted for diagnostics.
+**Learning:** SDK errors can contain complete network request/response context payloads, providing a backdoor vector for secrets to enter logs if they are not specifically ignored or redacted.
+**Prevention:** Explicitly omit network header objects (`requestHeaders`, `responseHeaders`) alongside request bodies when sanitizing and formatting error objects.
