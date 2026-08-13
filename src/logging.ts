@@ -195,7 +195,7 @@ const OMITTED_ERROR_PROPERTIES = new Set([
   "requestBodyValues",
   "responseBody",
   "requestHeaders",
-  "responseHeaders"
+  "responseHeaders",
 ]);
 
 function formatUnknownValue(value: unknown, depth = 0): string {

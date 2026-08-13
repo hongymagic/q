@@ -40,7 +40,10 @@ describe("formatErrorDiagnostics secret redaction", () => {
   it("omits requestHeaders and responseHeaders from error diagnostics", () => {
     const error = new Error("API error");
     Object.assign(error, {
-      requestHeaders: { "authorization": "Bearer secret-token", "x-api-key": "secret-key" },
+      requestHeaders: {
+        authorization: "Bearer secret-token",
+        "x-api-key": "secret-key",
+      },
       responseHeaders: { "set-cookie": "session=secret-session" },
       statusCode: 403,
     });
