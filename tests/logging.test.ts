@@ -41,7 +41,7 @@ describe("formatErrorDiagnostics secret redaction", () => {
     const error = new Error("API error");
     Object.assign(error, {
       requestHeaders: {
-        authorization: "******",
+        authorization: "secret-token",
         "x-api-key": "secret-key",
       },
       responseHeaders: { "set-cookie": "session=secret-session" },
